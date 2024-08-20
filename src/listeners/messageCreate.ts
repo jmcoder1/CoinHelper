@@ -17,7 +17,6 @@ export const messageCreate: MessageCreateListener = {
         message.channelId
       )
     ) {
-      console.log("message.content", message.content);
       const balanceUpdate = toBalanceUpdate(message.content);
       if (balanceUpdate)
         await updateBalance(message.client, { ...balanceUpdate });
