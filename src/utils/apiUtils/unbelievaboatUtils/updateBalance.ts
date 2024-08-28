@@ -1,5 +1,5 @@
 import { Client } from "discord.js";
-import { OnePieceHentaiZGuild } from "../discordUtils/constants";
+import { OnePieceHentaiZGuild } from "../../../listeners/utils/constants";
 import { client as unbelievaboatClient } from "./client";
 
 interface UpdateBalanceParams {

@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from "discord.js";
-import { attachListeners } from "../../listeners/utils/discordUtils/attachListeners";
-import { tryAsyncAwait } from "../tryAsyncAwait";
+import { attachListeners } from "../../../listeners/utils/attachListeners";
+import { tryAsyncAwait } from "../../tryAsyncAwait";
 
 export const initClient = async () => {
   const client = new Client({

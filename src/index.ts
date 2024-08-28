@@ -1,7 +1,7 @@
 import "dotenv-safe/config";
 import "reflect-metadata";
 import { tryAsyncAwait } from "./utils/tryAsyncAwait";
-import { initClient } from "./utils/apiUtils/initClient";
+import { initClient } from "./utils/apiUtils/discordUtils/initClient";
 
 const main = async () => {
   await tryAsyncAwait(() => initClient());

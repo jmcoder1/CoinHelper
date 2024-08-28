@@ -1,7 +1,7 @@
 import { Client } from "discord.js";
-import { ready } from "../../ready";
-import { messageCreate } from "../../messageCreate";
-import { interactionCreate } from "../../interactionCreate";
+import { ready } from "../ready";
+import { messageCreate } from "../messageCreate";
+import { interactionCreate } from "../interactionCreate";
 
 export const attachListeners = (client: Client) => {
   client.on(ready.event, (client) => ready.fn(client));

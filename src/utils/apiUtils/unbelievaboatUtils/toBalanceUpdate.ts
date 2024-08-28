@@ -1,4 +1,4 @@
-import { toUserId } from "../discordUtils/toUserId";
+import { toUserId } from "../../../listeners/utils/discordUtils/toUserId";
 
 const JOIN_AMOUNT = 100;
 const LEAVE_AMOUNT = -110;
