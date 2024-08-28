@@ -1,7 +1,7 @@
 import { Awaitable, Client, Events } from "discord.js";
-import { Listener } from "./utils/discordUtils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { Commands } from "../commands/utils/commands";
+import { Listener } from "./utils/types";
 
 export interface ReadyListener extends Listener {
   event: Events.ClientReady;
