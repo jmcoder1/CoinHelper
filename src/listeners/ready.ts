@@ -1,5 +1,7 @@
 import { Awaitable, Client, Events } from "discord.js";
 import { Listener } from "./utils/discordUtils/types";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
+import { Commands } from "../commands/utils/commands";
 
 export interface ReadyListener extends Listener {
   event: Events.ClientReady;
@@ -10,6 +12,8 @@ export const ready: ReadyListener = {
   event: Events.ClientReady,
   fn: async (client: Client) => {
     if (!client.user || !client.application) return;
+
+    await tryAsyncAwait(() => client.application?.commands.set(Commands));
 
     console.log(`${client.user.username} is online`);
   },
