@@ -1,6 +1,7 @@
 import { Client } from "discord.js";
 import { OnePieceHentaiZGuild } from "../../../listeners/utils/constants";
 import { client as unbelievaboatClient } from "./client";
+import { CURRENCY_NAME } from "../../constants";
 
 interface UpdateBalanceParams {
   userId: string;
@@ -23,6 +24,6 @@ export const updateBalance = async (
   );
   if (economyChannel?.isTextBased())
     await economyChannel.send(
-      `<@${userId}> your coin balance has been updated by ${cashAmount}. Reason: ${reason}`
+      `<@${userId}> your ${CURRENCY_NAME} balance has been updated by ${cashAmount}. Reason: ${reason}`
     );
 };

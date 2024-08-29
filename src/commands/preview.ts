@@ -11,6 +11,7 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
+import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 
 const PREVIEW_COST = 50;
 const NUM_PREVIEWS = 10;
@@ -69,7 +70,7 @@ export const Preview: Command = {
     await updateBalance(client, {
       userId,
       cashAmount: -PREVIEW_COST,
-      reason: `<@${userId}> you have been charged ${PREVIEW_COST} Coins for requesting a preview.`,
+      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${CURRENCY_NAME_PLURAL} for requesting a preview.`,
     });
 
     const allMessages = await channel.messages.fetch({ limit: 100 });

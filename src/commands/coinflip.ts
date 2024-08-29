@@ -9,6 +9,7 @@ import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 
 export const CoinFlip: Command = {
   name: "coinflip",
@@ -114,7 +115,7 @@ export const CoinFlip: Command = {
     if (won) {
       embed.addFields({
         name: "You won",
-        value: `You have been awarded ${amount} Coins`,
+        value: `You have been awarded ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
       await tryAsyncAwait(() =>
         interaction.reply({
@@ -125,13 +126,13 @@ export const CoinFlip: Command = {
       await updateBalance(client, {
         userId,
         cashAmount: +amount,
-        reason: `Coins flip won! <@${userId}> you have been awarded ${amount} Coins`,
+        reason: `Coins flip won! <@${userId}> you have won ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
       return;
     } else {
       embed.addFields({
         name: "You lost",
-        value: `You have lost ${amount} Coins`,
+        value: `You have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
       await tryAsyncAwait(() =>
         interaction.reply({
@@ -142,7 +143,7 @@ export const CoinFlip: Command = {
       await updateBalance(client, {
         userId,
         cashAmount: -amount,
-        reason: `Coins flip lost! <@${userId}> you have been lost ${amount} Coins`,
+        reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
       return;
     }
