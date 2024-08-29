@@ -13,7 +13,7 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 export const CoinFlip: Command = {
   name: "coinflip",
   description:
-    "Flip a coin and guess. Win 100% of your bet if correct, lose it all if wrong.",
+    "Flip a coin and guess. Win 100% of your bet if correct, and lose it if wrong.",
   type: ApplicationCommandType.ChatInput,
   options: [
     {
