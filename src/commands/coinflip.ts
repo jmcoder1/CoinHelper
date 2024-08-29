@@ -117,6 +117,9 @@ export const CoinFlip: Command = {
         name: "You won",
         value: `You have been awarded ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
+      embed.setImage(
+        "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
+      );
       await tryAsyncAwait(() =>
         interaction.reply({
           ephemeral: true,
@@ -134,6 +137,9 @@ export const CoinFlip: Command = {
         name: "You lost",
         value: `You have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
+      embed.setImage(
+        "https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"
+      );
       await tryAsyncAwait(() =>
         interaction.reply({
           ephemeral: true,
