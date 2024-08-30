@@ -38,8 +38,11 @@ export const CoinFlip: Command = {
       .setTitle("Coin Flip")
       .setImage(
         "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-      );
-
+      )
+      .setAuthor({
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() || undefined,
+      });
     if (
       face.charAt(0) !== "h" &&
       face.charAt(0) !== "H" &&
@@ -119,51 +122,41 @@ export const CoinFlip: Command = {
     );
 
     if (won) {
-      embed.addFields({
-        name: "You won",
-        value: `You have been awarded ${amount} ${CURRENCY_NAME_PLURAL}`,
-      });
-      embed.setImage(
-        "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
-      );
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
+      embed
+        .addFields({
+          name: "You won",
+          value: `You have been awarded ${amount} ${CURRENCY_NAME_PLURAL}`,
         })
-      );
+        .setImage(
+          "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
+        );
+
       await updateBalance(client, {
         userId,
         cashAmount: +amount,
         reason: `Coins flip won! <@${userId}> you have won ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
-
-      if (playChannel?.isTextBased())
-        await playChannel.send(`Coins flip won! <@${userId}>`);
-      return;
     } else {
-      embed.addFields({
-        name: "You lost",
-        value: `You have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
-      });
-      embed.setImage(
-        "https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"
-      );
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
+      embed
+        .addFields({
+          name: "You lost",
+          value: `You have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
         })
-      );
+        .setImage(
+          "https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"
+        );
+
       await updateBalance(client, {
         userId,
         cashAmount: -amount,
         reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
-      if (playChannel?.isTextBased())
-        await playChannel.send(`Coins flip lost! <@${userId}>`);
-
-      return;
     }
+
+    if (playChannel?.isTextBased()) await playChannel.send({ embeds: [embed] });
+    interaction.reply(
+      `Check the result in <#${OnePieceHentaiZGuild.channels.playChannelId}>`
+    );
+    return;
   },
 };
