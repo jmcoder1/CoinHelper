@@ -90,6 +90,7 @@ export const CoinFlip: Command = {
           embeds: [embed],
         })
       );
+      return;
     }
 
     const cashBalance = (
