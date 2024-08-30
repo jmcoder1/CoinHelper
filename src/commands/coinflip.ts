@@ -96,8 +96,8 @@ export const CoinFlip: Command = {
     ).cash;
     if (amount > cashBalance) {
       embed.addFields({
-        name: "Not enough Berries",
-        value: `You do not have ${amount} Berries! Please enter a lower amount`,
+        name: `Not enough ${CURRENCY_NAME_PLURAL}`,
+        value: `You do not have ${amount} ${CURRENCY_NAME_PLURAL}! Please enter a lower amount`,
       });
       embed.setColor(0xff0000);
       await tryAsyncAwait(() =>

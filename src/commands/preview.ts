@@ -37,8 +37,8 @@ export const Preview: Command = {
     ).cash;
     if (PREVIEW_COST > cashBalance) {
       const embed = new EmbedBuilder().addFields({
-        name: "Not enough Berries",
-        value: `You do not have enough Berries to request a preivew`,
+        name: `Not enough ${CURRENCY_NAME_PLURAL}`,
+        value: `You do not have enough ${CURRENCY_NAME_PLURAL} to request a preivew`,
       });
       embed.setColor(0xff0000);
       return;
