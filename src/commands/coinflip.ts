@@ -11,6 +11,7 @@ import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUt
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 import { OnePieceHentaiZGuild } from "../listeners/utils/constants";
+import { sleep } from "../utils/sleep";
 
 export const CoinFlip: Command = {
   name: "coinflip",
@@ -122,6 +123,16 @@ export const CoinFlip: Command = {
       OnePieceHentaiZGuild.channels.playChannelId
     );
 
+    const delayEmebd = new EmbedBuilder()
+      .setColor(0x0099ff)
+      .setTitle("Flipping")
+      .setImage("https://www.kiddiepunk.com/zacsdrugbinge/images/3.gif")
+      .setDescription(
+        `Check the result in <#${OnePieceHentaiZGuild.channels.playChannelId}>`
+      );
+    interaction.reply({ embeds: [delayEmebd] });
+    await sleep(5000);
+
     if (won) {
       embed
         .addFields({
@@ -163,9 +174,7 @@ export const CoinFlip: Command = {
     }
 
     if (playChannel?.isTextBased()) await playChannel.send({ embeds: [embed] });
-    interaction.reply(
-      `Check the result in <#${OnePieceHentaiZGuild.channels.playChannelId}>`
-    );
+
     return;
   },
 };
