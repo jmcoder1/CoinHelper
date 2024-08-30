@@ -1,7 +1,7 @@
 import { Client } from "discord.js";
 import { OnePieceHentaiZGuild } from "../../../listeners/utils/constants";
 import { client as unbelievaboatClient } from "./client";
-import { CURRENCY_NAME } from "../../constants";
+import { CURRENCY_NAME_PLURAL } from "../../constants";
 
 interface UpdateBalanceParams {
   userId: string;
@@ -24,6 +24,8 @@ export const updateBalance = async (
   );
   if (economyChannel?.isTextBased())
     await economyChannel.send(
-      `<@${userId}> your ${CURRENCY_NAME} balance has been updated by ${cashAmount}. Reason: ${reason}`
+      `<@${userId}> you have ${
+        cashAmount > 0 ? "gained" : "lost"
+      } ${cashAmount} ${CURRENCY_NAME_PLURAL}. Reason: ${reason}`
     );
 };
