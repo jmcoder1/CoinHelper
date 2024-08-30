@@ -12,6 +12,7 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 import { OnePieceHentaiZGuild } from "../listeners/utils/constants";
 import { sleep } from "../utils/sleep";
+import { validateAmount } from "./utils/validateAmount";
 
 export const CoinFlip: Command = {
   name: "coinflip",
@@ -65,55 +66,13 @@ export const CoinFlip: Command = {
     }
 
     const amount = interaction.options.get("amount")?.value as number;
-
-    if (amount < 0) {
-      embed.addFields({
-        name: "Invalid amonut",
-        value: `Please enter a positive amount`,
-      });
-      embed.setColor(0xff0000);
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
-        })
-      );
-      return;
-    } else if (amount < 50) {
-      embed.addFields({
-        name: "Invalid amonut",
-        value: `Please enter an amount greater or equal to 50`,
-      });
-      embed.setColor(0xff0000);
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
-        })
-      );
-      return;
-    }
-
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
         interaction.guildId as string,
         interaction.user.id
       )
     ).cash;
-    if (amount > cashBalance) {
-      embed.addFields({
-        name: `Not enough ${CURRENCY_NAME_PLURAL}`,
-        value: `You do not have ${amount} ${CURRENCY_NAME_PLURAL}! Please enter a lower amount`,
-      });
-      embed.setColor(0xff0000);
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
-        })
-      );
-      return;
-    }
+    await validateAmount(amount, interaction, cashBalance);
 
     const userId = interaction.user.id;
     const winChance = 0.3;
