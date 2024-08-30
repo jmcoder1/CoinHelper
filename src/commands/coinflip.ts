@@ -10,6 +10,7 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { CURRENCY_NAME_PLURAL } from "../utils/constants";
+import { OnePieceHentaiZGuild } from "../listeners/utils/constants";
 
 export const CoinFlip: Command = {
   name: "coinflip",
@@ -112,6 +113,11 @@ export const CoinFlip: Command = {
     const userId = interaction.user.id;
     const winChance = 0.3;
     const won = Math.random() <= winChance;
+
+    const playChannel = await client.channels.fetch(
+      OnePieceHentaiZGuild.channels.playChannelId
+    );
+
     if (won) {
       embed.addFields({
         name: "You won",
@@ -131,6 +137,9 @@ export const CoinFlip: Command = {
         cashAmount: +amount,
         reason: `Coins flip won! <@${userId}> you have won ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
+
+      if (playChannel?.isTextBased())
+        await playChannel.send(`Coins flip won! <@${userId}>`);
       return;
     } else {
       embed.addFields({
@@ -151,6 +160,9 @@ export const CoinFlip: Command = {
         cashAmount: -amount,
         reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
+      if (playChannel?.isTextBased())
+        await playChannel.send(`Coins flip lost! <@${userId}>`);
+
       return;
     }
   },
