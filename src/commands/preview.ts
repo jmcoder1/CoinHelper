@@ -68,7 +68,11 @@ export const Preview: Command = {
     );
     const userId = interaction.user.id;
     await updateBalance(client, {
-      userId,
+      user: {
+        id: userId,
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() || undefined,
+      },
       cashAmount: -PREVIEW_COST,
       reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${CURRENCY_NAME_PLURAL} for requesting a preview.`,
     });

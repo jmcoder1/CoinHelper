@@ -19,7 +19,7 @@ export const messageCreate: MessageCreateListener = {
         message.channelId
       )
     ) {
-      const balanceUpdate = toBalanceUpdate(message.content);
+      const balanceUpdate = toBalanceUpdate(message.client, message.content);
       if (balanceUpdate)
         await updateBalance(message.client, { ...balanceUpdate });
     } else {
@@ -31,7 +31,11 @@ export const messageCreate: MessageCreateListener = {
       const cashAmount = num * imageMultiplier;
       if (cashAmount === 0) return;
       await updateBalance(message.client, {
-        userId: message.author.id,
+        user: {
+          id: message.author.id,
+          name: message.author.username,
+          iconURL: message.author.avatarURL() || undefined,
+        },
         cashAmount,
         reason: `${num} image posts in <#${message.channel.id}>`,
       });

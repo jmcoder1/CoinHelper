@@ -132,7 +132,11 @@ export const CoinFlip: Command = {
         );
 
       await updateBalance(client, {
-        userId,
+        user: {
+          id: userId,
+          name: interaction.user.username,
+          iconURL: interaction.user.avatarURL() || undefined,
+        },
         cashAmount: +amount,
         reason: `Coins flip won! <@${userId}> you have won ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
@@ -147,7 +151,11 @@ export const CoinFlip: Command = {
         );
 
       await updateBalance(client, {
-        userId,
+        user: {
+          id: userId,
+          name: interaction.user.username,
+          iconURL: interaction.user.avatarURL() || undefined,
+        },
         cashAmount: -amount,
         reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
       });
