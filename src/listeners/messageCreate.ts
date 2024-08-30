@@ -33,7 +33,7 @@ export const messageCreate: MessageCreateListener = {
       await updateBalance(message.client, {
         userId: message.author.id,
         cashAmount,
-        reason: `${num} image posts in ${message.channel.name}`,
+        reason: `${num} image posts in <#${message.channel.id}>`,
       });
     }
   },
