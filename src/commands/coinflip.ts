@@ -96,8 +96,8 @@ export const CoinFlip: Command = {
     ).cash;
     if (amount > cashBalance) {
       embed.addFields({
-        name: "Invalid amonut",
-        value: `Amount exceeds your available balance`,
+        name: "Not enough Berries",
+        value: `You do not have ${amount} Berries! Please enter a lower amount`,
       });
       embed.setColor(0xff0000);
       await tryAsyncAwait(() =>
