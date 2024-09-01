@@ -4,7 +4,7 @@ import {
   crypto_pwhash_ALG_ARGON2ID13,
   crypto_pwhash_SALTBYTES,
   ready,
-} from "libsodium-wrappers";
+} from "libsodium-wrappers-sumo";
 
 export const calcAccessKey = async (email: string, password: string) => {
   await ready;

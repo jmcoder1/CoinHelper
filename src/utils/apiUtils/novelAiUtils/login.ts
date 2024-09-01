@@ -21,7 +21,7 @@ export const login = async (
   });
   if (error || !res) {
     console.error(error);
-    return null;
+    return error;
   }
 
   return res.data;
