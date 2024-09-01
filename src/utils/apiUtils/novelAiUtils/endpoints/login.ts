@@ -1,7 +1,7 @@
 import axios from "axios";
-import { API_ENDPOINT, API_HEADERS } from "./constants";
-import { tryAsyncAwait } from "../../tryAsyncAwait";
-import { calcAccessKey } from "./calcAccessKey";
+import { API_ENDPOINT, API_HEADERS } from "../constants";
+import { tryAsyncAwait } from "../../../tryAsyncAwait";
+import { calcAccessKey } from "../calcAccessKey";
 
 export const login = async (
   email: string,
