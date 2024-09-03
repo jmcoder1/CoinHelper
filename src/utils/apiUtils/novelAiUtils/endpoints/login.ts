@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_ENDPOINT, API_HEADERS } from "../constants";
+import { API_ENDPOINT } from "../constants";
 import { tryAsyncAwait } from "../../../tryAsyncAwait";
 import { calcAccessKey } from "../calcAccessKey";
 
@@ -15,7 +15,7 @@ export const login = async (
         key,
       },
       {
-        headers: API_HEADERS,
+        headers: { "content-type": "application/json" },
       }
     );
   });
