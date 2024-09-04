@@ -15,6 +15,7 @@ import { fetchTextToImage } from "../utils/apiUtils/novelAiUtils/endpoints/fetch
 import { uploadImage } from "../utils/apiUtils/s3Utils/uploadImage";
 import AdmZip from "adm-zip";
 import { getRandomImage } from "../utils/apiUtils/getRandomImage";
+import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 
 const COMMAND_COST = 100;
 
@@ -79,9 +80,8 @@ export const TextToImage: Command = {
     const [resImage, resImageError] = await tryAsyncAwait(() =>
       fetchTextToImage(accessToken, {
         input: prompt,
-        model: "nai",
-        resolution: "square",
-        sampling: "k_euler_ancestral",
+        model: "nai-diffusion-3",
+        seed: 1,
       })
     );
     if (!resImage || resImageError) {
@@ -118,11 +118,20 @@ export const TextToImage: Command = {
       .setColor(0x0099ff)
       .setTitle("Text to image")
       .setImage(imageUrl)
-      .setDescription(`"${prompt}"`);
+      .setDescription(`Prompt: ${prompt}`);
 
     if (currentChannel?.isTextBased())
       await currentChannel.send({ embeds: [resultEmbed] });
 
+    updateBalance(client, {
+      user: {
+        id: interaction.user.id,
+        name: interaction.user.username,
+        iconURL: interaction.user.avatarURL() || undefined,
+      },
+      cashAmount: -COMMAND_COST,
+      reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${CURRENCY_NAME_PLURAL} for generating a text to image.`,
+    });
     return;
   },
 };
