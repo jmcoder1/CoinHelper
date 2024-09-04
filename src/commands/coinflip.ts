@@ -72,7 +72,17 @@ export const CoinFlip: Command = {
         interaction.user.id
       )
     ).cash;
-    await validateAmount(amount, interaction, cashBalance);
+    await validateAmount(
+      { amount, cashBalance, cost: 50 },
+      {
+        interaction,
+        embedProps: {
+          title: "Coin Flip",
+          image:
+            "https://media1.tenor.com/m/PSQehV-u3SIAAAAC/money-expensive.gif",
+        },
+      }
+    );
 
     const userId = interaction.user.id;
     const winChance = 0.3;
