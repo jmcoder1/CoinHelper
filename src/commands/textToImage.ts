@@ -18,7 +18,7 @@ import { getRandomImage } from "../utils/apiUtils/getRandomImage";
 import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
 
-const COMMAND_COST = 100;
+const COMMAND_COST = 25;
 const BANNED_WORD_COST = 1000;
 
 export const TextToImage: Command = {
@@ -39,7 +39,7 @@ export const TextToImage: Command = {
     for (let i = 0; i < BANNED_WORDS.length; i++) {
       const bannedWord = BANNED_WORDS[i];
       if (prompt.includes(bannedWord)) {
-        updateBalance(client, {
+        await updateBalance(client, {
           user: {
             id: interaction.user.id,
             name: interaction.user.username,
@@ -142,7 +142,7 @@ export const TextToImage: Command = {
     if (currentChannel?.isTextBased())
       await currentChannel.send({ embeds: [resultEmbed] });
 
-    updateBalance(client, {
+    await updateBalance(client, {
       user: {
         id: interaction.user.id,
         name: interaction.user.username,
