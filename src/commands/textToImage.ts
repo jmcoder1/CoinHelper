@@ -16,8 +16,10 @@ import { uploadImage } from "../utils/apiUtils/s3Utils/uploadImage";
 import AdmZip from "adm-zip";
 import { getRandomImage } from "../utils/apiUtils/getRandomImage";
 import { CURRENCY_NAME_PLURAL } from "../utils/constants";
+import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
 
 const COMMAND_COST = 100;
+const BANNED_WORD_COST = 1000;
 
 export const TextToImage: Command = {
   name: "text-to-image",
@@ -32,6 +34,24 @@ export const TextToImage: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
+    const prompt = interaction.options.get("prompt")?.value as string;
+
+    for (let i = 0; i < BANNED_WORDS.length; i++) {
+      const bannedWord = BANNED_WORDS[i];
+      if (prompt.includes(bannedWord)) {
+        updateBalance(client, {
+          user: {
+            id: interaction.user.id,
+            name: interaction.user.username,
+            iconURL: interaction.user.avatarURL() || undefined,
+          },
+          cashAmount: -1000,
+          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${CURRENCY_NAME_PLURAL}.`,
+        });
+        return;
+      }
+    }
+
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
         interaction.guildId as string,
@@ -55,7 +75,6 @@ export const TextToImage: Command = {
     if (error) console.error(error);
     if (!res) return;
 
-    const prompt = interaction.options.get("prompt")?.value as string;
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Text to Image Loading...")

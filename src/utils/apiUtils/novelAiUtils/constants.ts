@@ -1,7 +1,7 @@
 export const API_IMAGE_ENDPOINT = "https://image.novelai.net";
 export const API_ENDPOINT = "https://api.novelai.net";
 
-const BANNED_WORDS = [
+export const BANNED_WORDS = [
   "lolicon",
   "shotacon",
   "loli",
