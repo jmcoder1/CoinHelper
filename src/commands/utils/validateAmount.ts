@@ -1,11 +1,11 @@
 import { CommandInteraction, EmbedBuilder } from "discord.js";
 import { tryAsyncAwait } from "../../utils/tryAsyncAwait";
-import { CURRENCY_NAME_PLURAL } from "../../utils/constants";
 
 interface ValidateAmountDataProps {
   amount: number;
   cost: number;
   cashBalance: number;
+  currencyPluralName: string;
 }
 
 interface ValidateAmountEventProps {
@@ -20,7 +20,7 @@ export const validateAmount = async (
   data: ValidateAmountDataProps,
   event: ValidateAmountEventProps
 ): Promise<boolean> => {
-  const { amount, cost, cashBalance } = data;
+  const { amount, cost, cashBalance, currencyPluralName } = data;
   const { interaction, embedProps } = event;
 
   const embed = new EmbedBuilder()
@@ -51,8 +51,8 @@ export const validateAmount = async (
 
   if (amount > cashBalance) {
     embed.addFields({
-      name: `Not enough ${CURRENCY_NAME_PLURAL}`,
-      value: `You do not have ${amount} ${CURRENCY_NAME_PLURAL}! Please enter a lower amount`,
+      name: `Not enough ${currencyPluralName}`,
+      value: `You do not have ${amount} ${currencyPluralName}! Please enter a lower amount`,
     });
     isSuccesful = false;
   }

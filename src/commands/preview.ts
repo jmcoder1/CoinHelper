@@ -11,7 +11,7 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
-import { CURRENCY_NAME_PLURAL } from "../utils/constants";
+import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 
 const PREVIEW_COST = 50;
 const NUM_PREVIEWS = 10;
@@ -29,6 +29,10 @@ export const Preview: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
+    if (!interaction.guildId) return;
+
+    const guildInfo = getGuildInfoById(interaction.guildId);
+    if (!guildInfo) return null;
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
         interaction.guildId as string,
@@ -37,8 +41,8 @@ export const Preview: Command = {
     ).cash;
     if (PREVIEW_COST > cashBalance) {
       const embed = new EmbedBuilder().addFields({
-        name: `Not enough ${CURRENCY_NAME_PLURAL}`,
-        value: `You do not have enough ${CURRENCY_NAME_PLURAL} to request a preivew`,
+        name: `Not enough ${guildInfo.currencyPluralName}`,
+        value: `You do not have enough ${guildInfo.currencyPluralName} to request a preivew`,
       });
       embed.setColor(0xff0000);
       return;
@@ -72,9 +76,15 @@ export const Preview: Command = {
         id: userId,
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
+        guild: {
+          id: interaction.guildId,
+          economyChannelId: guildInfo.channels.economyChannelId,
+          currencyPluralName: guildInfo.currencyPluralName,
+        },
       },
+
       cashAmount: -PREVIEW_COST,
-      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${CURRENCY_NAME_PLURAL} for requesting a preview.`,
+      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
     });
 
     const allMessages = await channel.messages.fetch({ limit: 100 });

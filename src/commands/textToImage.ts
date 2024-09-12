@@ -14,9 +14,9 @@ import { login } from "../utils/apiUtils/novelAiUtils/endpoints/login";
 import { fetchTextToImage } from "../utils/apiUtils/novelAiUtils/endpoints/fetchTextToImage";
 import { uploadImage } from "../utils/apiUtils/s3Utils/uploadImage";
 import AdmZip from "adm-zip";
-import { getRandomImage } from "../utils/apiUtils/getRandomImage";
-import { CURRENCY_NAME_PLURAL } from "../utils/constants";
 import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
+import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
+import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 
 const COMMAND_COST = 25;
 const BANNED_WORD_COST = 1000;
@@ -35,6 +35,10 @@ export const TextToImage: Command = {
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
     const prompt = interaction.options.get("prompt")?.value as string;
+    if (!interaction.guildId) return;
+
+    const guildInfo = getGuildInfoById(interaction.guildId);
+    if (!guildInfo) return null;
 
     for (let i = 0; i < BANNED_WORDS.length; i++) {
       const bannedWord = BANNED_WORDS[i];
@@ -42,11 +46,16 @@ export const TextToImage: Command = {
         await updateBalance(client, {
           user: {
             id: interaction.user.id,
+            guild: {
+              id: interaction.guildId,
+              economyChannelId: guildInfo.channels.economyChannelId,
+              currencyPluralName: guildInfo.currencyPluralName,
+            },
             name: interaction.user.username,
             iconURL: interaction.user.avatarURL() || undefined,
           },
           cashAmount: -1000,
-          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${CURRENCY_NAME_PLURAL}.`,
+          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName}.`,
         });
         return;
       }
@@ -61,7 +70,12 @@ export const TextToImage: Command = {
 
     const [res, error] = await tryAsyncAwait(() =>
       validateAmount(
-        { amount: COMMAND_COST, cost: COMMAND_COST, cashBalance },
+        {
+          amount: COMMAND_COST,
+          cost: COMMAND_COST,
+          cashBalance,
+          currencyPluralName: guildInfo.currencyPluralName,
+        },
         {
           interaction,
           embedProps: {
@@ -75,10 +89,11 @@ export const TextToImage: Command = {
     if (error) console.error(error);
     if (!res) return;
 
+    const loadingImage = getRandElement(guildInfo.images.loading);
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Text to Image Loading...")
-      .setImage(getRandomImage());
+      .setImage(loadingImage);
 
     interaction.reply({ embeds: [delayEmebd] });
 
@@ -147,9 +162,14 @@ export const TextToImage: Command = {
         id: interaction.user.id,
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
+        guild: {
+          id: interaction.guildId,
+          economyChannelId: guildInfo.channels.economyChannelId,
+          currencyPluralName: guildInfo.currencyPluralName,
+        },
       },
       cashAmount: -COMMAND_COST,
-      reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${CURRENCY_NAME_PLURAL} for generating a text to image.`,
+      reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${guildInfo.currencyPluralName} for generating a text to image.`,
     });
     return;
   },

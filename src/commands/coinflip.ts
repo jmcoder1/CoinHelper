@@ -9,10 +9,9 @@ import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
-import { CURRENCY_NAME_PLURAL } from "../utils/constants";
-import { OnePieceHentaiZGuild } from "../listeners/utils/constants";
 import { sleep } from "../utils/sleep";
 import { validateAmount } from "./utils/validateAmount";
+import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 
 export const CoinFlip: Command = {
   name: "coinflip",
@@ -34,6 +33,8 @@ export const CoinFlip: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
+    if (!interaction.guildId) return;
+
     const face = interaction.options.get("face")?.value as string;
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -65,6 +66,9 @@ export const CoinFlip: Command = {
       return;
     }
 
+    const guildInfo = getGuildInfoById(interaction.guildId);
+    if (!guildInfo) return null;
+
     const amount = interaction.options.get("amount")?.value as number;
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
@@ -73,7 +77,12 @@ export const CoinFlip: Command = {
       )
     ).cash;
     await validateAmount(
-      { amount, cashBalance, cost: 50 },
+      {
+        amount,
+        cashBalance,
+        cost: 50,
+        currencyPluralName: guildInfo.currencyPluralName,
+      },
       {
         interaction,
         embedProps: {
@@ -89,7 +98,7 @@ export const CoinFlip: Command = {
     const won = Math.random() <= winChance;
 
     const playChannel = await client.channels.fetch(
-      OnePieceHentaiZGuild.channels.playChannelId
+      guildInfo.channels.playChannelId
     );
 
     const delayEmebd = new EmbedBuilder()
@@ -97,7 +106,7 @@ export const CoinFlip: Command = {
       .setTitle("Flipping")
       .setImage("https://www.kiddiepunk.com/zacsdrugbinge/images/3.gif")
       .setDescription(
-        `Check the result in <#${OnePieceHentaiZGuild.channels.playChannelId}>`
+        `Check the result in <#${guildInfo.channels.playChannelId}>`
       );
     interaction.reply({ embeds: [delayEmebd] });
     await sleep(5000);
@@ -106,7 +115,7 @@ export const CoinFlip: Command = {
       embed
         .addFields({
           name: "You won",
-          value: `You have been awarded ${amount} ${CURRENCY_NAME_PLURAL}`,
+          value: `You have been awarded ${amount} ${guildInfo.currencyPluralName}`,
         })
         .setImage(
           "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
@@ -117,15 +126,20 @@ export const CoinFlip: Command = {
           id: userId,
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
+          guild: {
+            id: interaction.guildId,
+            economyChannelId: guildInfo.channels.economyChannelId,
+            currencyPluralName: guildInfo.currencyPluralName,
+          },
         },
         cashAmount: +amount,
-        reason: `Coins flip won! <@${userId}> you have won ${amount} ${CURRENCY_NAME_PLURAL}`,
+        reason: `Coins flip won! <@${userId}> you have won ${amount} ${guildInfo.currencyPluralName}`,
       });
     } else {
       embed
         .addFields({
           name: "You lost",
-          value: `You have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
+          value: `You have lost ${amount} ${guildInfo.currencyPluralName}`,
         })
         .setImage(
           "https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"
@@ -136,9 +150,14 @@ export const CoinFlip: Command = {
           id: userId,
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
+          guild: {
+            id: interaction.guildId,
+            economyChannelId: guildInfo.channels.economyChannelId,
+            currencyPluralName: guildInfo.currencyPluralName,
+          },
         },
         cashAmount: -amount,
-        reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${CURRENCY_NAME_PLURAL}`,
+        reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${guildInfo.currencyPluralName}`,
       });
     }
 

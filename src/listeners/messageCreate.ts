@@ -1,10 +1,10 @@
 import { Awaitable, ChannelType, Events, Message } from "discord.js";
 import { toBalanceUpdate } from "../utils/apiUtils/unbelievaboatUtils/toBalanceUpdate";
-import { OnePieceHentaiZGuild } from "./utils/constants";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
+import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 
 export interface MessageCreateListener extends Listener {
   event: Events.MessageCreate;
@@ -14,12 +14,16 @@ export interface MessageCreateListener extends Listener {
 export const messageCreate: MessageCreateListener = {
   event: Events.MessageCreate,
   fn: async (message: Message) => {
-    if (
-      [OnePieceHentaiZGuild.channels.invitesChannelId].includes(
-        message.channelId
-      )
-    ) {
-      const balanceUpdate = toBalanceUpdate(message.client, message.content);
+    if (!message.guildId) return;
+    const guildInfo = getGuildInfoById(message.guildId);
+    if (!guildInfo) return;
+
+    if (guildInfo.channels.invitesChannelId === message.channelId) {
+      const balanceUpdate = toBalanceUpdate(message.client, message.content, {
+        guildId: guildInfo.id,
+        currencyPluralName: guildInfo.currencyPluralName,
+        economyChannelId: guildInfo.channels.economyChannelId,
+      });
       if (balanceUpdate)
         await updateBalance(message.client, { ...balanceUpdate });
     } else {
@@ -35,10 +39,17 @@ export const messageCreate: MessageCreateListener = {
           id: message.author.id,
           name: message.author.username,
           iconURL: message.author.avatarURL() || undefined,
+          guild: {
+            id: guildInfo.id,
+            currencyPluralName: guildInfo.currencyPluralName,
+            economyChannelId: guildInfo.channels.economyChannelId,
+          },
         },
         cashAmount,
         reason: `${num} image posts in <#${message.channel.id}>`,
       });
     }
+
+    return;
   },
 };
