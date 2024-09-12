@@ -94,7 +94,7 @@ export const CoinFlip: Command = {
     );
 
     const userId = interaction.user.id;
-    const winChance = 0.3;
+    const winChance = 0.45;
     const won = Math.random() <= winChance;
 
     const playChannel = await client.channels.fetch(
