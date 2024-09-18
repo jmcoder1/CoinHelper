@@ -161,7 +161,10 @@ export const CoinFlip: Command = {
       });
     }
 
-    if (playChannel?.isTextBased()) await playChannel.send({ embeds: [embed] });
+    if (playChannel?.isTextBased()) {
+      await playChannel.send(`<@${interaction.user.id}>`);
+      await playChannel.send({ embeds: [embed] });
+    }
 
     return;
   },

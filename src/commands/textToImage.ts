@@ -154,8 +154,10 @@ export const TextToImage: Command = {
       .setImage(imageUrl)
       .setDescription(`Prompt: ${prompt}`);
 
-    if (currentChannel?.isTextBased())
+    if (currentChannel?.isTextBased()) {
       await currentChannel.send({ embeds: [resultEmbed] });
+      await currentChannel.send(`<@${interaction.id}>`);
+    }
 
     await updateBalance(client, {
       user: {

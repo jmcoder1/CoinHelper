@@ -42,6 +42,9 @@ export const updateBalance = async (
     reason
   );
   const economyChannel = await client.channels.fetch(economyChannelId);
-  if (economyChannel?.isTextBased())
+
+  if (economyChannel?.isTextBased()) {
     await economyChannel.send({ embeds: [embed] });
+    await economyChannel.send(`<@${user.id}>`);
+  }
 };

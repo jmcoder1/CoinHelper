@@ -119,8 +119,10 @@ export const Give: Command = {
         "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
       );
 
-    if (playChannel?.isTextBased())
+    if (playChannel?.isTextBased()) {
+      await playChannel.send(`<@${interaction.user.id}>`);
       await playChannel.send({ embeds: [resultEmbed] });
+    }
 
     return;
   },
