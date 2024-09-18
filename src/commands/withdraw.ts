@@ -45,8 +45,15 @@ export const Withdraw: Command = {
       interaction.user.id
     );
     const amount = interaction.options.get("amount")?.value as number;
+
+    const economyChannel = (await getChannelById(
+      client,
+      guildInfo.channels.economyChannelId
+    )) as TextChannel;
     const resValidateAmount = await validateAmount(
       {
+        client,
+        channelId: economyChannel.id,
         amount,
         balance: balance.bank,
         cost: 50,
@@ -64,11 +71,6 @@ export const Withdraw: Command = {
     if (!resValidateAmount) return;
 
     await sleep(2000);
-
-    const economyChannel = (await getChannelById(
-      client,
-      guildInfo.channels.economyChannelId
-    )) as TextChannel;
 
     await withdraw({
       user: { id: interaction.user.id, guild: { id: guildInfo.id } },

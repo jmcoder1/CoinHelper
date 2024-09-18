@@ -1,11 +1,18 @@
-import { CommandInteraction, EmbedBuilder } from "discord.js";
-import { tryAsyncAwait } from "../../utils/tryAsyncAwait";
+import {
+  Client,
+  CommandInteraction,
+  EmbedBuilder,
+  TextChannel,
+} from "discord.js";
+import { getChannelById } from "../../utils/apiUtils/discordUtils/getChannelById";
 
 interface ValidateAmountDataProps {
   amount: number;
   cost: number;
   balance: number;
   currencyPluralName: string;
+  client: Client;
+  channelId: string;
 }
 
 interface ValidateAmountEventProps {
@@ -20,7 +27,7 @@ export const validateAmount = async (
   data: ValidateAmountDataProps,
   event: ValidateAmountEventProps
 ): Promise<boolean> => {
-  const { amount, cost, balance, currencyPluralName } = data;
+  const { amount, cost, balance, currencyPluralName, channelId, client } = data;
   const { interaction, embedProps } = event;
 
   const embed = new EmbedBuilder()
@@ -57,13 +64,13 @@ export const validateAmount = async (
     isSuccesful = false;
   }
 
-  if (!isSuccesful)
-    await tryAsyncAwait(() =>
-      interaction.reply({
-        ephemeral: true,
-        embeds: [embed],
-      })
-    );
+  if (!isSuccesful) {
+    const economyChannel = (await getChannelById(
+      client,
+      channelId
+    )) as TextChannel;
+    await economyChannel.send({ embeds: [embed] });
+  }
 
   return isSuccesful;
 };

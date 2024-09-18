@@ -5,6 +5,7 @@ import {
   CommandInteraction,
   EmbedBuilder,
   GuildMember,
+  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
@@ -48,8 +49,14 @@ export const Give: Command = {
         interaction.user.id
       )
     ).cash;
+
+    const economyChannel = (await client.channels.fetch(
+      guildInfo.channels.economyChannelId
+    )) as TextChannel;
     await validateAmount(
       {
+        client,
+        channelId: economyChannel.id,
         amount,
         balance: cashBalance,
         cost: 50,

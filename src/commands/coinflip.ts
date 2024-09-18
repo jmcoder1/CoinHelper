@@ -4,6 +4,7 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
+  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
@@ -76,8 +77,14 @@ export const CoinFlip: Command = {
         interaction.user.id
       )
     ).cash;
+
+    const economyChannel = (await client.channels.fetch(
+      guildInfo.channels.economyChannelId
+    )) as TextChannel;
     await validateAmount(
       {
+        client,
+        channelId: economyChannel.id,
         amount,
         balance: cashBalance,
         cost: 50,

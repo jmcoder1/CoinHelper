@@ -4,6 +4,7 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
+  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
@@ -68,9 +69,14 @@ export const TextToImage: Command = {
       )
     ).cash;
 
+    const economyChannel = (await client.channels.fetch(
+      guildInfo.channels.economyChannelId
+    )) as TextChannel;
     const [res, error] = await tryAsyncAwait(() =>
       validateAmount(
         {
+          client,
+          channelId: economyChannel.id,
           amount: COMMAND_COST,
           cost: COMMAND_COST,
           balance: cashBalance,
