@@ -70,11 +70,11 @@ export const AddBerries: Command = {
       )
       .addFields({
         name: amount > 0 ? "Added" : "Removed",
-        value: `<@${recipient}> you have been randomly awarded ${amount} ${guildInfo.currencyPluralName} by <@${interaction.user.id}>`,
+        value: `<@${recipient}> your balance has been updated by ${amount} ${guildInfo.currencyPluralName}`,
       });
 
     if (economyChannel?.isTextBased()) {
-      await economyChannel.send(`<@${interaction.user.id}>`);
+      await economyChannel.send(`<@${recipient}> ${reason}`);
       await economyChannel.send({ embeds: [resultEmbed] });
     }
 
