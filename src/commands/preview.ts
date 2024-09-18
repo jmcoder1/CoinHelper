@@ -112,7 +112,7 @@ export const Preview: Command = {
 
     const previewChannel = (await getChannelById(
       client,
-      "1278515096233967616"
+      guildInfo.channels.previewChannelId
     )) as TextChannel;
     previewChannel.send({
       content: `<@${userId}> here is your preview of <#${channelId}>`,
