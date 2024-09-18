@@ -73,7 +73,7 @@ export const TextToImage: Command = {
         {
           amount: COMMAND_COST,
           cost: COMMAND_COST,
-          cashBalance,
+          balance: cashBalance,
           currencyPluralName: guildInfo.currencyPluralName,
         },
         {

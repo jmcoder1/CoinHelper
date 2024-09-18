@@ -79,7 +79,7 @@ export const CoinFlip: Command = {
     await validateAmount(
       {
         amount,
-        cashBalance,
+        balance: cashBalance,
         cost: 50,
         currencyPluralName: guildInfo.currencyPluralName,
       },

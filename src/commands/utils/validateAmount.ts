@@ -4,7 +4,7 @@ import { tryAsyncAwait } from "../../utils/tryAsyncAwait";
 interface ValidateAmountDataProps {
   amount: number;
   cost: number;
-  cashBalance: number;
+  balance: number;
   currencyPluralName: string;
 }
 
@@ -20,7 +20,7 @@ export const validateAmount = async (
   data: ValidateAmountDataProps,
   event: ValidateAmountEventProps
 ): Promise<boolean> => {
-  const { amount, cost, cashBalance, currencyPluralName } = data;
+  const { amount, cost, balance, currencyPluralName } = data;
   const { interaction, embedProps } = event;
 
   const embed = new EmbedBuilder()
@@ -49,7 +49,7 @@ export const validateAmount = async (
     isSuccesful = false;
   }
 
-  if (amount > cashBalance) {
+  if (amount > balance) {
     embed.addFields({
       name: `Not enough ${currencyPluralName}`,
       value: `You do not have ${amount} ${currencyPluralName}! Please enter a lower amount`,
