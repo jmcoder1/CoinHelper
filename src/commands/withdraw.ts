@@ -45,11 +45,11 @@ export const Withdraw: Command = {
       interaction.user.id
     );
     const amount = interaction.options.get("amount")?.value as number;
-    await validateAmount(
+    const resValidateAmount = await validateAmount(
       {
         amount,
-        cashBalance: balance.cash,
-        cost: 10,
+        balance: balance.bank,
+        cost: 50,
         currencyPluralName: guildInfo.currencyPluralName,
       },
       {
@@ -61,6 +61,7 @@ export const Withdraw: Command = {
         },
       }
     );
+    if (!resValidateAmount) return;
 
     await sleep(2000);
 
