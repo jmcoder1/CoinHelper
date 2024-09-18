@@ -15,7 +15,7 @@ import { validateAmount } from "./utils/validateAmount";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 
 export const CoinFlip: Command = {
-  name: "coinflip",
+  name: "coin-flip",
   description:
     "Flip a coin and guess. Win 100% of your bet if correct, and lose it if wrong.",
   type: ApplicationCommandType.ChatInput,
