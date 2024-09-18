@@ -11,6 +11,7 @@ export const OP_GUILD: Guild = {
     invitesChannelId: "1271884184733880441",
     economyChannelId: "1272985796844191765",
     playChannelId: "1278903155836456961",
+    previewChannelId: "1278515096233967616",
   },
   images: {
     loading: [
@@ -32,6 +33,7 @@ export const BMB_GUILD: Guild = {
     invitesChannelId: "1216937502368071772",
     economyChannelId: "1283233463121477763",
     playChannelId: "1283234433763115122",
+    previewChannelId: "",
   },
   images: {
     loading: [],

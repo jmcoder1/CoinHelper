@@ -7,6 +7,7 @@ export interface Guild {
     invitesChannelId: string;
     economyChannelId: string;
     playChannelId: string;
+    previewChannelId: string;
   };
   images: { loading: string[] };
 }
