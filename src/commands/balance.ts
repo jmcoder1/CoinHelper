@@ -14,7 +14,7 @@ import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 
 export const Balance: Command = {
   name: "balance",
-  description: "Get your cash and bank balance.",
+  description: "Get your balance",
   type: ApplicationCommandType.ChatInput,
   options: [],
   run: async (client: Client, interaction: CommandInteraction) => {
@@ -54,10 +54,6 @@ export const Balance: Command = {
       .addFields({
         name: "Cash balance",
         value: `${balance.cash} ${guildInfo.currencyPluralName}`,
-      })
-      .addFields({
-        name: "Bank balance",
-        value: `${balance.bank} ${guildInfo.currencyPluralName}`,
       })
       .addFields({
         name: "Rank",
