@@ -18,7 +18,7 @@ import { getRandCollectionElement } from "../utils/mathUtils.ts/getRandCollectio
 
 export const Give: Command = {
   name: "give",
-  description: "Give Berries to a random member of the server who is online.",
+  description: "Give currency to a random member of the server who is online.",
   type: ApplicationCommandType.ChatInput,
   options: [
     {

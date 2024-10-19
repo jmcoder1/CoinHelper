@@ -22,6 +22,7 @@ export const updateBalance = async (
 ) => {
   const { guild } = user;
   const { currencyPluralName, economyChannelId } = guild;
+
   const embed = new EmbedBuilder()
     .setColor(0x0099ff)
     .setTitle(`${currencyPluralName} Update`)
@@ -32,7 +33,10 @@ export const updateBalance = async (
       name: user.name,
       iconURL: user.iconURL,
     })
-    .addFields({ name: "Added Berries", value: "" + cashAmount })
+    .addFields({
+      name: `Added ${guild.currencyPluralName}`,
+      value: "" + cashAmount,
+    })
     .addFields({ name: "Reason", value: reason });
 
   await unbelievaboatClient.editUserBalance(

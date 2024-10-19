@@ -17,7 +17,7 @@ import { withdraw } from "../utils/apiUtils/unbelievaboatUtils/withdraw";
 
 export const Withdraw: Command = {
   name: "withdraw",
-  description: "Withdraw Berries from your bank balance to your cash baalnce.",
+  description: "Withdraw currency from your bank balance to your cash baalnce.",
   type: ApplicationCommandType.ChatInput,
   options: [
     {

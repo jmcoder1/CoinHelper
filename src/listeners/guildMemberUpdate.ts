@@ -36,7 +36,7 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
           },
         },
         cashAmount: REWARD_AMOUNT,
-        reason: `You have been awarded ${REWARD_AMOUNT} Berries for boosting the server`,
+        reason: `You have been awarded ${REWARD_AMOUNT} $${guildInfo.currencyPluralName} for boosting the server`,
       });
     }
 

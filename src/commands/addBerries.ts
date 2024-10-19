@@ -44,7 +44,7 @@ export const AddBerries: Command = {
     const loadingImage = getRandElement(guildInfo.images.loading);
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
-      .setTitle(`Adding Berries...`)
+      .setTitle(`Adding ${guildInfo.currencyPluralName}...`)
       .setImage(loadingImage);
 
     interaction.reply({ embeds: [delayEmebd] });
