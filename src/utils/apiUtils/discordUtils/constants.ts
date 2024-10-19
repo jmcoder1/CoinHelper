@@ -45,7 +45,7 @@ export const BMB_GUILD: Guild = {
     invitesChannelId: "1216937502368071772",
     economyChannelId: "1283233463121477763",
     playChannelId: "1283234433763115122",
-    previewChannelId: "",
+    previewChannelId: "1283252619388911697",
   },
   images: {
     loading: [
