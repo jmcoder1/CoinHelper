@@ -122,7 +122,7 @@ export const CoinFlip: Command = {
           name: "You won",
           value: `You have been awarded ${amount} ${guildInfo.currencyPluralName}`,
         })
-        .setImage(getRandElement(guildInfo.images.coinFlip));
+        .setImage(getRandElement(guildInfo.images.gameWin));
 
       await updateBalance(client, {
         user: {
