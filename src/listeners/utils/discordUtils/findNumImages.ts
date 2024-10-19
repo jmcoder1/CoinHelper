@@ -9,6 +9,7 @@ export const findNumImages = (attachments: Collection<string, Attachment>) => {
     if (
       attachment.contentType &&
       [
+        "image/avif",
         "image/gif",
         "image/jpeg",
         "image/png",
@@ -17,6 +18,11 @@ export const findNumImages = (attachments: Collection<string, Attachment>) => {
         "image/x-icon",
         "image/vnd.djvu",
         "image/svg+xml",
+        "video/mp4",
+        "video/mpeg",
+        "video/ogg",
+        "video/quicktime",
+        "video/webm",
       ].includes(attachment.contentType)
     )
       numImages = numImages + 1;
