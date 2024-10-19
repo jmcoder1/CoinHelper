@@ -86,8 +86,7 @@ export const TextToImage: Command = {
           interaction,
           embedProps: {
             title: "Text to Image",
-            image:
-              "https://media1.tenor.com/m/PSQehV-u3SIAAAAC/money-expensive.gif",
+            image: getRandElement(guildInfo.images.gameLost),
           },
         }
       )

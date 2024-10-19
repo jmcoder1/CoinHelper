@@ -63,8 +63,7 @@ export const Withdraw: Command = {
         interaction,
         embedProps: {
           title: "Withdraw",
-          image:
-            "https://media1.tenor.com/m/PSQehV-u3SIAAAAC/money-expensive.gif",
+          image: getRandElement(guildInfo.images.gameLost),
         },
       }
     );

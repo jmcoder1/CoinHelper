@@ -65,9 +65,7 @@ export const AddCurrency: Command = {
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(`${guildInfo.currencyPluralName} Updated`)
-      .setImage(
-        "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-      )
+      .setImage(getRandElement(guildInfo.images.currency))
       .addFields({
         name: amount > 0 ? "Added" : "Removed",
         value: `<@${recipient}> your balance has been updated by ${amount} ${guildInfo.currencyPluralName}`,

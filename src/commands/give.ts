@@ -66,8 +66,7 @@ export const Give: Command = {
         interaction,
         embedProps: {
           title: "Coin Flip",
-          image:
-            "https://media1.tenor.com/m/PSQehV-u3SIAAAAC/money-expensive.gif",
+          image: getRandElement(guildInfo.images.gameLost),
         },
       }
     );
@@ -115,16 +114,12 @@ export const Give: Command = {
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(`${guildInfo.currencyPluralName} Awarded`)
-      .setImage(
-        "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-      )
+      .setImage(getRandElement(guildInfo.images.currency))
       .addFields({
         name: "You won",
         value: `<@${randomMember.user.id}> you have been randomly awarded ${amount} ${guildInfo.currencyPluralName} by <@${interaction.user.id}>`,
       })
-      .setImage(
-        "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
-      );
+      .setImage(getRandElement(guildInfo.images.gameWin));
 
     if (playChannel?.isTextBased()) {
       await playChannel.send(`<@${interaction.user.id}>`);

@@ -13,6 +13,7 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { sleep } from "../utils/sleep";
 import { validateAmount } from "./utils/validateAmount";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
+import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 
 export const CoinFlip: Command = {
   name: "coin-flip",
@@ -36,13 +37,14 @@ export const CoinFlip: Command = {
   run: async (client: Client, interaction: CommandInteraction) => {
     if (!interaction.guildId) return;
 
+    const guildInfo = getGuildInfoById(interaction.guildId);
+    if (!guildInfo) return null;
+
     const face = interaction.options.get("face")?.value as string;
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Coin Flip")
-      .setImage(
-        "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-      )
+      .setImage(getRandElement(guildInfo.images.currency))
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
@@ -66,9 +68,6 @@ export const CoinFlip: Command = {
       );
       return;
     }
-
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
 
     const amount = interaction.options.get("amount")?.value as number;
     const cashBalance = (
@@ -94,8 +93,7 @@ export const CoinFlip: Command = {
         interaction,
         embedProps: {
           title: "Coin Flip",
-          image:
-            "https://media1.tenor.com/m/PSQehV-u3SIAAAAC/money-expensive.gif",
+          image: getRandElement(guildInfo.images.insufficientBalance),
         },
       }
     );
@@ -111,7 +109,7 @@ export const CoinFlip: Command = {
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Flipping")
-      .setImage("https://www.kiddiepunk.com/zacsdrugbinge/images/3.gif")
+      .setImage(getRandElement(guildInfo.images.coinFlip))
       .setDescription(
         `Check the result in <#${guildInfo.channels.playChannelId}>`
       );
@@ -124,9 +122,7 @@ export const CoinFlip: Command = {
           name: "You won",
           value: `You have been awarded ${amount} ${guildInfo.currencyPluralName}`,
         })
-        .setImage(
-          "https://media1.tenor.com/m/Mlv8ii9SuRQAAAAC/one-piece-anime.gif"
-        );
+        .setImage(getRandElement(guildInfo.images.coinFlip));
 
       await updateBalance(client, {
         user: {
@@ -148,9 +144,7 @@ export const CoinFlip: Command = {
           name: "You lost",
           value: `You have lost ${amount} ${guildInfo.currencyPluralName}`,
         })
-        .setImage(
-          "https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"
-        );
+        .setImage(getRandElement(guildInfo.images.gameLost));
 
       await updateBalance(client, {
         user: {

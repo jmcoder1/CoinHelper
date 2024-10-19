@@ -46,9 +46,7 @@ export const Balance: Command = {
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Balance")
-      .setImage(
-        "https://w0.peakpx.com/wallpaper/312/357/HD-wallpaper-nami-x-berry-nami-anime-one-piece.jpg"
-      )
+      .setImage(getRandElement(guildInfo.images.currency))
       .addFields({
         name: "Total balance",
         value: `${balance.total} ${guildInfo.currencyPluralName}`,

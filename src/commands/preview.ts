@@ -12,6 +12,7 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
+import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 
 const PREVIEW_COST = 50;
 const NUM_PREVIEWS = 10;
@@ -57,9 +58,7 @@ export const Preview: Command = {
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Preview channel")
-      .setImage(
-        "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-      )
+      .setImage(getRandElement(guildInfo.images.currency))
       .addFields({
         name: `${channel.name}`,
         value: `A preview of your requested channel has been granted! Please check in <#1278515096233967616>`,

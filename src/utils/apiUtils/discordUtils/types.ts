@@ -9,5 +9,12 @@ export interface Guild {
     playChannelId: string;
     previewChannelId: string;
   };
-  images: { loading: string[] };
+  images: {
+    loading: string[];
+    currency: string[];
+    coinFlip: string[];
+    insufficientBalance: string[];
+    gameWin: string[];
+    gameLost: string[];
+  };
 }
