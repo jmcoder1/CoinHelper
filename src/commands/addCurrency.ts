@@ -11,9 +11,9 @@ import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUt
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 
-export const AddBerries: Command = {
-  name: "add-berries",
-  description: "Add Berries to any member",
+export const AddCurrency: Command = {
+  name: "add-currency",
+  description: "Add curerncy to any member",
   type: ApplicationCommandType.ChatInput,
   options: [
     {

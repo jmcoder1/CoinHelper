@@ -1,4 +1,4 @@
-import { AddBerries } from "../addBerries";
+import { AddCurrency } from "../addCurrency";
 import { Balance } from "../balance";
 import { CoinFlip } from "../coinflip";
 import { Give } from "../give";
@@ -8,7 +8,7 @@ import { Withdraw } from "../withdraw";
 import { Command } from "./types";
 
 export const Commands: Command[] = [
-  AddBerries,
+  AddCurrency,
   Balance,
   CoinFlip,
   Give,
