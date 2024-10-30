@@ -56,7 +56,7 @@ export const validateAmount = async (
     isSuccesful = false;
   }
 
-  if (amount > balance) {
+  if (balance < amount) {
     embed.addFields({
       name: `Not enough ${currencyPluralName}`,
       value: `You do not have ${amount} ${currencyPluralName}! Please enter a lower amount`,

@@ -80,23 +80,27 @@ export const CoinFlip: Command = {
     const economyChannel = (await client.channels.fetch(
       guildInfo.channels.economyChannelId
     )) as TextChannel;
-    await validateAmount(
-      {
-        client,
-        channelId: economyChannel.id,
-        amount,
-        balance: cashBalance,
-        cost: 50,
-        currencyPluralName: guildInfo.currencyPluralName,
-      },
-      {
-        interaction,
-        embedProps: {
-          title: "Coin Flip",
-          image: getRandElement(guildInfo.images.insufficientBalance),
+    const [res, error] = await tryAsyncAwait(() =>
+      validateAmount(
+        {
+          client,
+          channelId: economyChannel.id,
+          amount,
+          balance: cashBalance,
+          cost: 50,
+          currencyPluralName: guildInfo.currencyPluralName,
         },
-      }
+        {
+          interaction,
+          embedProps: {
+            title: "Coin Flip",
+            image: getRandElement(guildInfo.images.insufficientBalance),
+          },
+        }
+      )
     );
+    if (error) console.error(error);
+    if (!res) return;
 
     const userId = interaction.user.id;
     const winChance = 0.45;

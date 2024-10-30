@@ -15,6 +15,7 @@ import { validateAmount } from "./utils/validateAmount";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { getRandCollectionElement } from "../utils/mathUtils.ts/getRandCollectionElement";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 
 export const Give: Command = {
   name: "give",
@@ -53,23 +54,27 @@ export const Give: Command = {
     const economyChannel = (await client.channels.fetch(
       guildInfo.channels.economyChannelId
     )) as TextChannel;
-    await validateAmount(
-      {
-        client,
-        channelId: economyChannel.id,
-        amount,
-        balance: cashBalance,
-        cost: 50,
-        currencyPluralName: guildInfo.currencyPluralName,
-      },
-      {
-        interaction,
-        embedProps: {
-          title: "Coin Flip",
-          image: getRandElement(guildInfo.images.gameLost),
+    const [res, error] = await tryAsyncAwait(() =>
+      validateAmount(
+        {
+          client,
+          channelId: economyChannel.id,
+          amount,
+          balance: cashBalance,
+          cost: 50,
+          currencyPluralName: guildInfo.currencyPluralName,
         },
-      }
+        {
+          interaction,
+          embedProps: {
+            title: "Coin Flip",
+            image: getRandElement(guildInfo.images.gameLost),
+          },
+        }
+      )
     );
+    if (error) console.error(error);
+    if (!res) return;
 
     // FIND THE ONLINE USER
     const onlineUsers = interaction.guild?.members.cache.filter(
