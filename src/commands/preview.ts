@@ -61,7 +61,7 @@ export const Preview: Command = {
       .setImage(getRandElement(guildInfo.images.currency))
       .addFields({
         name: `${channel.name}`,
-        value: `A preview of your requested channel has been granted! Please check in <#1278515096233967616>`,
+        value: `A preview of your requested channel has been granted! Please check in <#${guildInfo.channels.previewChannelId}>`,
       });
     await tryAsyncAwait(() =>
       interaction.reply({
