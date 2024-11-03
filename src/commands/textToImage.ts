@@ -161,7 +161,7 @@ export const TextToImage: Command = {
 
     if (currentChannel?.isTextBased()) {
       await currentChannel.send({ embeds: [resultEmbed] });
-      await currentChannel.send(`<@${interaction.id}>`);
+      await currentChannel.send(`<@${interaction.user.id}>`);
     }
 
     await updateBalance(client, {
