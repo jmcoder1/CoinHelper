@@ -1,5 +1,8 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { client as unbelievaboatClient } from "./client";
+import { getGuildInfoById } from "../discordUtils/getGuildInfoById";
+import { getRandElement } from "../../mathUtils.ts/getRandElement";
+import { Guild } from "../discordUtils/types";
 
 export interface UpdateBalanceParams {
   user: {
@@ -22,13 +25,12 @@ export const updateBalance = async (
 ) => {
   const { guild } = user;
   const { currencyPluralName, economyChannelId } = guild;
+  const guildInfo = getGuildInfoById(guild.id) as Guild;
 
   const embed = new EmbedBuilder()
     .setColor(0x0099ff)
     .setTitle(`${currencyPluralName} Update`)
-    .setImage(
-      "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552"
-    )
+    .setImage(getRandElement(guildInfo.images.currency))
     .setAuthor({
       name: user.name,
       iconURL: user.iconURL,
