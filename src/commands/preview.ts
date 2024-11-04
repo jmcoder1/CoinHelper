@@ -83,7 +83,7 @@ export const Preview: Command = {
       },
 
       cashAmount: -PREVIEW_COST,
-      reason: `<@${guildInfo.notifications.previewRoleId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
+      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
     });
 
     const allMessages = await channel.messages.fetch({ limit: 100 });
@@ -95,7 +95,7 @@ export const Preview: Command = {
       if (message.attachments.size > 0) {
         for (let j = 0; j < message.attachments.size; j++) {
           const attachment = message.attachments.at(j);
-          if (attachment?.name && attachment.url)
+          if (!!attachment?.name && !!attachment.url)
             files.push({ attachment: attachment?.url });
         }
       }
@@ -114,7 +114,7 @@ export const Preview: Command = {
       guildInfo.channels.previewChannelId
     )) as TextChannel;
     previewChannel.send({
-      content: `<@${userId}> here is your preview of <#${channelId}>`,
+      content: `<@&${guildInfo.notifications.previewRoleId}> here is your preview of <#${channelId}>`,
       files: randomFiles,
     });
 
