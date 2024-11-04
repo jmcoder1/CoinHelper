@@ -83,7 +83,7 @@ export const Preview: Command = {
       },
 
       cashAmount: -PREVIEW_COST,
-      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
+      reason: `<@${guildInfo.notifications.previewRoleId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
     });
 
     const allMessages = await channel.messages.fetch({ limit: 100 });

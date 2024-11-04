@@ -17,4 +17,7 @@ export interface Guild {
     gameWin: string[];
     gameLost: string[];
   };
+  notifications: {
+    previewRoleId: string;
+  };
 }

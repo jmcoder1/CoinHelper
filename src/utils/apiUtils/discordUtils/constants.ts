@@ -34,6 +34,9 @@ export const OP_GUILD: Guild = {
     ],
     gameLost: ["https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"],
   },
+  notifications: {
+    previewRoleId: "1302671208386396160",
+  },
 };
 
 export const BMB_GUILD: Guild = {
@@ -69,6 +72,9 @@ export const BMB_GUILD: Guild = {
     gameLost: [
       "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmgxYjN2Zm5senptN3VkZDhuNTgwdnJnc29nOXQ1NXR6NGxhNjAybCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKr3nzbh5WgCFxe/giphy.webp",
     ],
+  },
+  notifications: {
+    previewRoleId: "1301614832277000244",
   },
 };
 export const guilds: Guild[] = [OP_GUILD, BMB_GUILD];
