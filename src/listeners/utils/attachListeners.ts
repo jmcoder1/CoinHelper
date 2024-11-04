@@ -5,10 +5,12 @@ import { interactionCreate } from "../interactionCreate";
 import { guildMemberUpdate } from "../guildMemberUpdate";
 import { messageReactionAdd } from "../messageReactionAdd";
 import { messageReactionRemove } from "../messageReactionRemove";
+import { messageDelete } from "../messageDelete";
 
 export const attachListeners = (client: Client) => {
   client.on(ready.event, (client) => ready.fn(client));
   client.on(messageCreate.event, (message) => messageCreate.fn(message));
+  client.on(messageDelete.event, (message) => messageDelete.fn(message));
   client.on(interactionCreate.event, (interaction) =>
     interactionCreate.fn(interaction, client)
   );
