@@ -33,6 +33,7 @@ export const Preview: Command = {
     if (!interaction.guildId) return;
 
     const guildInfo = getGuildInfoById(interaction.guildId);
+    // COST CHECK
     if (!guildInfo) return null;
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
@@ -49,11 +50,33 @@ export const Preview: Command = {
       return;
     }
 
+    // NUM IMAGES CHECK
     const channelId = interaction.options.get("channel")?.value as number;
     const channel = (await getChannelById(
       client,
       channelId.toString()
     )) as TextChannel;
+    const allMessages = await channel.messages.fetch({ limit: 100 });
+    let files: { attachment: string }[] = [];
+    for (let i = 0; i < allMessages.size; i++) {
+      const message = allMessages.at(i);
+      if (!message) break;
+
+      if (message.attachments.size > 0) {
+        for (let j = 0; j < message.attachments.size; j++) {
+          const attachment = message.attachments.at(j);
+          if (!!attachment?.name && !!attachment.url)
+            files.push({ attachment: attachment?.url });
+        }
+      }
+    }
+    if (files.length < NUM_PREVIEWS) {
+      interaction.reply({
+        ephemeral: true,
+        content: "This channel is not eligible for previews",
+      });
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -85,21 +108,6 @@ export const Preview: Command = {
       cashAmount: -PREVIEW_COST,
       reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
     });
-
-    const allMessages = await channel.messages.fetch({ limit: 100 });
-    let files: { attachment: string }[] = [];
-    for (let i = 0; i < allMessages.size; i++) {
-      const message = allMessages.at(i);
-      if (!message) break;
-
-      if (message.attachments.size > 0) {
-        for (let j = 0; j < message.attachments.size; j++) {
-          const attachment = message.attachments.at(j);
-          if (!!attachment?.name && !!attachment.url)
-            files.push({ attachment: attachment?.url });
-        }
-      }
-    }
 
     const randomFiles = [];
     const r = new Array(NUM_PREVIEWS)
