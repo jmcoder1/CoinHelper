@@ -1,6 +1,8 @@
 import { Guild } from "./types";
 
 export const APP_NAME = "CoinHelper";
+export const SERVER_BOOST_ICON =
+  "https://media.sketchfab.com/models/7218d808cf2d46db9fcca7f96aebd76f/thumbnails/40a5430b011647bbafa078d38b0c919e/5fc1f8cf89ea4cfa8bbc77eb1ba2ce31.jpeg";
 
 export const OP_GUILD: Guild = {
   id: "1271527781716725973",
@@ -12,6 +14,7 @@ export const OP_GUILD: Guild = {
     economyChannelId: "1272985796844191765",
     playChannelId: "1278903155836456961",
     previewChannelId: "1278515096233967616",
+    boughtCoinsChannelId: "1279224913978462218",
   },
   images: {
     loading: [
@@ -49,6 +52,7 @@ export const BMB_GUILD: Guild = {
     economyChannelId: "1283233463121477763",
     playChannelId: "1283234433763115122",
     previewChannelId: "1283252619388911697",
+    boughtCoinsChannelId: "1283233838763606086",
   },
   images: {
     loading: [

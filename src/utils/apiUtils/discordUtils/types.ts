@@ -8,6 +8,7 @@ export interface Guild {
     economyChannelId: string;
     playChannelId: string;
     previewChannelId: string;
+    boughtCoinsChannelId: string;
   };
   images: {
     loading: string[];

@@ -1,7 +1,16 @@
-import { Awaitable, Events, GuildMember, PartialGuildMember } from "discord.js";
+import {
+  Awaitable,
+  EmbedBuilder,
+  Events,
+  GuildMember,
+  PartialGuildMember,
+  TextChannel,
+} from "discord.js";
 import { Listener } from "./utils/types";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
+import { SERVER_BOOST_ICON } from "../utils/apiUtils/discordUtils/constants";
 
 export interface GuildMemberUpdateListener extends Listener {
   event: Events.GuildMemberUpdate;
@@ -37,6 +46,22 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
         },
         cashAmount: REWARD_AMOUNT,
         reason: `You have been awarded ${REWARD_AMOUNT} $${guildInfo.currencyPluralName} for boosting the server`,
+      });
+
+      const boughtCoinsChannel = (await getChannelById(
+        oldMember.client,
+        guildInfo.channels.boughtCoinsChannelId
+      )) as TextChannel;
+      const embed = new EmbedBuilder()
+        .setColor(0x0099ff)
+        .setTitle("Server Boosted")
+        .setImage(SERVER_BOOST_ICON)
+        .setAuthor({
+          name: oldMember.user.username,
+          iconURL: oldMember.user.avatarURL() || undefined,
+        });
+      boughtCoinsChannel.send({
+        embeds: [embed],
       });
     }
 
