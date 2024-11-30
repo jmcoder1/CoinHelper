@@ -18,6 +18,7 @@ import AdmZip from "adm-zip";
 import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
+import { toChannelURL } from "../utils/apiUtils/discordUtils/toChannelURL";
 
 const COMMAND_COST = 25;
 const BANNED_WORD_COST = 1000;
@@ -157,7 +158,15 @@ export const TextToImage: Command = {
       .setColor(0x0099ff)
       .setTitle("Text to image")
       .setImage(imageUrl)
-      .setDescription(`Prompt: ${prompt}`);
+      .setDescription(`Prompt: ${prompt}`)
+      .addFields({
+        name: "Need help?",
+        value: `Read [📷-ai-gen-image-tips](${toChannelURL({
+          serverId: guildInfo.id,
+          channelId: guildInfo.channels.aiGenImageTipsId,
+        })})`,
+        inline: true,
+      });
 
     if (currentChannel?.isTextBased()) {
       await currentChannel.send({ embeds: [resultEmbed] });

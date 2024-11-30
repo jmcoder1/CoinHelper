@@ -9,6 +9,7 @@ export interface Guild {
     playChannelId: string;
     previewChannelId: string;
     boughtCoinsChannelId: string;
+    aiGenImageTipsId: string;
   };
   images: {
     loading: string[];

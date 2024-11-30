@@ -15,6 +15,7 @@ export const OP_GUILD: Guild = {
     playChannelId: "1278903155836456961",
     previewChannelId: "1278515096233967616",
     boughtCoinsChannelId: "1279224913978462218",
+    aiGenImageTipsId: "1283114792248147998",
   },
   images: {
     loading: [
@@ -53,6 +54,7 @@ export const BMB_GUILD: Guild = {
     playChannelId: "1283234433763115122",
     previewChannelId: "1283252619388911697",
     boughtCoinsChannelId: "1283233838763606086",
+    aiGenImageTipsId: "1302472227840725012",
   },
   images: {
     loading: [
