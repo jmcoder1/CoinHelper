@@ -10,6 +10,7 @@ export const OP_GUILD: Guild = {
   currencyName: "Berry",
   currencyPluralName: "Berries",
   channels: {
+    levelsChannelId: "1317619314349572188",
     invitesChannelId: "1271884184733880441",
     economyChannelId: "1272985796844191765",
     playChannelId: "1278903155836456961",
@@ -49,6 +50,7 @@ export const BMB_GUILD: Guild = {
   currencyName: "Coin",
   currencyPluralName: "Coins",
   channels: {
+    levelsChannelId: "1317536726838677576",
     invitesChannelId: "1216937502368071772",
     economyChannelId: "1283233463121477763",
     playChannelId: "1283234433763115122",

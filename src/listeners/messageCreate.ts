@@ -1,10 +1,11 @@
-import { Awaitable, ChannelType, Events, Message } from "discord.js";
+import { Awaitable, ChannelType, Events, Message, User } from "discord.js";
 import { toBalanceUpdate } from "../utils/apiUtils/unbelievaboatUtils/toBalanceUpdate";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
+import { toUserId } from "./utils/discordUtils/toUserId";
 
 export interface MessageCreateListener extends Listener {
   event: Events.MessageCreate;
@@ -26,6 +27,25 @@ export const messageCreate: MessageCreateListener = {
       });
       if (balanceUpdate)
         await updateBalance(message.client, { ...balanceUpdate });
+    } else if (guildInfo.channels.levelsChannelId === message.channelId) {
+      const recipientMention = message.content.split(" ")[0];
+      const recipientUserId = toUserId(recipientMention);
+
+      const user = message.client.users.cache.get(recipientUserId) as User;
+      await updateBalance(message.client, {
+        user: {
+          id: user.id,
+          name: user.username,
+          guild: {
+            id: guildInfo.id,
+            currencyPluralName: guildInfo.currencyPluralName,
+            economyChannelId: guildInfo.channels.economyChannelId,
+          },
+          iconURL: user.avatarURL() || undefined,
+        },
+        cashAmount: 25,
+        reason: "New Level",
+      });
     } else {
       const num = findNumImages(message.attachments);
       if (!num || num === 0) return;

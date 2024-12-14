@@ -5,6 +5,7 @@ export interface Guild {
   currencyPluralName: string;
   channels: {
     invitesChannelId: string;
+    levelsChannelId: string;
     economyChannelId: string;
     playChannelId: string;
     previewChannelId: string;
