@@ -60,7 +60,7 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
           economyChannelId: guildInfo.channels.economyChannelId,
         },
       },
-      cashAmount: -6,
+      cashAmount: -5,
       reason: `<@${user.id}> negatively reacted to your message ${message.url}`,
     });
 
