@@ -46,7 +46,7 @@ export const OP_GUILD: Guild = {
 
 export const BMB_GUILD: Guild = {
   id: "1215158193634938921",
-  name: "BMB",
+  name: "Bang My Bully",
   currencyName: "Coin",
   currencyPluralName: "Coins",
   channels: {
@@ -85,4 +85,46 @@ export const BMB_GUILD: Guild = {
     previewRoleId: "1301614832277000244",
   },
 };
-export const guilds: Guild[] = [OP_GUILD, BMB_GUILD];
+
+export const Tt_GUILD: Guild = {
+  id: "1323043338903097445",
+  name: "Transtopia",
+  currencyName: "Coin",
+  currencyPluralName: "Coins",
+  channels: {
+    levelsChannelId: "1323753964340252703",
+    invitesChannelId: "1323046385141944320",
+    economyChannelId: "1323745285893263502",
+    playChannelId: "1323747470295171142",
+    previewChannelId: "1323047319259840663",
+    boughtCoinsChannelId: "1323753795251077212",
+    aiGenImageTipsId: "1323760824572968970",
+  },
+  images: {
+    loading: [
+      "https://images-ext-1.discordapp.net/external/lW7nWkDzTQmeuKWQs7Lws8SXIqhv6DoEKN7MS3m3ips/https/i.redd.it/k2t27b5gwwh81.gif?width=450&height=450",
+    ],
+    currency: [
+      "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExc29vcnB1aHFyeGFqcTRzMW43aTIxMTZ5Zms2d2tvOXV6bHduNDdrOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oXCoG04rCxSSs/200w.webp",
+      "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRmYnlqcms5b3ZmeHVmNnoycjlzNmZvYndyN2VpOGJ2ZjU1eWExNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qH7FCK1u7ASDkrLRTg/giphy.webp",
+      "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnF2Y2JmOHMyam5vNTlwaHppZjByN2FhaGE3azR5aHJpMnU4dGgyaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5fBH6z8aMV1RbA4FaSc/giphy.webp",
+      "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzhqd2I1OHhycXNmNTAwb3UybzU4NHcweDF0Y2t2Y21sbm1ya2p4byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/4ZcXo1CQTZypGNpR4z/giphy.webp",
+    ],
+    coinFlip: [
+      "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWk3dWhkamd3OGRpa2ZyeHphY2N6Y3QwemVidWxrODdsdTgyanZ5cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6jqfXikz9yzhS/giphy.webp",
+    ],
+    insufficientBalance: [
+      "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3I4aXpnNDU2MTBoMXJqdjU3YzB4NndjMXpuaGFscThjZ3doOHk4ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sTrctjVpVXJsI/giphy.webp",
+    ],
+    gameWin: [
+      "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjlsMDlzcHQ1bHQ5a2g2cWhpbHh4MTl0YTQ0bjRyZnA5Yjc5ejVlZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/fNt9GxIiR6OMU/giphy.webp",
+    ],
+    gameLost: [
+      "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmgxYjN2Zm5senptN3VkZDhuNTgwdnJnc29nOXQ1NXR6NGxhNjAybCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKr3nzbh5WgCFxe/giphy.webp",
+    ],
+  },
+  notifications: {
+    previewRoleId: "1323742269005893652",
+  },
+};
+export const guilds: Guild[] = [OP_GUILD, BMB_GUILD, Tt_GUILD];
