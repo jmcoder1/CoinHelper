@@ -110,11 +110,25 @@ export const Preview: Command = {
     });
 
     const randomFiles = [];
-    const r = new Array(NUM_PREVIEWS)
-      .fill(0)
-      .map((_) => (Math.random() * NUM_PREVIEWS) | 0);
-    for (let i = 0; i < r.length; i++) {
-      randomFiles.push(files[r[i]]);
+    const usedIndices = new Set<number>(); // To track already used indices
+
+    while (
+      randomFiles.length < NUM_PREVIEWS &&
+      usedIndices.size < files.length
+    ) {
+      const randomIndex = Math.floor(Math.random() * files.length);
+      if (!usedIndices.has(randomIndex)) {
+        usedIndices.add(randomIndex);
+        randomFiles.push(files[randomIndex]);
+      }
+    }
+
+    if (randomFiles.length < NUM_PREVIEWS) {
+      await interaction.reply({
+        ephemeral: true,
+        content: "Not enough unique images available for a full preview.",
+      });
+      return;
     }
 
     const previewChannel = (await getChannelById(
