@@ -119,6 +119,16 @@ export const NewChannel: Command = {
     if (newChannelModChannel?.isTextBased())
       await newChannelModChannel.send({ embeds: [resultEmbed] });
 
+    const announcementChannel = await getChannelById(
+      client,
+      guildInfo.channels.announcementChannelId
+    );
+    if (announcementChannel?.isTextBased()) {
+      await announcementChannel.send({
+        content: `<@&${guildInfo.notifications.newChannelRoleId}>  New channel created by ${creditUser.user.username}: <#${newChannel.id}>`,
+      });
+    }
+
     return;
   },
 };

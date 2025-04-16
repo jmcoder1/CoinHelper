@@ -4,6 +4,7 @@ export interface Guild {
   currencyName: string;
   currencyPluralName: string;
   channels: {
+    announcementChannelId: string;
     invitesChannelId: string;
     levelsChannelId: string;
     economyChannelId: string;
@@ -23,5 +24,6 @@ export interface Guild {
   };
   notifications: {
     previewRoleId: string;
+    newChannelRoleId: string;
   };
 }

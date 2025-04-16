@@ -10,6 +10,7 @@ export const OP_GUILD: Guild = {
   currencyName: "Berry",
   currencyPluralName: "Berries",
   channels: {
+    announcementChannelId: "1271844114597548154",
     levelsChannelId: "1317619314349572188",
     invitesChannelId: "1271884184733880441",
     economyChannelId: "1272985796844191765",
@@ -42,6 +43,7 @@ export const OP_GUILD: Guild = {
   },
   notifications: {
     previewRoleId: "1302671208386396160",
+    newChannelRoleId: "1302671235444117624",
   },
 };
 
@@ -51,6 +53,7 @@ export const BMB_GUILD: Guild = {
   currencyName: "Coin",
   currencyPluralName: "Coins",
   channels: {
+    announcementChannelId: "1216937367676649563",
     levelsChannelId: "1317536726838677576",
     invitesChannelId: "1216937502368071772",
     economyChannelId: "1283233463121477763",
@@ -85,6 +88,7 @@ export const BMB_GUILD: Guild = {
   },
   notifications: {
     previewRoleId: "1301614832277000244",
+    newChannelRoleId: "1216937367676649563",
   },
 };
 
@@ -94,6 +98,7 @@ export const Tt_GUILD: Guild = {
   currencyName: "Coin",
   currencyPluralName: "Coins",
   channels: {
+    announcementChannelId: "1323046507552702536",
     levelsChannelId: "1323753964340252703",
     invitesChannelId: "1323046385141944320",
     economyChannelId: "1323745285893263502",
@@ -128,6 +133,7 @@ export const Tt_GUILD: Guild = {
   },
   notifications: {
     previewRoleId: "1323742269005893652",
+    newChannelRoleId: "1323046507552702536",
   },
 };
 export const guilds: Guild[] = [OP_GUILD, BMB_GUILD, Tt_GUILD];
