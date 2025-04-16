@@ -17,6 +17,7 @@ export const OP_GUILD: Guild = {
     previewChannelId: "1278515096233967616",
     boughtCoinsChannelId: "1279224913978462218",
     aiGenImageTipsId: "1283114792248147998",
+    newChannelModId: "1362130473173913760",
   },
   images: {
     loading: [
@@ -57,6 +58,7 @@ export const BMB_GUILD: Guild = {
     previewChannelId: "1283252619388911697",
     boughtCoinsChannelId: "1283233838763606086",
     aiGenImageTipsId: "1302472227840725012",
+    newChannelModId: "1359643627269390336",
   },
   images: {
     loading: [
@@ -99,6 +101,7 @@ export const Tt_GUILD: Guild = {
     previewChannelId: "1323047319259840663",
     boughtCoinsChannelId: "1323753795251077212",
     aiGenImageTipsId: "1323760824572968970",
+    newChannelModId: "1362130610595827863",
   },
   images: {
     loading: [

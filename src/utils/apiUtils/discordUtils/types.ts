@@ -11,6 +11,7 @@ export interface Guild {
     previewChannelId: string;
     boughtCoinsChannelId: string;
     aiGenImageTipsId: string;
+    newChannelModId: string;
   };
   images: {
     loading: string[];
