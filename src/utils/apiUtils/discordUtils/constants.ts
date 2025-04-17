@@ -88,7 +88,7 @@ export const BMB_GUILD: Guild = {
   },
   notifications: {
     previewRoleId: "1301614832277000244",
-    newChannelRoleId: "1216937367676649563",
+    newChannelRoleId: "1301614797292441642",
   },
 };
 

@@ -125,7 +125,7 @@ export const NewChannel: Command = {
     );
     if (announcementChannel?.isTextBased()) {
       await announcementChannel.send({
-        content: `<@&${guildInfo.notifications.newChannelRoleId}>  New channel created by ${creditUser.user.username}: <#${newChannel.id}>`,
+        content: `<@&${guildInfo.notifications.newChannelRoleId}>  <#${newChannel.id}> created thanks to <@${creditUser.user.username}>`,
       });
     }
 
