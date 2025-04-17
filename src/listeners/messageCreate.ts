@@ -49,6 +49,12 @@ export const messageCreate: MessageCreateListener = {
     } else {
       const num = findNumImages(message.attachments);
       if (!num || num === 0) return;
+
+      if (num > 5) {
+        message.reply("You can only post 5 images at a time!");
+        return;
+      }
+
       if (message.channel.type != ChannelType.GuildText) return;
       const imageMultiplier = getImageMultiplier(message.channel.name);
       if (imageMultiplier === 0) return;
