@@ -67,7 +67,7 @@ export const Give: Command = {
         {
           interaction,
           embedProps: {
-            title: "Coin Flip",
+            title: "Give",
             image: getRandElement(guildInfo.images.gameLost),
           },
         }
