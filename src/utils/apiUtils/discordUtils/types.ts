@@ -13,6 +13,8 @@ export interface Guild {
     boughtCoinsChannelId: string;
     aiGenImageTipsId: string;
     newChannelModId: string;
+    dmRequestChannelId: string;
+    roleplayRequestChannelId: string;
   };
   images: {
     loading: string[];

@@ -4,6 +4,7 @@ import { CoinFlip } from "../coinflip";
 import { Give } from "../give";
 import { NewChannel } from "../newChannel";
 import { Preview } from "../preview";
+import { Request } from "../request";
 import { TextToImage } from "../textToImage";
 import { Command } from "./types";
 
@@ -15,4 +16,5 @@ export const Commands: Command[] = [
   Preview,
   TextToImage,
   NewChannel,
+  Request,
 ];

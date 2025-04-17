@@ -19,6 +19,8 @@ export const OP_GUILD: Guild = {
     boughtCoinsChannelId: "1279224913978462218",
     aiGenImageTipsId: "1283114792248147998",
     newChannelModId: "1362130473173913760",
+    dmRequestChannelId: "1271843643036012625",
+    roleplayRequestChannelId: "1271846932893011999",
   },
   images: {
     loading: [
@@ -62,6 +64,8 @@ export const BMB_GUILD: Guild = {
     boughtCoinsChannelId: "1283233838763606086",
     aiGenImageTipsId: "1302472227840725012",
     newChannelModId: "1359643627269390336",
+    dmRequestChannelId: "1283252315465191566",
+    roleplayRequestChannelId: "1283252490753671178",
   },
   images: {
     loading: [
@@ -107,6 +111,8 @@ export const Tt_GUILD: Guild = {
     boughtCoinsChannelId: "1323753795251077212",
     aiGenImageTipsId: "1323760824572968970",
     newChannelModId: "1362130610595827863",
+    dmRequestChannelId: "1323455646087123006",
+    roleplayRequestChannelId: "1323455695319732244",
   },
   images: {
     loading: [
