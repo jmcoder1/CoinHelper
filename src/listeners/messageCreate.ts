@@ -51,7 +51,8 @@ export const messageCreate: MessageCreateListener = {
       if (!num || num === 0) return;
 
       if (num > 5) {
-        message.reply("You can only post 5 images at a time!");
+        await message.reply("You can only post 5 images at a time!");
+        await message.delete();
         return;
       }
 
