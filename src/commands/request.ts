@@ -68,19 +68,10 @@ export const Request: Command = {
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(false);
 
-    const whoShouldDmInput = new TextInputBuilder()
-      .setCustomId("who-should-dm")
-      .setLabel("Who should DM")
-      .setStyle(TextInputStyle.Paragraph)
-      .setRequired(false);
-
     modal.addComponents(
       new ActionRowBuilder<TextInputBuilder>().addComponents(kinksInput),
       new ActionRowBuilder<TextInputBuilder>().addComponents(limitsInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(
-        whoShouldntDmInput
-      ),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(whoShouldDmInput)
+      new ActionRowBuilder<TextInputBuilder>().addComponents(whoShouldntDmInput)
     );
 
     if (type === "roleplay-request") {
@@ -90,15 +81,9 @@ export const Request: Command = {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
-      const charactersInput = new TextInputBuilder()
-        .setCustomId("characters")
-        .setLabel("Characters")
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
 
       modal.addComponents(
         new ActionRowBuilder<TextInputBuilder>().addComponents(plotInput),
-        new ActionRowBuilder<TextInputBuilder>().addComponents(charactersInput)
       );
     }
 
