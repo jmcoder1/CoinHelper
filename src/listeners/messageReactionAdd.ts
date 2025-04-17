@@ -84,6 +84,45 @@ export const messageReactionAdd: MessageReactionAddListener = {
       reason: `<@${user.id}> positively reacted to your message ${message.url}`,
     });
 
+    // Check the total number of reactions on the message
+    const totalReactions = reaction.message.reactions.cache.reduce(
+      (count, reaction) => count + reaction.count,
+      0
+    );
+
+    // Award additional coins based on reaction thresholds
+    if (totalReactions > 25) {
+      await updateBalance(message.client, {
+        user: {
+          id: message.author.id,
+          name: message.author.username,
+          iconURL: message.author.avatarURL() || undefined,
+          guild: {
+            id: guildInfo.id,
+            currencyPluralName: guildInfo.currencyPluralName,
+            economyChannelId: guildInfo.channels.economyChannelId,
+          },
+        },
+        cashAmount: 100,
+        reason: `Your message ${message.url} received more than 25 reactions!`,
+      });
+    } else if (totalReactions > 10) {
+      await updateBalance(message.client, {
+        user: {
+          id: message.author.id,
+          name: message.author.username,
+          iconURL: message.author.avatarURL() || undefined,
+          guild: {
+            id: guildInfo.id,
+            currencyPluralName: guildInfo.currencyPluralName,
+            economyChannelId: guildInfo.channels.economyChannelId,
+          },
+        },
+        cashAmount: 50,
+        reason: `Your message ${message.url} received more than 10 reactions!`,
+      });
+    }
+
     return;
   },
 };
