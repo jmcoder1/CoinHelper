@@ -81,9 +81,8 @@ export const Request: Command = {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
-
       modal.addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(plotInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(plotInput)
       );
     }
 
@@ -101,8 +100,6 @@ export const Request: Command = {
       const limits = modalInteraction.fields.getTextInputValue("limits");
       const whoShouldntDm =
         modalInteraction.fields.getTextInputValue("who-shouldnt-dm") || "None";
-      const whoShouldDm =
-        modalInteraction.fields.getTextInputValue("who-should-dm") || "None";
 
       let plot = "";
       let characters = "";
@@ -121,8 +118,7 @@ export const Request: Command = {
         .addFields(
           { name: "Kinks", value: kinks, inline: false },
           { name: "Limits", value: limits, inline: false },
-          { name: "Who shouldn't DM", value: whoShouldntDm, inline: false },
-          { name: "Who should DM", value: whoShouldDm, inline: false }
+          { name: "Who shouldn't DM", value: whoShouldntDm, inline: false }
         );
 
       if (type === "roleplay-request") {
