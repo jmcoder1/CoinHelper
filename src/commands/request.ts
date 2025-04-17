@@ -12,6 +12,7 @@ import {
 } from "discord.js";
 import { Command } from "./utils/types";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
+import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 
 export const Request: Command = {
   name: "request",
@@ -161,6 +162,41 @@ export const Request: Command = {
           ephemeral: true,
         });
         return;
+      }
+
+      // Check if the user has created a request in the last 24 hours
+      const messages = await targetChannel.messages.fetch({ limit: 100 });
+      const now = Date.now();
+      const userAvatarURL = interaction.user.avatarURL() || undefined;
+
+      const hasRecentRequest = messages.some((message) => {
+        if (!message.embeds.length) return false;
+        const embed = message.embeds[0];
+        const embedAuthorIcon = embed.author?.iconURL;
+        const embedTimestamp = message.createdTimestamp;
+
+        return (
+          embedAuthorIcon === userAvatarURL &&
+          now - embedTimestamp < 24 * 60 * 60 * 1000
+        );
+      });
+
+      if (hasRecentRequest) {
+        // Deduct 100 coins from the user
+        await updateBalance(interaction.client, {
+          user: {
+            id: interaction.user.id,
+            name: interaction.user.username,
+            iconURL: userAvatarURL,
+            guild: {
+              id: guildInfo.id,
+              currencyPluralName: guildInfo.currencyPluralName,
+              economyChannelId: guildInfo.channels.economyChannelId,
+            },
+          },
+          cashAmount: -100,
+          reason: "You created a request in the last 24 hours.",
+        });
       }
 
       // Send the embed to the appropriate channel
