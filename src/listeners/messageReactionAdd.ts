@@ -27,6 +27,26 @@ export const messageReactionAdd: MessageReactionAddListener = {
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser
   ) => {
+    // Fetch partial reaction if necessary
+    if (reaction.partial) {
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error("Failed to fetch reaction:", error);
+        return;
+      }
+    }
+
+    // Fetch partial user if necessary
+    if (user.partial) {
+      try {
+        await user.fetch();
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        return;
+      }
+    }
+
     if (reaction.emoji.name != INCREMENTOR_EMOJI) return;
     if (!reaction.message.guildId) return;
     const guildInfo = getGuildInfoById(reaction.message.guildId);
