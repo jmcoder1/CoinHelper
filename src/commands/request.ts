@@ -112,6 +112,7 @@ export const Request: Command = {
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
         })
+        .setDescription(`Submitted by: <@${interaction.user.id}>`)
         .addFields(
           { name: "Kinks", value: kinks, inline: false },
           { name: "Limits", value: limits, inline: false },
