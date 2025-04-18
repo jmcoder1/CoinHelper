@@ -102,11 +102,8 @@ export const Request: Command = {
         modalInteraction.fields.getTextInputValue("who-shouldnt-dm") || "None";
 
       let plot = "";
-      let characters = "";
-      if (type === "roleplay-request") {
+      if (type === "roleplay-request")
         plot = modalInteraction.fields.getTextInputValue("plot");
-        characters = modalInteraction.fields.getTextInputValue("characters");
-      }
 
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
@@ -121,12 +118,8 @@ export const Request: Command = {
           { name: "Who shouldn't DM", value: whoShouldntDm, inline: false }
         );
 
-      if (type === "roleplay-request") {
-        embed.addFields(
-          { name: "Plot", value: plot },
-          { name: "Characters", value: characters }
-        );
-      }
+      if (type === "roleplay-request")
+        embed.addFields({ name: "Plot", value: plot });
 
       // Determine the appropriate channel
       const channelId =
