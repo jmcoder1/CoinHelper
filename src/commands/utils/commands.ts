@@ -1,5 +1,6 @@
 import { AddCurrency } from "../addCurrency";
 import { Balance } from "../balance";
+import { BoughtCoins } from "../boughtCoins";
 import { CoinFlip } from "../coinflip";
 import { Give } from "../give";
 import { NewChannel } from "../newChannel";
@@ -17,4 +18,5 @@ export const Commands: Command[] = [
   TextToImage,
   NewChannel,
   Request,
+  BoughtCoins,
 ];
