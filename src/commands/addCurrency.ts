@@ -41,14 +41,6 @@ export const AddCurrency: Command = {
     const guildInfo = getGuildInfoById(interaction.guild.id);
     if (!guildInfo) return null;
 
-    const loadingImage = getRandElement(guildInfo.images.loading);
-    const delayEmebd = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`Adding ${guildInfo.currencyPluralName}...`)
-      .setImage(loadingImage);
-
-    interaction.reply({ embeds: [delayEmebd] });
-
     const amount = interaction.options.get("amount")?.value as number;
     const recipient = interaction.options.get("recipient")?.value as string;
     const reason = interaction.options.get("reason")?.value as string;

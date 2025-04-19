@@ -95,14 +95,6 @@ export const TextToImage: Command = {
     if (error) console.error(error);
     if (!res) return;
 
-    const loadingImage = getRandElement(guildInfo.images.loading);
-    const delayEmebd = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle("Text to Image Loading...")
-      .setImage(loadingImage);
-
-    interaction.reply({ embeds: [delayEmebd] });
-
     const [resLogin, loginError] = await tryAsyncAwait(() =>
       login(process.env.NOVEL_API_USERNAME, process.env.NOVEL_API_PASSWORD)
     );

@@ -23,14 +23,6 @@ export const Balance: Command = {
     const guildInfo = getGuildInfoById(interaction.guildId);
     if (!guildInfo) return null;
 
-    const loadingImage = getRandElement(guildInfo.images.loading);
-    const delayEmebd = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`Awarding ${guildInfo.currencyPluralName}...`)
-      .setImage(loadingImage);
-
-    interaction.reply({ embeds: [delayEmebd] });
-
     const balance = await unbelievaboatClient.getUserBalance(
       interaction.guildId as string,
       interaction.user.id

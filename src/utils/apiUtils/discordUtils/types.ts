@@ -17,7 +17,6 @@ export interface Guild {
     roleplayRequestChannelId: string;
   };
   images: {
-    loading: string[];
     currency: string[];
     coinFlip: string[];
     insufficientBalance: string[];
@@ -27,5 +26,6 @@ export interface Guild {
   notifications: {
     previewRoleId: string;
     newChannelRoleId: string;
+    deleteMessageRoleId: string;
   };
 }
