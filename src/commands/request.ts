@@ -176,6 +176,7 @@ export const Request: Command = {
 
       // Send the embed to the appropriate channel
       await targetChannel.send({
+        content: `Request submitted by <@${interaction.user.id}>`,
         embeds: [embed],
       });
 
