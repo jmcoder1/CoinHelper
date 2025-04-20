@@ -131,7 +131,7 @@ export const messageReactionAdd: MessageReactionAddListener = {
       reaction.emoji.name === QUESTION_EMOJI
     ) {
       const member = await reaction.message.guild?.members.fetch(user.id);
-      const requiredRoleId = guildInfo.notifications.deleteMessageRoleId; // Replace with the actual role ID
+      const requiredRoleId = guildInfo.roles.deleteMessageRoleId; // Replace with the actual role ID
       if (!member?.roles.cache.has(requiredRoleId)) return;
 
       // Create a dropdown (select menu)

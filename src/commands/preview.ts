@@ -136,7 +136,7 @@ export const Preview: Command = {
       guildInfo.channels.previewChannelId
     )) as TextChannel;
     previewChannel.send({
-      content: `<@&${guildInfo.notifications.previewRoleId}> here is your preview of <#${channelId}>`,
+      content: `<@&${guildInfo.roles.previewRoleId}> here is your preview of <#${channelId}>`,
       files: randomFiles,
     });
 
