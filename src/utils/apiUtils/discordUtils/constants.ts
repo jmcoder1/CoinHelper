@@ -36,7 +36,7 @@ export const OP_GUILD: Guild = {
     ],
     gameLost: ["https://media1.tenor.com/m/e_G1SKuHsAsAAAAC/chopper-one.gif"],
   },
-  notifications: {
+  roles: {
     previewRoleId: "1302671208386396160",
     newChannelRoleId: "1302671235444117624",
     deleteMessageRoleId: "1362894473499246835",
@@ -82,7 +82,7 @@ export const BMB_GUILD: Guild = {
       "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmgxYjN2Zm5senptN3VkZDhuNTgwdnJnc29nOXQ1NXR6NGxhNjAybCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKr3nzbh5WgCFxe/giphy.webp",
     ],
   },
-  notifications: {
+  roles: {
     previewRoleId: "1301614832277000244",
     newChannelRoleId: "1301614797292441642",
     deleteMessageRoleId: "1362890996865695875",
@@ -110,6 +110,10 @@ export const BMB_GUILD: Guild = {
     {
       title: "Rule 8: Captions only",
       value: "Captions must be burned or side by side the media",
+    },
+    {
+      title: "Inappropriate request",
+      value: "Request in the wrong channel",
     },
   ],
 };
@@ -152,7 +156,7 @@ export const Tt_GUILD: Guild = {
       "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmgxYjN2Zm5senptN3VkZDhuNTgwdnJnc29nOXQ1NXR6NGxhNjAybCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKr3nzbh5WgCFxe/giphy.webp",
     ],
   },
-  notifications: {
+  roles: {
     previewRoleId: "1323742269005893652",
     newChannelRoleId: "1323046507552702536",
     deleteMessageRoleId: "1362893885528867086",

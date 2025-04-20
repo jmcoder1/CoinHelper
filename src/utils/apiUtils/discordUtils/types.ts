@@ -23,7 +23,7 @@ export interface Guild {
     gameWin: string[];
     gameLost: string[];
   };
-  notifications: {
+  roles: {
     previewRoleId: string;
     newChannelRoleId: string;
     deleteMessageRoleId: string;
