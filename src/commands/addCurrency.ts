@@ -3,13 +3,10 @@ import {
   ApplicationCommandType,
   Client,
   CommandInteraction,
-  EmbedBuilder,
-  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
-import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
+import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 
 export const AddCurrency: Command = {
   name: "add-currency",
@@ -36,37 +33,38 @@ export const AddCurrency: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
-    if (!interaction.guild || !interaction.user) return;
+    if (!interaction.guild) return;
 
     const guildInfo = getGuildInfoById(interaction.guild.id);
     if (!guildInfo) return null;
 
     const amount = interaction.options.get("amount")?.value as number;
-    const recipient = interaction.options.get("recipient")?.value as string;
+    const recipientId = interaction.options.get("recipient")?.value as string;
     const reason = interaction.options.get("reason")?.value as string;
-    await unbelievaboatClient.editUserBalance(
-      interaction.guild.id,
-      recipient,
-      { cash: amount },
-      reason
-    );
 
-    const economyChannel = (await client.channels.fetch(
-      guildInfo.channels.economyChannelId
-    )) as TextChannel;
-    const resultEmbed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle(`${guildInfo.currencyPluralName} Updated`)
-      .setImage(getRandElement(guildInfo.images.currency))
-      .addFields({
-        name: amount > 0 ? "Added" : "Removed",
-        value: `<@${recipient}> your balance has been updated by ${amount} ${guildInfo.currencyPluralName}`,
+    const recipient = interaction.guild.members.cache.get(recipientId)?.user;
+    if (!recipient) {
+      await interaction.reply({
+        content: "Recipient not found",
+        ephemeral: true,
       });
-
-    if (economyChannel?.isTextBased()) {
-      await economyChannel.send(`<@${recipient}> ${reason}`);
-      await economyChannel.send({ embeds: [resultEmbed] });
+      return;
     }
+
+    await updateBalance(client, {
+      user: {
+        name: recipient.username,
+        id: recipient.id,
+        guild: {
+          id: interaction.guild.id,
+          currencyPluralName: guildInfo.currencyPluralName,
+          economyChannelId: guildInfo.channels.economyChannelId,
+        },
+        iconURL: recipient.displayAvatarURL(),
+      },
+      cashAmount: amount,
+      reason: reason,
+    });
 
     return;
   },

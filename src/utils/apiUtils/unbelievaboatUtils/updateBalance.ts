@@ -27,17 +27,19 @@ export const updateBalance = async (
   const { currencyPluralName, economyChannelId } = guild;
   const guildInfo = getGuildInfoById(guild.id) as Guild;
 
+  const action = cashAmount > 0 ? "Added" : "Removed";
+
   const embed = new EmbedBuilder()
     .setColor(0x0099ff)
-    .setTitle(`${currencyPluralName} Update`)
+    .setTitle(`${currencyPluralName} ${action}`)
     .setImage(getRandElement(guildInfo.images.currency))
     .setAuthor({
       name: user.name,
       iconURL: user.iconURL,
     })
     .addFields({
-      name: `Added ${guild.currencyPluralName}`,
-      value: "" + cashAmount,
+      name: action,
+      value: `<@${user.id}> your balance has been updated by ${cashAmount} ${guildInfo.currencyPluralName}`,
     })
     .addFields({ name: "Reason", value: reason });
 
@@ -47,8 +49,8 @@ export const updateBalance = async (
     { cash: cashAmount },
     reason
   );
-  const economyChannel = await client.channels.fetch(economyChannelId);
 
+  const economyChannel = await client.channels.fetch(economyChannelId);
   if (economyChannel?.isTextBased()) {
     await economyChannel.send({ embeds: [embed] });
     await economyChannel.send(`<@${user.id}>`);
