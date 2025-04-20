@@ -7,7 +7,6 @@ import {
 } from "discord.js";
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
-import { sleep } from "../utils/sleep";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
@@ -27,8 +26,6 @@ export const Balance: Command = {
       interaction.guildId as string,
       interaction.user.id
     );
-
-    await sleep(2000);
 
     const economyChannel = (await getChannelById(
       client,

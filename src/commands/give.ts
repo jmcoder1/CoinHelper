@@ -10,7 +10,6 @@ import {
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
-import { sleep } from "../utils/sleep";
 import { validateAmount } from "./utils/validateAmount";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
@@ -107,7 +106,6 @@ export const Give: Command = {
       cashAmount: -amount,
       reason: `<@${interaction.user.id}> you have been awarded ${amount} ${guildInfo.currencyPluralName}.`,
     });
-    await sleep(5000);
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(`${guildInfo.currencyPluralName} Awarded`)

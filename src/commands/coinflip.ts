@@ -118,7 +118,7 @@ export const CoinFlip: Command = {
         `Check the result in <#${guildInfo.channels.playChannelId}>`
       );
     interaction.reply({ embeds: [delayEmebd] });
-    await sleep(5000);
+    await sleep(2000);
 
     if (won) {
       embed
