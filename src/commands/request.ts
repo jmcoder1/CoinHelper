@@ -80,6 +80,7 @@ export const Request: Command = {
     }
 
     await interaction.showModal(modal);
+    await interaction.deferReply({ ephemeral: true });
 
     // Handle modal submission
     interaction.client.once("interactionCreate", async (modalInteraction) => {
