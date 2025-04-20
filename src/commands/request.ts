@@ -62,16 +62,9 @@ export const Request: Command = {
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true);
 
-    const whoShouldntDmInput = new TextInputBuilder()
-      .setCustomId("who-shouldnt-dm")
-      .setLabel("Who shouldn't DM")
-      .setStyle(TextInputStyle.Paragraph)
-      .setRequired(false);
-
     modal.addComponents(
       new ActionRowBuilder<TextInputBuilder>().addComponents(kinksInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(limitsInput),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(whoShouldntDmInput)
+      new ActionRowBuilder<TextInputBuilder>().addComponents(limitsInput)
     );
 
     if (type === "roleplay-request") {
@@ -98,8 +91,6 @@ export const Request: Command = {
 
       const kinks = modalInteraction.fields.getTextInputValue("kinks");
       const limits = modalInteraction.fields.getTextInputValue("limits");
-      const whoShouldntDm =
-        modalInteraction.fields.getTextInputValue("who-shouldnt-dm") || "None";
 
       let plot = "";
       if (type === "roleplay-request")
@@ -115,8 +106,7 @@ export const Request: Command = {
         .setDescription(`Submitted by: <@${interaction.user.id}>`)
         .addFields(
           { name: "Kinks", value: kinks, inline: false },
-          { name: "Limits", value: limits, inline: false },
-          { name: "Who shouldn't DM", value: whoShouldntDm, inline: false }
+          { name: "Limits", value: limits, inline: false }
         );
 
       if (type === "roleplay-request")
