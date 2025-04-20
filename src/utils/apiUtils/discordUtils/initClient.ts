@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { attachListeners } from "../../../listeners/utils/attachListeners";
 import { tryAsyncAwait } from "../../tryAsyncAwait";
 
@@ -22,6 +22,7 @@ export const initClient = async () => {
       GatewayIntentBits.GuildInvites,
       GatewayIntentBits.GuildMembers,
     ],
+    partials: [Partials.Message, Partials.Reaction, Partials.User],
   });
   attachListeners(client);
 

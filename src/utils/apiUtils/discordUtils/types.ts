@@ -28,4 +28,10 @@ export interface Guild {
     newChannelRoleId: string;
     deleteMessageRoleId: string;
   };
+  removalReasons:
+    | {
+        title: string;
+        value: string;
+      }[]
+    | undefined;
 }

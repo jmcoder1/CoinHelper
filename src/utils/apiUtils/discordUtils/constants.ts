@@ -23,13 +23,6 @@ export const OP_GUILD: Guild = {
     roleplayRequestChannelId: "1271846932893011999",
   },
   images: {
-    loading: [
-      "https://iili.io/dNgXyas.gif",
-      "https://media.discordapp.net/attachments/1274743214053789738/1278381923357687879/D5DA5DC2-9DA6-47CB-AB82-0B8D9E2DF4C2.gif?ex=66d730f1&is=66d5df71&hm=7136b0eb19e3ee2e9c57a3a3d7f694b066c9f330ee6e80f0f154b981d50de504&=&width=454&height=545",
-      "https://media.discordapp.net/attachments/1274743214053789738/1276663756767756388/9d86b4df30c39c52a8e526d0110f0d58.gif?ex=66d78846&is=66d636c6&hm=9ea71a24f7211b55aadb36e991e61a68fefa8b5401b47bfa0058cbe5c655b3cd&=&width=800&height=450",
-      "https://media.discordapp.net/attachments/1274743214053789738/1276663709627846707/cf83367216908fd516a2db837fde9a46.gif?ex=66d7883b&is=66d636bb&hm=7c23fbcea87f2610127512cd66befc5838f393706fd80fa94de9e60cfc21856c&=&width=969&height=545",
-      "https://media.discordapp.net/attachments/1274743214053789738/1276663574512533588/6859c7326c0ccf349c7b9f7c0c4a6316.gif?ex=66d7881b&is=66d6369b&hm=586061f140de50da16e85f64497932f028602adc0739df68bb0538e0d6c34456&=&width=969&height=545",
-    ],
     currency: [
       "https://static.wikia.nocookie.net/onepiece/images/c/cb/Wano_Country%27s_Gold.png/revision/latest?cb=20200210015552",
       "https://w0.peakpx.com/wallpaper/312/357/HD-wallpaper-nami-x-berry-nami-anime-one-piece.jpg",
@@ -46,7 +39,9 @@ export const OP_GUILD: Guild = {
   notifications: {
     previewRoleId: "1302671208386396160",
     newChannelRoleId: "1302671235444117624",
+    deleteMessageRoleId: "1362894473499246835",
   },
+  removalReasons: undefined,
 };
 
 export const BMB_GUILD: Guild = {
@@ -68,9 +63,6 @@ export const BMB_GUILD: Guild = {
     roleplayRequestChannelId: "1283252490753671178",
   },
   images: {
-    loading: [
-      "https://images-ext-1.discordapp.net/external/lW7nWkDzTQmeuKWQs7Lws8SXIqhv6DoEKN7MS3m3ips/https/i.redd.it/k2t27b5gwwh81.gif?width=450&height=450",
-    ],
     currency: [
       "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExc29vcnB1aHFyeGFqcTRzMW43aTIxMTZ5Zms2d2tvOXV6bHduNDdrOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oXCoG04rCxSSs/200w.webp",
       "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRmYnlqcms5b3ZmeHVmNnoycjlzNmZvYndyN2VpOGJ2ZjU1eWExNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qH7FCK1u7ASDkrLRTg/giphy.webp",
@@ -93,7 +85,33 @@ export const BMB_GUILD: Guild = {
   notifications: {
     previewRoleId: "1301614832277000244",
     newChannelRoleId: "1301614797292441642",
+    deleteMessageRoleId: "1362890996865695875",
   },
+  removalReasons: [
+    {
+      title: "Rule 1: You must be 18+",
+      value: "This is an adult-only NSFW server",
+    },
+    {
+      title: "Rule 2: No doxxing",
+      value: "No doxxing",
+    },
+    {
+      title: "Rule 3: Using @everyone ping",
+      value: "Do not use the @everyone ping",
+    },
+    {
+      title: "Rule 4: No paywall content",
+      value: "No paywall content",
+    },
+    { title: "Rule 5: No leaks", value: "No leaks" },
+    { title: "Rule 6: Bully theme", value: "All content must be bully-themed" },
+    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
+    {
+      title: "Rule 8: Captions only",
+      value: "Captions must be burned or side by side the media",
+    },
+  ],
 };
 
 export const Tt_GUILD: Guild = {
@@ -115,9 +133,6 @@ export const Tt_GUILD: Guild = {
     roleplayRequestChannelId: "1323455695319732244",
   },
   images: {
-    loading: [
-      "https://images-ext-1.discordapp.net/external/lW7nWkDzTQmeuKWQs7Lws8SXIqhv6DoEKN7MS3m3ips/https/i.redd.it/k2t27b5gwwh81.gif?width=450&height=450",
-    ],
     currency: [
       "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExc29vcnB1aHFyeGFqcTRzMW43aTIxMTZ5Zms2d2tvOXV6bHduNDdrOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oXCoG04rCxSSs/200w.webp",
       "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExdjRmYnlqcms5b3ZmeHVmNnoycjlzNmZvYndyN2VpOGJ2ZjU1eWExNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qH7FCK1u7ASDkrLRTg/giphy.webp",
@@ -140,6 +155,8 @@ export const Tt_GUILD: Guild = {
   notifications: {
     previewRoleId: "1323742269005893652",
     newChannelRoleId: "1323046507552702536",
+    deleteMessageRoleId: "1362893885528867086",
   },
+  removalReasons: undefined,
 };
 export const guilds: Guild[] = [OP_GUILD, BMB_GUILD, Tt_GUILD];
