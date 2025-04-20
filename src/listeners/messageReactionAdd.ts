@@ -169,40 +169,58 @@ export const messageReactionAdd: MessageReactionAddListener = {
         async (interaction: StringSelectMenuInteraction) => {
           if (interaction.customId !== "message-options") return;
 
-          if (interaction.values[0] === "delete") {
+          try {
             // Delete the original message
             await reaction.message.delete();
-
-            // Send the message content to the user
-            await user.send({
-              content: `Here is the content of the deleted message:\n\n${
-                reaction.message.content || "No content"
-              }`,
-            });
-
+          } catch (error) {
+            console.error("Failed to delete message:", error);
             await interaction.reply({
-              content:
-                "The message has been deleted, and its content has been sent to the user.",
+              content: "Failed to delete the message.",
               ephemeral: true,
             });
-          } else if (interaction.values[0] === "nothing") {
-            await interaction.reply({
-              content: "No action was taken.",
-              ephemeral: true,
-            });
+            return;
           }
+
+          // Send the message content to the user
+          await message.author?.send({
+            content: `Your post has been deleted.\n\nReason: ${
+              interaction.values[0]
+            }\n\nMessage content:\n${reaction.message.content || "No content"}`,
+          });
+
+          await interaction.reply({
+            content:
+              "The message has been deleted, and its content has been sent to the user.",
+            ephemeral: true,
+          });
 
           // Clean up the dropdown message
           await dropdownMessage.delete();
+          await interaction.editReply({
+            content: "The dropdown has been processed and closed.",
+          });
         }
       );
 
       collector.on("end", async () => {
-        // Disable the dropdown after the collector ends
-        await dropdownMessage.edit({
-          content: "The dropdown has expired.",
-          components: [],
-        });
+        try {
+          // Check if the dropdown message still exists
+          const fetchedMessage = await dropdownMessage.channel.messages.fetch(
+            dropdownMessage.id
+          );
+
+          // If the message exists, edit it to indicate expiration
+          await fetchedMessage.edit({
+            content: "The dropdown has expired.",
+            components: [],
+          });
+        } catch (error) {
+          if (error.code === 10008) {
+            console.error("Dropdown message was already deleted.");
+          } else {
+            console.error("Failed to edit the dropdown message:", error);
+          }
+        }
       });
     }
   },

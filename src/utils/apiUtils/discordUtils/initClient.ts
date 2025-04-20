@@ -9,6 +9,7 @@ export const initClient = async () => {
       GatewayIntentBits.DirectMessageTyping,
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildModeration,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildMessageTyping,
