@@ -61,23 +61,12 @@ export const Give: Command = {
 
     const cashBalance = userBalance.cash;
     const [res, error] = await tryAsyncAwait(() =>
-      validateAmount(
-        {
-          client,
-          channelId: economyChannel.id,
-          amount,
-          balance: cashBalance,
-          cost: 50,
-          currencyPluralName: guildInfo.currencyPluralName,
-        },
-        {
-          interaction,
-          embedProps: {
-            title: "Give",
-            image: getRandElement(guildInfo.images.gameLost),
-          },
-        }
-      )
+      validateAmount(interaction, {
+        amount,
+        balance: cashBalance,
+        cost: 50,
+        currencyPluralName: guildInfo.currencyPluralName,
+      })
     );
     if (!res || error) return endInteraction(interaction, error);
 

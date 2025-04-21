@@ -16,7 +16,6 @@ import { uploadImage } from "../utils/apiUtils/s3Utils/uploadImage";
 import AdmZip from "adm-zip";
 import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { toChannelURL } from "../utils/apiUtils/discordUtils/toChannelURL";
 import { endInteraction } from "./utils/endnteraction";
 
@@ -81,23 +80,12 @@ export const TextToImage: Command = {
       return endInteraction(interaction, "Economy channel not found.");
 
     const [res, error] = await tryAsyncAwait(() =>
-      validateAmount(
-        {
-          client,
-          channelId: economyChannel.id,
-          amount: COMMAND_COST,
-          cost: COMMAND_COST,
-          balance: cashBalance,
-          currencyPluralName: guildInfo.currencyPluralName,
-        },
-        {
-          interaction,
-          embedProps: {
-            title: "Text to Image",
-            image: getRandElement(guildInfo.images.gameLost),
-          },
-        }
-      )
+      validateAmount(interaction, {
+        amount: COMMAND_COST,
+        cost: COMMAND_COST,
+        balance: cashBalance,
+        currencyPluralName: guildInfo.currencyPluralName,
+      })
     );
     if (!res || error) return endInteraction(interaction, error);
 

@@ -94,23 +94,12 @@ export const CoinFlip: Command = {
 
     const cashBalance = userBalance.cash;
     const [resValidateAmount, errorValidateAmount] = await tryAsyncAwait(() =>
-      validateAmount(
-        {
-          client,
-          channelId: economyChannel.id,
-          amount,
-          balance: cashBalance,
-          cost: 50,
-          currencyPluralName: guildInfo.currencyPluralName,
-        },
-        {
-          interaction,
-          embedProps: {
-            title: "Coin Flip",
-            image: getRandElement(guildInfo.images.insufficientBalance),
-          },
-        }
-      )
+      validateAmount(interaction, {
+        amount,
+        balance: cashBalance,
+        cost: 50,
+        currencyPluralName: guildInfo.currencyPluralName,
+      })
     );
     if (!resValidateAmount || errorValidateAmount)
       return endInteraction(interaction, errorValidateAmount);
