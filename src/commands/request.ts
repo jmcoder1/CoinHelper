@@ -80,22 +80,21 @@ export const Request: Command = {
     }
 
     await interaction.showModal(modal);
-    await interaction.deferReply({ ephemeral: true });
 
-    // Handle modal submission
-    interaction.client.once("interactionCreate", async (modalInteraction) => {
-      if (
-        !modalInteraction.isModalSubmit() ||
-        modalInteraction.customId !== `${type}-form`
-      )
-        return;
+    try {
+      const modalInteraction = await interaction.awaitModalSubmit({
+        time: 15 * 60 * 1000, // 15 minutes timeout
+        filter: (i) =>
+          i.customId === `${type}-form` && i.user.id === interaction.user.id,
+      });
 
       const kinks = modalInteraction.fields.getTextInputValue("kinks");
       const limits = modalInteraction.fields.getTextInputValue("limits");
 
       let plot = "";
-      if (type === "roleplay-request")
+      if (type === "roleplay-request") {
         plot = modalInteraction.fields.getTextInputValue("plot");
+      }
 
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
@@ -110,8 +109,9 @@ export const Request: Command = {
           { name: "Limits", value: limits, inline: false }
         );
 
-      if (type === "roleplay-request")
+      if (type === "roleplay-request") {
         embed.addFields({ name: "Plot", value: plot });
+      }
 
       // Determine the appropriate channel
       const channelId =
@@ -122,6 +122,7 @@ export const Request: Command = {
       const targetChannel = interaction.guild?.channels.cache.get(
         channelId
       ) as TextChannel;
+
       if (!targetChannel) {
         await modalInteraction.reply({
           content: "The target channel could not be found.",
@@ -177,7 +178,13 @@ export const Request: Command = {
           `<#${channelId}>`,
         ephemeral: true,
       });
-    });
+    } catch (error) {
+      console.error("Error handling modal submission:", error);
+      await interaction.followUp({
+        content: "There was an error processing your request.",
+        ephemeral: true,
+      });
+    }
 
     return;
   },
