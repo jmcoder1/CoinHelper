@@ -8,10 +8,10 @@ interface ValidateAmountDataProps {
   currencyPluralName: string;
 }
 
-export const validateAmount = async (
+export const validateAmount = (
   interaction: CommandInteraction,
   data: ValidateAmountDataProps
-): Promise<boolean> => {
+): Boolean => {
   const { amount, cost, balance, currencyPluralName } = data;
 
   if (amount < 0) endInteraction(interaction, "Please enter a positive amount");
@@ -27,8 +27,6 @@ export const validateAmount = async (
       interaction,
       `You do not have enough ${currencyPluralName}! Please enter a lower amount`
     );
-
-  if (amount > balance) true;
 
   return false;
 };
