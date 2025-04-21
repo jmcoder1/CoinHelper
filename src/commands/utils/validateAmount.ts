@@ -14,19 +14,27 @@ export const validateAmount = (
 ): Boolean => {
   const { amount, cost, balance, currencyPluralName } = data;
 
-  if (amount < 0) endInteraction(interaction, "Please enter a positive amount");
+  let isSuccesful = true;
+  if (amount < 0) {
+    endInteraction(interaction, "Please enter a positive amount");
+    isSuccesful = false;
+  }
 
-  if (amount < cost)
+  if (amount < cost) {
     endInteraction(
       interaction,
       `Please enter an amount greater or equal to ${cost}`
     );
+    isSuccesful = false;
+  }
 
-  if (balance < amount)
+  if (balance < amount) {
     endInteraction(
       interaction,
       `You do not have enough ${currencyPluralName}! Please enter a lower amount`
     );
+    isSuccesful = false;
+  }
 
-  return false;
+  return isSuccesful;
 };
