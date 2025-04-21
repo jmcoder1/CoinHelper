@@ -118,12 +118,10 @@ export const Request: Command = {
           { name: "Limits", value: limits, inline: false }
         );
 
-      if (type === "roleplay-request") {
+      if (type === "roleplay-request")
         embed.addFields({ name: "Plot", value: plot });
-      }
 
       // Determine the appropriate channel
-
       const targetChannel = interactionGuild.channels.cache.get(channelId) as
         | TextChannel
         | undefined;
