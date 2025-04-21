@@ -13,6 +13,8 @@ import {
 import { Command } from "./utils/types";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { endInteraction } from "./utils/endnteraction";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 
 export const Request: Command = {
   name: "request",
@@ -37,10 +39,12 @@ export const Request: Command = {
     },
   ],
   run: async (_: Client, interaction: CommandInteraction) => {
-    if (!interaction.guildId) return;
+    if (!interaction.guild)
+      return endInteraction(interaction, "Guild not found.");
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
 
     const type = interaction.options.get("type")?.value as string;
 
@@ -81,6 +85,11 @@ export const Request: Command = {
 
     await interaction.showModal(modal);
 
+    const channelId =
+      type === "dm-request"
+        ? guildInfo.channels.dmRequestChannelId
+        : guildInfo.channels.roleplayRequestChannelId;
+
     try {
       const modalInteraction = await interaction.awaitModalSubmit({
         time: 15 * 60 * 1000, // 15 minutes timeout
@@ -114,22 +123,12 @@ export const Request: Command = {
       }
 
       // Determine the appropriate channel
-      const channelId =
-        type === "dm-request"
-          ? guildInfo.channels.dmRequestChannelId
-          : guildInfo.channels.roleplayRequestChannelId;
 
-      const targetChannel = interaction.guild?.channels.cache.get(
-        channelId
-      ) as TextChannel;
-
-      if (!targetChannel) {
-        await modalInteraction.reply({
-          content: "The target channel could not be found.",
-          ephemeral: true,
-        });
-        return;
-      }
+      const targetChannel = interactionGuild.channels.cache.get(channelId) as
+        | TextChannel
+        | undefined;
+      if (!targetChannel || !targetChannel.isTextBased())
+        return endInteraction(interaction, "Target channel not found.");
 
       // Check if the user has created a request in the last 24 hours
       const messages = await targetChannel.messages.fetch({ limit: 100 });
@@ -150,20 +149,24 @@ export const Request: Command = {
 
       if (hasRecentRequest) {
         // Deduct 100 coins from the user
-        await updateBalance(interaction.client, {
-          user: {
-            id: interaction.user.id,
-            name: interaction.user.username,
-            iconURL: userAvatarURL,
-            guild: {
-              id: guildInfo.id,
-              currencyPluralName: guildInfo.currencyPluralName,
-              economyChannelId: guildInfo.channels.economyChannelId,
+        const [, errorBalance] = await tryAsyncAwait(() =>
+          updateBalance(interaction.client, {
+            user: {
+              id: interaction.user.id,
+              name: interaction.user.username,
+              iconURL: userAvatarURL,
+              guild: {
+                id: guildInfo.id,
+                currencyPluralName: guildInfo.currencyPluralName,
+                economyChannelId: guildInfo.channels.economyChannelId,
+              },
             },
-          },
-          cashAmount: -100,
-          reason: "You created a request in the last 24 hours.",
-        });
+            cashAmount: -100,
+            reason: "You created a request in the last 24 hours.",
+          })
+        );
+        if (errorBalance)
+          return endInteraction(interaction, "Error updating balance.");
       }
 
       // Send the embed to the appropriate channel
@@ -186,6 +189,9 @@ export const Request: Command = {
       });
     }
 
-    return;
+    return endInteraction(
+      interaction,
+      `Request submitted successfully in <#${channelId}>`
+    );
   },
 };

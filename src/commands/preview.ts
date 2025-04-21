@@ -13,6 +13,7 @@ import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUt
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
+import { endInteraction } from "./utils/endnteraction";
 
 const PREVIEW_COST = 50;
 const NUM_PREVIEWS = 10;
@@ -30,25 +31,21 @@ export const Preview: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
-    if (!interaction.guildId) return;
+    if (!interaction.guild)
+      return endInteraction(interaction, "Guild not found.");
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    // COST CHECK
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
-        interaction.guildId as string,
+        interactionGuild.id,
         interaction.user.id
       )
     ).cash;
-    if (PREVIEW_COST > cashBalance) {
-      const embed = new EmbedBuilder().addFields({
-        name: `Not enough ${guildInfo.currencyPluralName}`,
-        value: `You do not have enough ${guildInfo.currencyPluralName} to request a preivew`,
-      });
-      embed.setColor(0xff0000);
-      return;
-    }
+    if (PREVIEW_COST > cashBalance)
+      return endInteraction(interaction, "Not enough balance.");
 
     // NUM IMAGES CHECK
     const channelId = interaction.options.get("channel")?.value as number;
@@ -56,6 +53,7 @@ export const Preview: Command = {
       client,
       channelId.toString()
     )) as TextChannel;
+
     const allMessages = await channel.messages.fetch({ limit: 100 });
     let files: { attachment: string }[] = [];
     for (let i = 0; i < allMessages.size; i++) {
@@ -70,13 +68,8 @@ export const Preview: Command = {
         }
       }
     }
-    if (files.length < NUM_PREVIEWS) {
-      interaction.reply({
-        ephemeral: true,
-        content: "This channel is not eligible for previews",
-      });
-      return;
-    }
+    if (files.length < NUM_PREVIEWS)
+      return endInteraction(interaction, "Not enough images.");
 
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -93,21 +86,26 @@ export const Preview: Command = {
       })
     );
     const userId = interaction.user.id;
-    await updateBalance(client, {
-      user: {
-        id: userId,
-        name: interaction.user.username,
-        iconURL: interaction.user.avatarURL() || undefined,
-        guild: {
-          id: interaction.guildId,
-          economyChannelId: guildInfo.channels.economyChannelId,
-          currencyPluralName: guildInfo.currencyPluralName,
-        },
-      },
 
-      cashAmount: -PREVIEW_COST,
-      reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
-    });
+    const [, errorBalance] = await tryAsyncAwait(() =>
+      updateBalance(client, {
+        user: {
+          id: userId,
+          name: interaction.user.username,
+          iconURL: interaction.user.avatarURL() || undefined,
+          guild: {
+            id: interactionGuild.id,
+            economyChannelId: guildInfo.channels.economyChannelId,
+            currencyPluralName: guildInfo.currencyPluralName,
+          },
+        },
+
+        cashAmount: -PREVIEW_COST,
+        reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
+      })
+    );
+    if (!errorBalance)
+      return endInteraction(interaction, "Error updating balance.");
 
     const randomFiles = [];
     const usedIndices = new Set<number>(); // To track already used indices
@@ -123,23 +121,21 @@ export const Preview: Command = {
       }
     }
 
-    if (randomFiles.length < NUM_PREVIEWS) {
-      await interaction.reply({
-        ephemeral: true,
-        content: "Not enough unique images available for a full preview.",
-      });
-      return;
-    }
+    if (randomFiles.length < NUM_PREVIEWS)
+      return endInteraction(interaction, "Not enough images.");
 
-    const previewChannel = (await getChannelById(
+    const previewChannel = await getChannelById(
       client,
       guildInfo.channels.previewChannelId
-    )) as TextChannel;
+    );
+    if (!previewChannel || !previewChannel.isTextBased())
+      return endInteraction(interaction, "Preview channel not found.");
+
     previewChannel.send({
       content: `<@&${guildInfo.roles.previewRoleId}> here is your preview of <#${channelId}>`,
       files: randomFiles,
     });
 
-    return;
+    return endInteraction(interaction, `Preview sent to <#${channelId}>`);
   },
 };

@@ -4,7 +4,6 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
-  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
@@ -19,6 +18,7 @@ import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { toChannelURL } from "../utils/apiUtils/discordUtils/toChannelURL";
+import { endInteraction } from "./utils/endnteraction";
 
 const COMMAND_COST = 25;
 const BANNED_WORD_COST = 1000;
@@ -37,10 +37,11 @@ export const TextToImage: Command = {
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
     const prompt = interaction.options.get("prompt")?.value as string;
-    if (!interaction.guildId) return;
+    if (!interaction.guild) return;
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
 
     for (let i = 0; i < BANNED_WORDS.length; i++) {
       const bannedWord = BANNED_WORDS[i];
@@ -49,7 +50,7 @@ export const TextToImage: Command = {
           user: {
             id: interaction.user.id,
             guild: {
-              id: interaction.guildId,
+              id: interactionGuild.id,
               economyChannelId: guildInfo.channels.economyChannelId,
               currencyPluralName: guildInfo.currencyPluralName,
             },
@@ -59,20 +60,26 @@ export const TextToImage: Command = {
           cashAmount: -1000,
           reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName}.`,
         });
-        return;
+        return endInteraction(
+          interaction,
+          `You have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName} for using a banned word in your prompt.`
+        );
       }
     }
 
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
-        interaction.guildId as string,
+        interactionGuild.id as string,
         interaction.user.id
       )
     ).cash;
 
-    const economyChannel = (await client.channels.fetch(
+    const economyChannel = await client.channels.fetch(
       guildInfo.channels.economyChannelId
-    )) as TextChannel;
+    );
+    if (!economyChannel || !economyChannel.isTextBased())
+      return endInteraction(interaction, "Economy channel not found.");
+
     const [res, error] = await tryAsyncAwait(() =>
       validateAmount(
         {
@@ -92,22 +99,16 @@ export const TextToImage: Command = {
         }
       )
     );
-    if (error) console.error(error);
-    if (!res) return;
+    if (!res || error) return endInteraction(interaction, error);
 
     const [resLogin, loginError] = await tryAsyncAwait(() =>
       login(process.env.NOVEL_API_USERNAME, process.env.NOVEL_API_PASSWORD)
     );
-    if (loginError) {
-      console.error(loginError);
-      return;
-    }
+    if (loginError) return endInteraction(interaction, loginError);
 
     const accessToken = resLogin?.accessToken;
-    if (!accessToken) {
-      console.error("No access token returned");
-      return;
-    }
+    if (!accessToken)
+      return endInteraction(interaction, "No access token returned");
 
     const [resImage, resImageError] = await tryAsyncAwait(() =>
       fetchTextToImage(accessToken, {
@@ -116,10 +117,8 @@ export const TextToImage: Command = {
         seed: 1,
       })
     );
-    if (!resImage || resImageError) {
-      console.error(resImageError);
-      return null;
-    }
+    if (!resImage || resImageError)
+      return endInteraction(interaction, resImageError);
 
     const zip = new AdmZip(resImage.buffer);
 
@@ -127,24 +126,24 @@ export const TextToImage: Command = {
     const imageEntry = zipEntries.find(
       (entry) => entry.entryName === "image_0.png"
     );
-    if (!imageEntry) {
-      console.error("Failed Image Entry");
-      return;
-    }
+    if (!imageEntry)
+      return endInteraction(interaction, "Image not found in zip file.");
+
     const imageBase64 = Buffer.from(imageEntry.getData()).toString("base64");
 
     const [resUploadImage, resUploadImageError] = await tryAsyncAwait(() =>
       uploadImage(imageBase64)
     );
-    if (resUploadImageError) {
-      console.error(resUploadImageError);
-      return;
-    }
+    if (resUploadImageError)
+      return endInteraction(interaction, resUploadImageError);
+
     const imageUrl =
       "https://clzseiyrja.cloudimg.io/" +
       (await resUploadImage?.done())?.Location;
 
     const currentChannel = await client.channels.fetch(interaction.channelId);
+    if (!currentChannel || !currentChannel.isTextBased())
+      return endInteraction(interaction, "Current channel not found.");
 
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -171,7 +170,7 @@ export const TextToImage: Command = {
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
         guild: {
-          id: interaction.guildId,
+          id: interactionGuild.id,
           economyChannelId: guildInfo.channels.economyChannelId,
           currencyPluralName: guildInfo.currencyPluralName,
         },
@@ -179,6 +178,9 @@ export const TextToImage: Command = {
       cashAmount: -COMMAND_COST,
       reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${guildInfo.currencyPluralName} for generating a text to image.`,
     });
-    return;
+    return endInteraction(
+      interaction,
+      `You have been charged ${COMMAND_COST} ${guildInfo.currencyPluralName} for generating a text to image.`
+    );
   },
 };

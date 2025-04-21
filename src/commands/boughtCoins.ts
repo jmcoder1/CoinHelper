@@ -4,12 +4,13 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
-  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { endInteraction } from "./utils/endnteraction";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 
 export const BoughtCoins: Command = {
   name: "bought-coins",
@@ -31,38 +32,58 @@ export const BoughtCoins: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
-    if (!interaction.guildId) return;
+    if (!interaction.guild)
+      return endInteraction(
+        interaction,
+        "This command can only be used in a server."
+      );
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
 
     const buyerId = interaction.options.get("buyer")?.value as string;
     const amount = interaction.options.get("amount")?.value as number;
 
-    if (!interaction.guild) return null;
-    const buyer = interaction.guild.members.cache.get(buyerId)?.user;
-    if (!buyer) return null;
+    const buyer = interactionGuild.members.cache.get(buyerId)?.user;
+    if (!buyer) return endInteraction(interaction, "Buyer not found.");
 
     const titleReason = `${amount} ${guildInfo.currencyPluralName} Bought`;
-    await updateBalance(client, {
-      user: {
-        name: buyer.username,
-        id: buyer.id,
-        guild: {
-          id: interaction.guild.id,
-          currencyPluralName: guildInfo.currencyPluralName,
-          economyChannelId: guildInfo.channels.economyChannelId,
+    const [, error] = await tryAsyncAwait(() =>
+      updateBalance(client, {
+        user: {
+          name: buyer.username,
+          id: buyer.id,
+          guild: {
+            id: interactionGuild.id,
+            currencyPluralName: guildInfo.currencyPluralName,
+            economyChannelId: guildInfo.channels.economyChannelId,
+          },
+          iconURL: buyer.displayAvatarURL(),
         },
-        iconURL: buyer.displayAvatarURL(),
-      },
-      cashAmount: amount,
-      reason: titleReason,
-    });
+        cashAmount: amount,
+        reason: titleReason,
+      })
+    );
+    if (error)
+      return endInteraction(
+        interaction,
+        "Error updating balance. Please try again later."
+      );
 
-    const boughtCoinsChannel = (await getChannelById(
+    const boughtCoinsChannel = await getChannelById(
       client,
       guildInfo.channels.boughtCoinsChannelId
-    )) as TextChannel;
+    );
+    if (!boughtCoinsChannel)
+      return endInteraction(interaction, "Bought coins channel not found.");
+
+    if (!boughtCoinsChannel.isTextBased())
+      return endInteraction(
+        interaction,
+        "Bought coins channel is not a text channel."
+      );
+
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(titleReason)

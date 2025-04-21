@@ -4,8 +4,6 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
-  GuildMember,
-  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
@@ -15,6 +13,7 @@ import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoByI
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { getRandCollectionElement } from "../utils/mathUtils.ts/getRandCollectionElement";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
+import { endInteraction } from "./utils/endnteraction";
 
 export const Give: Command = {
   name: "give",
@@ -29,22 +28,38 @@ export const Give: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
-    if (!interaction.guildId) return;
+    if (!interaction.guild)
+      return endInteraction(
+        interaction,
+        "This command can only be used in a server."
+      );
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild info not found.");
 
     const amount = interaction.options.get("amount")?.value as number;
-    const cashBalance = (
-      await unbelievaboatClient.getUserBalance(
-        interaction.guildId as string,
+    const [userBalance, errorBalance] = await tryAsyncAwait(() =>
+      unbelievaboatClient.getUserBalance(
+        interactionGuild.id,
         interaction.user.id
       )
-    ).cash;
+    );
+    if (!userBalance || errorBalance)
+      return endInteraction(
+        interaction,
+        "Error fetching balance. Please try again later."
+      );
 
-    const economyChannel = (await client.channels.fetch(
+    const economyChannel = await client.channels.fetch(
       guildInfo.channels.economyChannelId
-    )) as TextChannel;
+    );
+    if (!economyChannel)
+      return endInteraction(interaction, "Economy channel not found.");
+    if (!economyChannel?.isTextBased())
+      return endInteraction(interaction, "Economy channel not found.");
+
+    const cashBalance = userBalance.cash;
     const [res, error] = await tryAsyncAwait(() =>
       validateAmount(
         {
@@ -64,48 +79,69 @@ export const Give: Command = {
         }
       )
     );
-    if (error) console.error(error);
-    if (!res) return;
+    if (!res || error) return endInteraction(interaction, error);
 
     // FIND THE ONLINE USER
-    const onlineUsers = interaction.guild?.members.cache.filter(
-      (member) => member?.presence?.status === "online" && member
+    const onlineUsers = interactionGuild?.members.cache.filter(
+      (member) =>
+        member &&
+        member.user.id != interaction.user.id &&
+        member.user.bot == false &&
+        member.presence &&
+        member.presence.status === "online"
     );
     if (!onlineUsers) return;
-    const randomMember = getRandCollectionElement(onlineUsers) as GuildMember;
+
+    const randomMember = getRandCollectionElement(onlineUsers);
+    if (!randomMember)
+      return endInteraction(interaction, "No online members found.");
 
     const playChannel = await client.channels.fetch(
       guildInfo.channels.playChannelId
     );
+    if (!playChannel)
+      return endInteraction(interaction, "Play channel not found.");
+    if (!playChannel?.isTextBased())
+      return endInteraction(interaction, "Play channel not found.");
 
-    await updateBalance(client, {
-      user: {
-        id: randomMember.user.id,
-        name: randomMember.user.displayName,
-        iconURL: randomMember.user.avatarURL() || undefined,
-        guild: {
-          id: interaction.guildId,
-          economyChannelId: guildInfo.channels.economyChannelId,
-          currencyPluralName: guildInfo.currencyPluralName,
+    const [, errorUpdateBalance] = await tryAsyncAwait(() =>
+      updateBalance(client, {
+        user: {
+          id: randomMember.user.id,
+          name: randomMember.user.displayName,
+          iconURL: randomMember.user.avatarURL() || undefined,
+          guild: {
+            id: interactionGuild.id,
+            economyChannelId: guildInfo.channels.economyChannelId,
+            currencyPluralName: guildInfo.currencyPluralName,
+          },
         },
-      },
-      cashAmount: amount,
-      reason: `<@${randomMember.user.id}> you have won ${amount} ${guildInfo.currencyPluralName}`,
-    });
-    await updateBalance(client, {
-      user: {
-        id: interaction.user.id,
-        name: interaction.user.username,
-        iconURL: interaction.user.avatarURL() || undefined,
-        guild: {
-          id: interaction.guildId,
-          economyChannelId: guildInfo.channels.economyChannelId,
-          currencyPluralName: guildInfo.currencyPluralName,
+        cashAmount: amount,
+        reason: `<@${randomMember.user.id}> you have won ${amount} ${guildInfo.currencyPluralName}`,
+      })
+    );
+    if (errorUpdateBalance)
+      return endInteraction(interaction, "Error updating balance.");
+
+    const [, errorUpdateBalance_1] = await tryAsyncAwait(() =>
+      updateBalance(client, {
+        user: {
+          id: interaction.user.id,
+          name: interaction.user.username,
+          iconURL: interaction.user.avatarURL() || undefined,
+          guild: {
+            id: interactionGuild.id,
+            economyChannelId: guildInfo.channels.economyChannelId,
+            currencyPluralName: guildInfo.currencyPluralName,
+          },
         },
-      },
-      cashAmount: -amount,
-      reason: `<@${interaction.user.id}> you have been awarded ${amount} ${guildInfo.currencyPluralName}.`,
-    });
+        cashAmount: -amount,
+        reason: `<@${interaction.user.id}> you awarded ${amount} ${guildInfo.currencyPluralName}.`,
+      })
+    );
+    if (errorUpdateBalance_1)
+      return endInteraction(interaction, "Error updating balance.");
+
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(`${guildInfo.currencyPluralName} Awarded`)
@@ -116,11 +152,9 @@ export const Give: Command = {
       })
       .setImage(getRandElement(guildInfo.images.gameWin));
 
-    if (playChannel?.isTextBased()) {
-      await playChannel.send(`<@${interaction.user.id}>`);
-      await playChannel.send({ embeds: [resultEmbed] });
-    }
+    await playChannel.send(`<@${interaction.user.id}>`);
+    await playChannel.send({ embeds: [resultEmbed] });
 
-    return;
+    return endInteraction(interaction, "Currency awarded successfully.");
   },
 };

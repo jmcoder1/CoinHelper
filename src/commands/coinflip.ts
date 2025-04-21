@@ -4,7 +4,6 @@ import {
   Client,
   CommandInteraction,
   EmbedBuilder,
-  TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
@@ -14,6 +13,7 @@ import { sleep } from "../utils/sleep";
 import { validateAmount } from "./utils/validateAmount";
 import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
+import { endInteraction } from "./utils/endnteraction";
 
 export const CoinFlip: Command = {
   name: "coin-flip",
@@ -35,10 +35,15 @@ export const CoinFlip: Command = {
     },
   ],
   run: async (client: Client, interaction: CommandInteraction) => {
-    if (!interaction.guildId) return;
+    if (!interaction.guild)
+      return endInteraction(
+        interaction,
+        "This command can only be used in a server."
+      );
 
-    const guildInfo = getGuildInfoById(interaction.guildId);
-    if (!guildInfo) return null;
+    const interactionGuild = interaction.guild;
+    const guildInfo = getGuildInfoById(interactionGuild.id);
+    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
 
     const face = interaction.options.get("face")?.value as string;
     const embed = new EmbedBuilder()
@@ -55,32 +60,40 @@ export const CoinFlip: Command = {
       face.charAt(0) !== "t" &&
       face.charAt(0) !== "T"
     ) {
+      const message = `Please enter either "heads" or "tails"`;
       embed.addFields({
         name: "Invalid face!",
-        value: `Please enter either "heads" or "tails"`,
+        value: message,
       });
       embed.setColor(0xff0000);
-      await tryAsyncAwait(() =>
-        interaction.reply({
-          ephemeral: true,
-          embeds: [embed],
-        })
-      );
-      return;
+
+      return endInteraction(interaction, message);
     }
 
     const amount = interaction.options.get("amount")?.value as number;
-    const cashBalance = (
-      await unbelievaboatClient.getUserBalance(
-        interaction.guildId as string,
+    const [userBalance, errorBalance] = await tryAsyncAwait(() =>
+      unbelievaboatClient.getUserBalance(
+        interactionGuild.id,
         interaction.user.id
       )
-    ).cash;
+    );
+    if (!userBalance || errorBalance) {
+      return endInteraction(
+        interaction,
+        "Error fetching balance. Please try again later."
+      );
+    }
 
-    const economyChannel = (await client.channels.fetch(
+    const economyChannel = await client.channels.fetch(
       guildInfo.channels.economyChannelId
-    )) as TextChannel;
-    const [res, error] = await tryAsyncAwait(() =>
+    );
+    if (!economyChannel)
+      return endInteraction(interaction, "Economy channel not found.");
+    if (!economyChannel.isTextBased())
+      return endInteraction(interaction, "Economy channel is not text-based.");
+
+    const cashBalance = userBalance.cash;
+    const [resValidateAmount, errorValidateAmount] = await tryAsyncAwait(() =>
       validateAmount(
         {
           client,
@@ -99,8 +112,8 @@ export const CoinFlip: Command = {
         }
       )
     );
-    if (error) console.error(error);
-    if (!res) return;
+    if (!resValidateAmount || errorValidateAmount)
+      return endInteraction(interaction, errorValidateAmount);
 
     const userId = interaction.user.id;
     const winChance = 0.45;
@@ -109,6 +122,10 @@ export const CoinFlip: Command = {
     const playChannel = await client.channels.fetch(
       guildInfo.channels.playChannelId
     );
+    if (!playChannel)
+      return endInteraction(interaction, "Play channel not found.");
+    if (!playChannel.isTextBased())
+      return endInteraction(interaction, "Play channel is not text-based.");
 
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
@@ -120,6 +137,9 @@ export const CoinFlip: Command = {
     interaction.reply({ embeds: [delayEmebd] });
     await sleep(2000);
 
+    let reason: string;
+    let cashAmount: number;
+
     if (won) {
       embed
         .addFields({
@@ -128,20 +148,8 @@ export const CoinFlip: Command = {
         })
         .setImage(getRandElement(guildInfo.images.gameWin));
 
-      await updateBalance(client, {
-        user: {
-          id: userId,
-          name: interaction.user.username,
-          iconURL: interaction.user.avatarURL() || undefined,
-          guild: {
-            id: interaction.guildId,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyPluralName: guildInfo.currencyPluralName,
-          },
-        },
-        cashAmount: +amount,
-        reason: `Coins flip won! <@${userId}> you have won ${amount} ${guildInfo.currencyPluralName}`,
-      });
+      reason = `Coins flip won! <@${userId}> you have won ${amount} ${guildInfo.currencyPluralName}`;
+      cashAmount = +amount;
     } else {
       embed
         .addFields({
@@ -150,27 +158,35 @@ export const CoinFlip: Command = {
         })
         .setImage(getRandElement(guildInfo.images.gameLost));
 
-      await updateBalance(client, {
+      reason = `Coins flip lost! <@${userId}> you have lost ${amount} ${guildInfo.currencyPluralName}`;
+      cashAmount = -amount;
+    }
+
+    const [, errorUpdateBalance] = await tryAsyncAwait(() =>
+      updateBalance(client, {
         user: {
           id: userId,
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
           guild: {
-            id: interaction.guildId,
+            id: interactionGuild.id,
             economyChannelId: guildInfo.channels.economyChannelId,
             currencyPluralName: guildInfo.currencyPluralName,
           },
         },
-        cashAmount: -amount,
-        reason: `Coins flip lost! <@${userId}> you have lost ${amount} ${guildInfo.currencyPluralName}`,
-      });
-    }
+        cashAmount,
+        reason,
+      })
+    );
+    if (errorUpdateBalance)
+      return endInteraction(interaction, errorUpdateBalance);
 
-    if (playChannel?.isTextBased()) {
-      await playChannel.send(`<@${interaction.user.id}>`);
-      await playChannel.send({ embeds: [embed] });
-    }
+    await playChannel.send(`<@${interaction.user.id}>`);
+    await playChannel.send({ embeds: [embed] });
 
-    return;
+    return endInteraction(
+      interaction,
+      `Coin flip result sent to ${guildInfo.channels.playChannelId}`
+    );
   },
 };
