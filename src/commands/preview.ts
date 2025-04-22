@@ -15,8 +15,8 @@ import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoByI
 import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { endInteraction } from "./utils/endnteraction";
 
-const PREVIEW_COST = 50;
-const NUM_PREVIEWS = 10;
+const PREVIEW_COST = 25;
+const NUM_PREVIEWS = 5;
 
 export const Preview: Command = {
   name: "preview",
