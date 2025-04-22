@@ -101,9 +101,8 @@ export const Request: Command = {
       const limits = modalInteraction.fields.getTextInputValue("limits");
 
       let plot = "";
-      if (type === "roleplay-request") {
+      if (type === "roleplay-request")
         plot = modalInteraction.fields.getTextInputValue("plot");
-      }
 
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)
@@ -169,7 +168,7 @@ export const Request: Command = {
 
       // Send the embed to the appropriate channel
       await targetChannel.send({
-        content: `Request submitted by <@${interaction.user.id}>`,
+        content: `Request submitted by <@${interaction.user.id}>.`,
         embeds: [embed],
       });
 
