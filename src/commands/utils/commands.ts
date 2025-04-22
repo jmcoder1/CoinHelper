@@ -4,6 +4,7 @@ import { BoughtCoins } from "../boughtCoins";
 import { CoinFlip } from "../coinflip";
 import { Give } from "../give";
 import { NewChannel } from "../newChannel";
+import { PaidRequest } from "../paidRequest";
 import { Preview } from "../preview";
 import { Request } from "../request";
 import { TextToImage } from "../textToImage";
@@ -17,6 +18,7 @@ export const Commands: Command[] = [
   Preview,
   TextToImage,
   NewChannel,
+  PaidRequest,
   Request,
   BoughtCoins,
 ];

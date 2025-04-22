@@ -21,6 +21,7 @@ export const OP_GUILD: Guild = {
     newChannelModId: "1362130473173913760",
     dmRequestChannelId: "1271843643036012625",
     roleplayRequestChannelId: "1271846932893011999",
+    sauceRequestChannelId: "1363625638468255887",
   },
   images: {
     currency: [
@@ -40,6 +41,7 @@ export const OP_GUILD: Guild = {
     previewRoleId: "1302671208386396160",
     newChannelRoleId: "1302671235444117624",
     deleteMessageRoleId: "1362894473499246835",
+    manageRequestRoleId: "1363636566160834640",
   },
   removalReasons: undefined,
 };
@@ -61,6 +63,7 @@ export const BMB_GUILD: Guild = {
     newChannelModId: "1359643627269390336",
     dmRequestChannelId: "1283252315465191566",
     roleplayRequestChannelId: "1283252490753671178",
+    sauceRequestChannelId: "1319411062189195304",
   },
   images: {
     currency: [
@@ -86,6 +89,7 @@ export const BMB_GUILD: Guild = {
     previewRoleId: "1301614832277000244",
     newChannelRoleId: "1301614797292441642",
     deleteMessageRoleId: "1362890996865695875",
+    manageRequestRoleId: "1363636001674756096",
   },
   removalReasons: [
     {
@@ -135,6 +139,7 @@ export const Tt_GUILD: Guild = {
     newChannelModId: "1362130610595827863",
     dmRequestChannelId: "1323455646087123006",
     roleplayRequestChannelId: "1323455695319732244",
+    sauceRequestChannelId: "1323455587736096928",
   },
   images: {
     currency: [
@@ -160,6 +165,7 @@ export const Tt_GUILD: Guild = {
     previewRoleId: "1323742269005893652",
     newChannelRoleId: "1323046507552702536",
     deleteMessageRoleId: "1362893885528867086",
+    manageRequestRoleId: "1363636851793199314",
   },
   removalReasons: undefined,
 };

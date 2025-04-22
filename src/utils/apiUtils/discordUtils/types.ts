@@ -15,6 +15,7 @@ export interface Guild {
     newChannelModId: string;
     dmRequestChannelId: string;
     roleplayRequestChannelId: string;
+    sauceRequestChannelId: string;
   };
   images: {
     currency: string[];
@@ -27,6 +28,7 @@ export interface Guild {
     previewRoleId: string;
     newChannelRoleId: string;
     deleteMessageRoleId: string;
+    manageRequestRoleId: string;
   };
   removalReasons:
     | {
