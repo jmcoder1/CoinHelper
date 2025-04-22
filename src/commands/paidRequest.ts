@@ -86,11 +86,22 @@ export const PaidRequest: Command = {
     const typeValue = type?.value as string;
     if (!typeValue) return endInteraction(interaction, "Type not found.");
 
-    if (typeValue === "sauce-request") {
+    if (
+      typeValue === "sauce-request" ||
+      typeValue === "translation-request" ||
+      typeValue === "caption-request"
+    ) {
       try {
+        const embedTitle =
+          typeValue === "sauce-request"
+            ? "Sauce Request"
+            : typeValue === "translation-request"
+            ? "Translation Request"
+            : "Caption Request";
+
         const embed = new EmbedBuilder()
           .setColor(0x0099ff)
-          .setTitle("Sauce Request")
+          .setTitle(embedTitle)
           .setAuthor({
             name: interaction.user.username,
             iconURL: interaction.user.avatarURL() || undefined,
@@ -101,9 +112,14 @@ export const PaidRequest: Command = {
             inline: false,
           });
 
-        const channel = interactionGuild.channels.cache.get(
-          guildInfo.channels.sauceRequestChannelId
-        );
+        const channelId =
+          typeValue === "sauce-request"
+            ? guildInfo.channels.sauceRequestChannelId
+            : typeValue === "translation-request"
+            ? guildInfo.channels.translationRequestChannelId
+            : guildInfo.channels.captionRequestChannelId;
+
+        const channel = interactionGuild.channels.cache.get(channelId);
         if (!channel || !channel.isTextBased())
           return endInteraction(interaction, "Channel not found.");
 
@@ -143,7 +159,7 @@ export const PaidRequest: Command = {
             iconURL: interaction.user.displayAvatarURL(),
           },
           cashAmount: -amount,
-          reason: `Sauce request created in <#${channel.id}?`,
+          reason: `${embedTitle} created in <#${channel.id}>`,
         });
 
         // Handle button interactions

@@ -22,6 +22,8 @@ export const OP_GUILD: Guild = {
     dmRequestChannelId: "1271843643036012625",
     roleplayRequestChannelId: "1271846932893011999",
     sauceRequestChannelId: "1363625638468255887",
+    captionRequestChannelId: "",
+    translationRequestChannelId: "",
   },
   images: {
     currency: [
@@ -64,6 +66,8 @@ export const BMB_GUILD: Guild = {
     dmRequestChannelId: "1283252315465191566",
     roleplayRequestChannelId: "1283252490753671178",
     sauceRequestChannelId: "1319411062189195304",
+    captionRequestChannelId: "1362188356024406117",
+    translationRequestChannelId: "1318962911380635648",
   },
   images: {
     currency: [
@@ -140,6 +144,8 @@ export const Tt_GUILD: Guild = {
     dmRequestChannelId: "1323455646087123006",
     roleplayRequestChannelId: "1323455695319732244",
     sauceRequestChannelId: "1323455587736096928",
+    captionRequestChannelId: "1364066523701973062",
+    translationRequestChannelId: "1364066632955330644",
   },
   images: {
     currency: [

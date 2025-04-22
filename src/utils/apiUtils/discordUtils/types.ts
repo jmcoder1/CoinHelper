@@ -16,6 +16,8 @@ export interface Guild {
     dmRequestChannelId: string;
     roleplayRequestChannelId: string;
     sauceRequestChannelId: string;
+    captionRequestChannelId: string;
+    translationRequestChannelId: string;
   };
   images: {
     currency: string[];
