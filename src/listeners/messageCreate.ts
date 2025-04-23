@@ -46,6 +46,33 @@ export const messageCreate: MessageCreateListener = {
         cashAmount: 25,
         reason: "New Level",
       });
+    } else if (guildInfo.channels.boughtCoinsChannelId === message.channelId) {
+      if (message.author.bot && message.author.username === "DISBOARD") {
+        // Check if the message contains the "Bump done!" text
+        if (!message.content.includes("Bump done!")) {
+          const user = message.mentions.users.first(); // Get the user who bumped
+          if (user) {
+            console.log(`${user.username} used the /bump command.`);
+            // Perform any additional actions, such as logging or rewarding the user
+
+            const BOOST_REWARD_AMOUNT = 100;
+            await updateBalance(message.client, {
+              user: {
+                id: message.author.id,
+                name: message.author.username,
+                iconURL: message.author.avatarURL() || undefined,
+                guild: {
+                  id: guildInfo.id,
+                  currencyPluralName: guildInfo.currencyPluralName,
+                  economyChannelId: guildInfo.channels.economyChannelId,
+                },
+              },
+              cashAmount: BOOST_REWARD_AMOUNT,
+              reason: `You have been rewarded ${BOOST_REWARD_AMOUNT} ${guildInfo.currencyPluralName} for boosting the server.`,
+            });
+          }
+        }
+      }
     } else {
       const num = findNumImages(message.attachments);
       if (!num || num === 0) return;
