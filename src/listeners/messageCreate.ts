@@ -20,13 +20,23 @@ export const messageCreate: MessageCreateListener = {
     if (!guildInfo) return;
 
     if (guildInfo.channels.invitesChannelId === message.channelId) {
-      const balanceUpdate = toBalanceUpdate(message.client, message.content, {
-        guildId: guildInfo.id,
-        currencyPluralName: guildInfo.currencyPluralName,
-        economyChannelId: guildInfo.channels.economyChannelId,
-      });
+      const balanceUpdate = toBalanceUpdate(message.client, message.content);
       if (balanceUpdate)
-        await updateBalance(message.client, { ...balanceUpdate });
+        await updateBalance(message.client, {
+          cashAmount: balanceUpdate.cashAmount,
+          user: {
+            id: balanceUpdate.user.id,
+            name: balanceUpdate.user.name,
+            iconURL: balanceUpdate.user.iconURL,
+            guild: {
+              id: guildInfo.id,
+              currencyPluralName: guildInfo.currencyPluralName,
+              currencyImage: guildInfo.images.currency[0],
+              economyChannelId: guildInfo.channels.economyChannelId,
+            },
+          },
+          reason: balanceUpdate.reason,
+        });
     } else if (guildInfo.channels.levelsChannelId === message.channelId) {
       const recipientMention = message.content.split(" ")[0];
       const recipientUserId = toUserId(recipientMention);
@@ -39,6 +49,7 @@ export const messageCreate: MessageCreateListener = {
           guild: {
             id: guildInfo.id,
             currencyPluralName: guildInfo.currencyPluralName,
+            currencyImage: guildInfo.images.currency[0],
             economyChannelId: guildInfo.channels.economyChannelId,
           },
           iconURL: user.avatarURL() || undefined,
@@ -64,6 +75,7 @@ export const messageCreate: MessageCreateListener = {
                 guild: {
                   id: guildInfo.id,
                   currencyPluralName: guildInfo.currencyPluralName,
+                  currencyImage: guildInfo.images.currency[0],
                   economyChannelId: guildInfo.channels.economyChannelId,
                 },
               },
@@ -96,6 +108,7 @@ export const messageCreate: MessageCreateListener = {
           guild: {
             id: guildInfo.id,
             currencyPluralName: guildInfo.currencyPluralName,
+            currencyImage: guildInfo.images.currency[0],
             economyChannelId: guildInfo.channels.economyChannelId,
           },
         },

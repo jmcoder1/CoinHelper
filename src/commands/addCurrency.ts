@@ -61,6 +61,7 @@ export const AddCurrency: Command = {
             id: interactionGuild.id,
             currencyPluralName: guildInfo.currencyPluralName,
             economyChannelId: guildInfo.channels.economyChannelId,
+            currencyImage: guildInfo.images.currency[0],
           },
           iconURL: recipient.displayAvatarURL(),
         },

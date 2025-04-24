@@ -22,12 +22,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> just joined. They were invited by <@1206422067919061032> who now has 12 invites!",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "<@1057036912210231437> just joined. They were invited by <@1206422067919061032> who now has 12 invites!"
       )
     ).toEqual({
       cashAmount: 100,
@@ -35,11 +30,6 @@ describe("toBalanceUpdate from strings", () => {
         id: "1057036912210231437",
         name: "bobicus",
         iconURL: "testdoao",
-        guild: {
-          id: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        },
       },
       reason: "join <@1057036912210231437>",
     });
@@ -50,12 +40,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has invited himself!",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "<@1057036912210231437> has invited himself!"
       )
     ).toEqual(null);
   });
@@ -64,12 +49,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "I am unable to tell you who invited <@1057036912210231437>. Maybe a temporary invite.!",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "I am unable to tell you who invited <@1057036912210231437>. Maybe a temporary invite.!"
       )
     ).toEqual(null);
   });
@@ -78,12 +58,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has arrived by using the vanity invite 12",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "<@1057036912210231437> has arrived by using the vanity invite 12"
       )
     ).toEqual(null);
   });
@@ -92,12 +67,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has left. He was invited by <@1206422067919061032>",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "<@1057036912210231437> has left. He was invited by <@1206422067919061032>"
       )
     ).toEqual({
       cashAmount: -110,
@@ -119,12 +89,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "I don't know who invited <@1057036912210231437>",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "I don't know who invited <@1057036912210231437>"
       )
     ).toEqual(null);
   });
@@ -133,12 +98,7 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> was invited using a vanity invite.",
-        {
-          guildId: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
-        }
+        "<@1057036912210231437> was invited using a vanity invite."
       )
     ).toEqual(null);
   });

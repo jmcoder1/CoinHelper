@@ -97,6 +97,7 @@ export const Preview: Command = {
             id: interactionGuild.id,
             economyChannelId: guildInfo.channels.economyChannelId,
             currencyPluralName: guildInfo.currencyPluralName,
+            currencyImage: guildInfo.images.currency[0],
           },
         },
 

@@ -1,8 +1,5 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { client as unbelievaboatClient } from "./client";
-import { getGuildInfoById } from "../discordUtils/getGuildInfoById";
-import { getRandElement } from "../../mathUtils.ts/getRandElement";
-import { Guild } from "../discordUtils/types";
 
 export interface UpdateBalanceParams {
   user: {
@@ -11,6 +8,7 @@ export interface UpdateBalanceParams {
     guild: {
       id: string;
       currencyPluralName: string;
+      currencyImage: string;
       economyChannelId: string;
     };
     iconURL: string | undefined;
@@ -24,22 +22,21 @@ export const updateBalance = async (
   { user, cashAmount, reason }: UpdateBalanceParams
 ) => {
   const { guild } = user;
-  const { currencyPluralName, economyChannelId } = guild;
-  const guildInfo = getGuildInfoById(guild.id) as Guild;
+  const { currencyPluralName, economyChannelId, currencyImage } = guild;
 
   const action = cashAmount > 0 ? "Added" : "Removed";
 
   const embed = new EmbedBuilder()
     .setColor(0x0099ff)
     .setTitle(`${currencyPluralName} ${action}`)
-    .setImage(getRandElement(guildInfo.images.currency))
+    .setImage(currencyImage)
     .setAuthor({
       name: user.name,
       iconURL: user.iconURL,
     })
     .addFields({
       name: action,
-      value: `<@${user.id}> your balance has been updated by ${cashAmount} ${guildInfo.currencyPluralName}`,
+      value: `<@${user.id}> your balance has been updated by ${cashAmount} ${currencyPluralName}`,
     })
     .addFields({ name: "Reason", value: reason });
 
