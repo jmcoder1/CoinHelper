@@ -1,0 +1,10 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "postgres",
+  "password": "Ji4lCA8TfitgVp2EYwNs",
+  "database": "coinhelper",
+  "entities": ["dist/entities/*.js"],
+  "migrations": ["dist/entities/migrations/*.js"]
+}

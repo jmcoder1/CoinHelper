@@ -123,6 +123,10 @@ export const BMB_GUILD: Guild = {
       title: "Inappropriate request",
       value: "Request in the wrong channel",
     },
+    {
+      title: "Repost",
+      value: "Your post is a repost",
+    },
   ],
 };
 
