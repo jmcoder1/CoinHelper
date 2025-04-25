@@ -22,5 +22,8 @@ export class GuildActivity extends BaseEntity {
   numGuildCurrencies: number;
 
   @Column({ nullable: false, default: 0 })
+  numGuildChannels: number;
+
+  @Column({ nullable: false, default: 0 })
   numRemovalReasons: number;
 }

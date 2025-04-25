@@ -1,7 +1,9 @@
 import {
+  AfterInsert,
   BaseEntity,
   Column,
   Entity,
+  getConnection,
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -23,4 +25,15 @@ export class GuildChannel extends BaseEntity {
 
   @Column({ nullable: false })
   name: string;
+
+  @AfterInsert()
+  public handleAfterInsert = async () => {
+    await getConnection().query(
+      `
+        UPDATE guild_activity
+        SET "numGuildChannels" = "numGuildChannels" + 1
+        WHERE "guildId" = ${this.guildId}
+    `
+    );
+  };
 }
