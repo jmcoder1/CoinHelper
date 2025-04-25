@@ -57,7 +57,7 @@ export const TextToImage: Command = {
             name: interaction.user.username,
             iconURL: interaction.user.avatarURL() || undefined,
           },
-          cashAmount: -1000,
+          cashAmount: -BANNED_WORD_COST,
           reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName}.`,
         });
         return endInteraction(

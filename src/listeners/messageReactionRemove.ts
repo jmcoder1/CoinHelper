@@ -29,8 +29,6 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
   ) => {
     if (reaction.emoji.name != INCREMENTOR_EMOJI) return;
     if (!reaction.message.guildId) return;
-    const guildInfo = getGuildInfoById(reaction.message.guildId);
-    if (!guildInfo) return;
 
     const message = !reaction.message.author
       ? await reaction.message.fetch()
@@ -44,6 +42,9 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
 
     // is self reacting
     if (message.author.id === user.id) return;
+
+    const guildInfo = getGuildInfoById(reaction.message.guildId);
+    if (!guildInfo) return;
 
     // has no images
     const numImages = findNumImages(message.attachments);
