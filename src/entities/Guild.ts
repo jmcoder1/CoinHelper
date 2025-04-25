@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   AfterInsert,
+  OneToOne,
 } from "typeorm";
 import { GuildActivity } from "./GuildActivity";
 
@@ -17,6 +18,12 @@ export class Guild extends BaseEntity {
 
   @Column({ nullable: false })
   name: string;
+
+  @Column({ nullable: false })
+  guildEconomyChannelId: number;
+
+  @OneToOne(() => Guild)
+  guildEconomyChannel: Guild;
 
   @AfterInsert()
   public handleAfterInsert = async () => {
