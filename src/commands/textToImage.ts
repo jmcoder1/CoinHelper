@@ -15,9 +15,13 @@ import { fetchTextToImage } from "../utils/apiUtils/novelAiUtils/endpoints/fetch
 import { uploadImage } from "../utils/apiUtils/s3Utils/uploadImage";
 import AdmZip from "adm-zip";
 import { BANNED_WORDS } from "../utils/apiUtils/novelAiUtils/constants";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { toChannelURL } from "../utils/apiUtils/discordUtils/toChannelURL";
 import { endInteraction } from "./utils/endnteraction";
+import {
+  AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 const COMMAND_COST = 25;
 const BANNED_WORD_COST = 1000;
@@ -39,8 +43,28 @@ export const TextToImage: Command = {
     if (!interaction.guild) return;
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
+
+    // Fetch the economy guild channel
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(interaction, "Economy channel not found.");
 
     for (let i = 0; i < BANNED_WORDS.length; i++) {
       const bannedWord = BANNED_WORDS[i];
@@ -49,20 +73,20 @@ export const TextToImage: Command = {
           user: {
             id: interaction.user.id,
             guild: {
-              id: interactionGuild.id,
-              economyChannelId: guildInfo.channels.economyChannelId,
-              currencyPluralName: guildInfo.currencyPluralName,
-              currencyImage: guildInfo.images.currency[0],
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
             name: interaction.user.username,
             iconURL: interaction.user.avatarURL() || undefined,
           },
           cashAmount: -BANNED_WORD_COST,
-          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName}.`,
+          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildCurrency.namePlural}.`,
         });
         return endInteraction(
           interaction,
-          `You have been penalised ${BANNED_WORD_COST} ${guildInfo.currencyPluralName} for using a banned word in your prompt.`
+          `You have been penalised ${BANNED_WORD_COST} ${guildCurrency.namePlural} for using a banned word in your prompt.`
         );
       }
     }
@@ -75,7 +99,7 @@ export const TextToImage: Command = {
     ).cash;
 
     const economyChannel = await client.channels.fetch(
-      guildInfo.channels.economyChannelId
+      economyGuildChannel.discordId
     );
     if (!economyChannel || !economyChannel.isTextBased())
       return endInteraction(interaction, "Economy channel not found.");
@@ -85,7 +109,7 @@ export const TextToImage: Command = {
         amount: COMMAND_COST,
         cost: COMMAND_COST,
         balance: cashBalance,
-        currencyPluralName: guildInfo.currencyPluralName,
+        currencyPluralName: guildCurrency.namePlural,
       })
     );
     if (!res || error) return endInteraction(interaction, error);
@@ -134,6 +158,18 @@ export const TextToImage: Command = {
     if (!currentChannel || !currentChannel.isTextBased())
       return endInteraction(interaction, "Current channel not found.");
 
+    const aiGenImageTipsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+      },
+    });
+    if (!aiGenImageTipsGuildChannel)
+      return endInteraction(
+        interaction,
+        AI_GEN_IMAGE_TIPS_CHANNEL_NAME + " channel not found."
+      );
+
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Text to image")
@@ -142,8 +178,8 @@ export const TextToImage: Command = {
       .addFields({
         name: "Need help?",
         value: `Read [📷-ai-gen-image-tips](${toChannelURL({
-          serverId: guildInfo.id,
-          channelId: guildInfo.channels.aiGenImageTipsId,
+          serverId: guild.discordId,
+          channelId: aiGenImageTipsGuildChannel.discordId,
         })})`,
         inline: true,
       });
@@ -159,18 +195,18 @@ export const TextToImage: Command = {
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
         guild: {
-          id: interactionGuild.id,
-          economyChannelId: guildInfo.channels.economyChannelId,
-          currencyPluralName: guildInfo.currencyPluralName,
-          currencyImage: guildInfo.images.currency[0],
+          id: guild.discordId,
+          currencyPluralName: guildCurrency.namePlural,
+          economyChannelId: economyGuildChannel.discordId,
+          currencyImage: guildCurrency.iconSrc,
         },
       },
       cashAmount: -COMMAND_COST,
-      reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${guildInfo.currencyPluralName} for generating a text to image.`,
+      reason: `<@${interaction.user.id}> you have been charged ${COMMAND_COST} ${guildCurrency.namePlural} for generating a text to image.`,
     });
     return endInteraction(
       interaction,
-      `You have been charged ${COMMAND_COST} ${guildInfo.currencyPluralName} for generating a text to image.`
+      `You have been charged ${COMMAND_COST} ${guildCurrency.namePlural} for generating a text to image.`
     );
   },
 };

@@ -11,9 +11,12 @@ import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUt
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { sleep } from "../utils/sleep";
 import { validateAmount } from "./utils/validateAmount";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { endInteraction } from "./utils/endnteraction";
+import {
+  ECONOMY_CHANNEL_NAME,
+  PLAY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 export const CoinFlip: Command = {
   name: "coin-flip",
@@ -42,14 +45,24 @@ export const CoinFlip: Command = {
       );
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const face = interaction.options.get("face")?.value as string;
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Coin Flip")
-      .setImage(getRandElement(guildInfo.images.currency))
+      .setImage(guildCurrency.iconSrc)
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.avatarURL() || undefined,
@@ -84,8 +97,20 @@ export const CoinFlip: Command = {
       );
     }
 
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(
+        interaction,
+        ECONOMY_CHANNEL_NAME + " channel not found."
+      );
+
     const economyChannel = await client.channels.fetch(
-      guildInfo.channels.economyChannelId
+      economyGuildChannel.discordId
     );
     if (!economyChannel)
       return endInteraction(interaction, "Economy channel not found.");
@@ -98,7 +123,7 @@ export const CoinFlip: Command = {
         amount,
         balance: cashBalance,
         cost: 50,
-        currencyPluralName: guildInfo.currencyPluralName,
+        currencyPluralName: guildCurrency.namePlural,
       })
     );
     if (!resValidateAmount || errorValidateAmount)
@@ -108,9 +133,19 @@ export const CoinFlip: Command = {
     const winChance = 0.45;
     const won = Math.random() <= winChance;
 
-    const playChannel = await client.channels.fetch(
-      guildInfo.channels.playChannelId
-    );
+    const playGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: PLAY_CHANNEL_NAME,
+      },
+    });
+    if (!playGuildChannel)
+      return endInteraction(
+        interaction,
+        PLAY_CHANNEL_NAME + " channel not found."
+      );
+
+    const playChannel = await client.channels.fetch(playGuildChannel.discordId);
     if (!playChannel)
       return endInteraction(interaction, "Play channel not found.");
     if (!playChannel.isTextBased())
@@ -119,10 +154,10 @@ export const CoinFlip: Command = {
     const delayEmebd = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Flipping")
-      .setImage(getRandElement(guildInfo.images.coinFlip))
-      .setDescription(
-        `Check the result in <#${guildInfo.channels.playChannelId}>`
-      );
+      .setImage(
+        "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWk3dWhkamd3OGRpa2ZyeHphY2N6Y3QwemVidWxrODdsdTgyanZ5cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6jqfXikz9yzhS/giphy.webp"
+      )
+      .setDescription(`Check the result in <#${playGuildChannel.discordId}>`);
     interaction.reply({ embeds: [delayEmebd] });
     await sleep(2000);
 
@@ -133,21 +168,25 @@ export const CoinFlip: Command = {
       embed
         .addFields({
           name: "You won",
-          value: `You have been awarded ${amount} ${guildInfo.currencyPluralName}`,
+          value: `You have been awarded ${amount} ${guildCurrency.namePlural}`,
         })
-        .setImage(getRandElement(guildInfo.images.gameWin));
+        .setImage(
+          "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjlsMDlzcHQ1bHQ5a2g2cWhpbHh4MTl0YTQ0bjRyZnA5Yjc5ejVlZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/fNt9GxIiR6OMU/giphy.webp"
+        );
 
-      reason = `Coins flip won! <@${userId}> you have won ${amount} ${guildInfo.currencyPluralName}`;
+      reason = `Coins flip won! <@${userId}> you have won ${amount} ${guildCurrency.namePlural}`;
       cashAmount = +amount;
     } else {
       embed
         .addFields({
           name: "You lost",
-          value: `You have lost ${amount} ${guildInfo.currencyPluralName}`,
+          value: `You have lost ${amount} ${guildCurrency.namePlural}`,
         })
-        .setImage(getRandElement(guildInfo.images.gameLost));
+        .setImage(
+          "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmgxYjN2Zm5senptN3VkZDhuNTgwdnJnc29nOXQ1NXR6NGxhNjAybCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKr3nzbh5WgCFxe/giphy.webp"
+        );
 
-      reason = `Coins flip lost! <@${userId}> you have lost ${amount} ${guildInfo.currencyPluralName}`;
+      reason = `Coins flip lost! <@${userId}> you have lost ${amount} ${guildCurrency.namePlural}`;
       cashAmount = -amount;
     }
 
@@ -158,10 +197,10 @@ export const CoinFlip: Command = {
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
           guild: {
-            id: interactionGuild.id,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount,
@@ -176,7 +215,7 @@ export const CoinFlip: Command = {
 
     return endInteraction(
       interaction,
-      `Coin flip result sent to ${guildInfo.channels.playChannelId}`
+      `Coin flip result sent to ${playChannel.id}`
     );
   },
 };

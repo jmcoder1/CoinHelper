@@ -11,9 +11,13 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { endInteraction } from "./utils/endnteraction";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  ECONOMY_CHANNEL_NAME,
+  PREVIEW_CHANNEL_NAME,
+  PREVIEW_ROLE_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 const PREVIEW_COST = 25;
 const NUM_PREVIEWS = 5;
@@ -35,8 +39,18 @@ export const Preview: Command = {
       return endInteraction(interaction, "Guild not found.");
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
@@ -71,13 +85,31 @@ export const Preview: Command = {
     if (files.length < NUM_PREVIEWS)
       return endInteraction(interaction, "Not enough images.");
 
+    const previewGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: PREVIEW_CHANNEL_NAME,
+      },
+    });
+    if (!previewGuildChannel)
+      return endInteraction(
+        interaction,
+        ECONOMY_CHANNEL_NAME + " channel not found."
+      );
+
+    const previewChannel = await getChannelById(
+      client,
+      previewGuildChannel.discordId
+    );
+    if (!previewChannel || !previewChannel.isTextBased())
+      return endInteraction(interaction, "Preview channel not found.");
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Preview channel")
-      .setImage(getRandElement(guildInfo.images.currency))
+      .setImage(guildCurrency.namePlural)
       .addFields({
         name: `${channel.name}`,
-        value: `A preview of your requested channel has been granted! Please check in <#${guildInfo.channels.previewChannelId}>`,
+        value: `A preview of your requested channel has been granted! Please check in <#${previewChannel.id}>`,
       });
     await tryAsyncAwait(() =>
       interaction.reply({
@@ -86,6 +118,14 @@ export const Preview: Command = {
       })
     );
     const userId = interaction.user.id;
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(interaction, "Economy channel not found.");
 
     const [, errorBalance] = await tryAsyncAwait(() =>
       updateBalance(client, {
@@ -94,15 +134,15 @@ export const Preview: Command = {
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
           guild: {
-            id: interactionGuild.id,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
 
         cashAmount: -PREVIEW_COST,
-        reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildInfo.currencyPluralName} for requesting a preview.`,
+        reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildCurrency.namePlural} for requesting a preview.`,
       })
     );
     if (!errorBalance)
@@ -125,15 +165,20 @@ export const Preview: Command = {
     if (randomFiles.length < NUM_PREVIEWS)
       return endInteraction(interaction, "Not enough images.");
 
-    const previewChannel = await getChannelById(
-      client,
-      guildInfo.channels.previewChannelId
-    );
-    if (!previewChannel || !previewChannel.isTextBased())
-      return endInteraction(interaction, "Preview channel not found.");
+    const previewGuildRole = await prisma.guildRole.findFirst({
+      where: {
+        guildId: guild.id,
+        name: PREVIEW_ROLE_NAME,
+      },
+    });
+    if (!previewGuildRole)
+      return endInteraction(
+        interaction,
+        PREVIEW_ROLE_NAME + " role not found."
+      );
 
     previewChannel.send({
-      content: `<@&${guildInfo.roles.previewRoleId}> here is your preview of <#${channelId}>`,
+      content: `<@&${previewGuildRole.discordId}> here is your preview of <#${channelId}>`,
       files: randomFiles,
     });
 

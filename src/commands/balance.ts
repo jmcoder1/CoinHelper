@@ -6,10 +6,10 @@ import {
 } from "discord.js";
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { endInteraction } from "./utils/endnteraction";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 
 export const Balance: Command = {
   name: "balance",
@@ -24,17 +24,39 @@ export const Balance: Command = {
       );
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
 
     const balance = await unbelievaboatClient.getUserBalance(
       interactionGuild.id,
       interaction.user.id
     );
 
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
+
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(
+        interaction,
+        ECONOMY_CHANNEL_NAME + " channel not found."
+      );
+
     const economyChannel = await getChannelById(
       client,
-      guildInfo.channels.economyChannelId
+      economyGuildChannel.discordId
     );
     if (!economyChannel)
       return endInteraction(interaction, "Economy channel not found.");
@@ -45,14 +67,14 @@ export const Balance: Command = {
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Balance")
-      .setImage(getRandElement(guildInfo.images.currency))
+      .setImage(guildCurrency.namePlural)
       .addFields({
         name: "Total balance",
-        value: `${balance.total} ${guildInfo.currencyPluralName}`,
+        value: `${balance.total} ${guildCurrency.namePlural}`,
       })
       .addFields({
         name: "Cash balance",
-        value: `${balance.cash} ${guildInfo.currencyPluralName}`,
+        value: `${balance.cash} ${guildCurrency.namePlural}`,
       })
       .addFields({
         name: "Rank",
@@ -64,7 +86,7 @@ export const Balance: Command = {
 
     return endInteraction(
       interaction,
-      `Check your balance in <#${guildInfo.channels.economyChannelId}>!`
+      `Check your balance in <#${economyGuildChannel.discordId}>!`
     );
   },
 };

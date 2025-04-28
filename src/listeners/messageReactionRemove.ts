@@ -7,9 +7,10 @@ import {
   User,
 } from "discord.js";
 import { Listener } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
+import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 export interface MessageReactionRemoveListener extends Listener {
   event: Events.MessageReactionRemove;
@@ -43,8 +44,26 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
     // is self reacting
     if (message.author.id === user.id) return;
 
-    const guildInfo = getGuildInfoById(reaction.message.guildId);
-    if (!guildInfo) return;
+    // Fetch the guild
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: reaction.message.guildId },
+    });
+    if (!guild) return;
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency) return;
+
+    // Fetch the economy guild channel
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel) return;
 
     // has no images
     const numImages = findNumImages(message.attachments);
@@ -56,10 +75,10 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
         name: message.author.username,
         iconURL: message.author.avatarURL() || undefined,
         guild: {
-          id: guildInfo.id,
-          currencyPluralName: guildInfo.currencyPluralName,
-          economyChannelId: guildInfo.channels.economyChannelId,
-          currencyImage: guildInfo.images.currency[0],
+          id: guild.discordId,
+          currencyPluralName: guildCurrency.namePlural,
+          economyChannelId: economyGuildChannel.discordId,
+          currencyImage: guildCurrency.iconSrc,
         },
       },
       cashAmount: -5,

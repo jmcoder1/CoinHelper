@@ -6,11 +6,15 @@ import {
   EmbedBuilder,
 } from "discord.js";
 import { Command } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  BOUGHT_COINS_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export const BoughtCoins: Command = {
   name: "bought-coins",
@@ -39,8 +43,18 @@ export const BoughtCoins: Command = {
       );
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const buyerId = interaction.options.get("buyer")?.value as string;
     const amount = interaction.options.get("amount")?.value as number;
@@ -48,17 +62,29 @@ export const BoughtCoins: Command = {
     const buyer = interactionGuild.members.cache.get(buyerId)?.user;
     if (!buyer) return endInteraction(interaction, "Buyer not found.");
 
-    const titleReason = `${amount} ${guildInfo.currencyPluralName} Bought`;
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(
+        interaction,
+        ECONOMY_CHANNEL_NAME + " channel not found."
+      );
+
+    const titleReason = `${amount} ${guildCurrency.namePlural} Bought`;
     const [, error] = await tryAsyncAwait(() =>
       updateBalance(client, {
         user: {
           name: buyer.username,
           id: buyer.id,
           guild: {
-            id: interactionGuild.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
           iconURL: buyer.displayAvatarURL(),
         },
@@ -72,9 +98,21 @@ export const BoughtCoins: Command = {
         "Error updating balance. Please try again later."
       );
 
+    const boughtCoinsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: BOUGHT_COINS_CHANNEL_NAME,
+      },
+    });
+    if (!boughtCoinsGuildChannel)
+      return endInteraction(
+        interaction,
+        BOUGHT_COINS_CHANNEL_NAME + " channel not found."
+      );
+
     const boughtCoinsChannel = await getChannelById(
       client,
-      guildInfo.channels.boughtCoinsChannelId
+      boughtCoinsGuildChannel.discordId
     );
     if (!boughtCoinsChannel)
       return endInteraction(interaction, "Bought coins channel not found.");
@@ -88,7 +126,7 @@ export const BoughtCoins: Command = {
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(titleReason)
-      .setImage(guildInfo.images.currency[0])
+      .setImage(guildCurrency.iconSrc)
       .setAuthor({
         name: buyer.username,
         iconURL: buyer.avatarURL() || undefined,

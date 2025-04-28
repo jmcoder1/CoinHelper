@@ -11,10 +11,15 @@ import {
   TextInputStyle,
 } from "discord.js";
 import { Command } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  DM_REQUEST_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+  ROLEPLAY_REQUEST_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export const Request: Command = {
   name: "request",
@@ -43,8 +48,18 @@ export const Request: Command = {
       return endInteraction(interaction, "Guild not found.");
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const type = interaction.options.get("type")?.value as string;
 
@@ -85,10 +100,34 @@ export const Request: Command = {
 
     await interaction.showModal(modal);
 
+    const dmRequestGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: DM_REQUEST_CHANNEL_NAME,
+      },
+    });
+    if (!dmRequestGuildChannel)
+      return endInteraction(
+        interaction,
+        DM_REQUEST_CHANNEL_NAME + " channel not found."
+      );
+
+    const roleplayRequestGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ROLEPLAY_REQUEST_CHANNEL_NAME,
+      },
+    });
+    if (!roleplayRequestGuildChannel)
+      return endInteraction(
+        interaction,
+        ROLEPLAY_REQUEST_CHANNEL_NAME + " channel not found."
+      );
+
     const channelId =
       type === "dm-request"
-        ? guildInfo.channels.dmRequestChannelId
-        : guildInfo.channels.roleplayRequestChannelId;
+        ? dmRequestGuildChannel.discordId
+        : roleplayRequestGuildChannel.discordId;
 
     try {
       const modalInteraction = await interaction.awaitModalSubmit({
@@ -144,6 +183,18 @@ export const Request: Command = {
         );
       });
 
+      const economyGuildChannel = await prisma.guildChannel.findFirst({
+        where: {
+          guildId: guild.id,
+          name: ECONOMY_CHANNEL_NAME,
+        },
+      });
+      if (!economyGuildChannel)
+        return endInteraction(
+          interaction,
+          ECONOMY_CHANNEL_NAME + " channel not found."
+        );
+
       if (hasRecentRequest) {
         // Deduct 100 coins from the user
         const [, errorBalance] = await tryAsyncAwait(() =>
@@ -153,10 +204,10 @@ export const Request: Command = {
               name: interaction.user.username,
               iconURL: userAvatarURL,
               guild: {
-                id: guildInfo.id,
-                currencyPluralName: guildInfo.currencyPluralName,
-                economyChannelId: guildInfo.channels.economyChannelId,
-                currencyImage: guildInfo.images.currency[0],
+                id: guild.discordId,
+                currencyPluralName: guildCurrency.namePlural,
+                economyChannelId: economyGuildChannel.discordId,
+                currencyImage: guildCurrency.iconSrc,
               },
             },
             cashAmount: -100,

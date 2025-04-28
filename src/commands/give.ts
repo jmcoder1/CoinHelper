@@ -9,11 +9,14 @@ import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { validateAmount } from "./utils/validateAmount";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
-import { getRandElement } from "../utils/mathUtils.ts/getRandElement";
 import { getRandCollectionElement } from "../utils/mathUtils.ts/getRandCollectionElement";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { endInteraction } from "./utils/endnteraction";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  ECONOMY_CHANNEL_NAME,
+  PLAY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export const Give: Command = {
   name: "give",
@@ -35,8 +38,18 @@ export const Give: Command = {
       );
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild info not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const amount = interaction.options.get("amount")?.value as number;
     const [userBalance, errorBalance] = await tryAsyncAwait(() =>
@@ -51,8 +64,17 @@ export const Give: Command = {
         "Error fetching balance. Please try again later."
       );
 
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(interaction, "Economy channel not found.");
+
     const economyChannel = await client.channels.fetch(
-      guildInfo.channels.economyChannelId
+      economyGuildChannel.discordId
     );
     if (!economyChannel)
       return endInteraction(interaction, "Economy channel not found.");
@@ -65,7 +87,7 @@ export const Give: Command = {
         amount,
         balance: cashBalance,
         cost: 50,
-        currencyPluralName: guildInfo.currencyPluralName,
+        currencyPluralName: guildCurrency.namePlural,
       })
     );
     if (!res || error) return endInteraction(interaction, error);
@@ -85,9 +107,19 @@ export const Give: Command = {
     if (!randomMember)
       return endInteraction(interaction, "No online members found.");
 
-    const playChannel = await client.channels.fetch(
-      guildInfo.channels.playChannelId
-    );
+    const playGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: PLAY_CHANNEL_NAME,
+      },
+    });
+    if (!playGuildChannel)
+      return endInteraction(
+        interaction,
+        PLAY_CHANNEL_NAME + " channel not found."
+      );
+
+    const playChannel = await client.channels.fetch(playGuildChannel.discordId);
     if (!playChannel)
       return endInteraction(interaction, "Play channel not found.");
     if (!playChannel?.isTextBased())
@@ -100,14 +132,14 @@ export const Give: Command = {
           name: randomMember.user.displayName,
           iconURL: randomMember.user.avatarURL() || undefined,
           guild: {
-            id: interactionGuild.id,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount: amount,
-        reason: `<@${randomMember.user.id}> you have won ${amount} ${guildInfo.currencyPluralName}`,
+        reason: `<@${randomMember.user.id}> you have won ${amount} ${guildCurrency.namePlural}`,
       })
     );
     if (errorUpdateBalance)
@@ -120,14 +152,14 @@ export const Give: Command = {
           name: interaction.user.username,
           iconURL: interaction.user.avatarURL() || undefined,
           guild: {
-            id: interactionGuild.id,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount: -amount,
-        reason: `<@${interaction.user.id}> you awarded ${amount} ${guildInfo.currencyPluralName}.`,
+        reason: `<@${interaction.user.id}> you awarded ${amount} ${guildCurrency.namePlural}.`,
       })
     );
     if (errorUpdateBalance_1)
@@ -135,17 +167,22 @@ export const Give: Command = {
 
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
-      .setTitle(`${guildInfo.currencyPluralName} Awarded`)
-      .setImage(getRandElement(guildInfo.images.currency))
+      .setTitle(`${guildCurrency.namePlural} Awarded`)
+      .setImage(guildCurrency.iconSrc)
       .addFields({
         name: "You won",
-        value: `<@${randomMember.user.id}> you have been randomly awarded ${amount} ${guildInfo.currencyPluralName} by <@${interaction.user.id}>`,
+        value: `<@${randomMember.user.id}> you have been randomly awarded ${amount} ${guildCurrency.namePlural} by <@${interaction.user.id}>`,
       })
-      .setImage(getRandElement(guildInfo.images.gameWin));
+      .setImage(
+        "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjlsMDlzcHQ1bHQ5a2g2cWhpbHh4MTl0YTQ0bjRyZnA5Yjc5ejVlZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/fNt9GxIiR6OMU/giphy.webp"
+      );
 
     await playChannel.send(`<@${interaction.user.id}>`);
     await playChannel.send({ embeds: [resultEmbed] });
 
-    return endInteraction(interaction, "Currency awarded successfully.");
+    return endInteraction(
+      interaction,
+      guildCurrency.namePlural + " awarded successfully."
+    );
   },
 };

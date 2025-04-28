@@ -11,9 +11,13 @@ import {
   User,
 } from "discord.js";
 import { Listener } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  DELETE_MESSAGE_ROLE_NAME,
+  ECONOMY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export interface MessageReactionAddListener extends Listener {
   event: Events.MessageReactionAdd;
@@ -51,8 +55,6 @@ export const messageReactionAdd: MessageReactionAddListener = {
       }
 
     if (!reaction.message.guildId) return;
-    const guildInfo = getGuildInfoById(reaction.message.guildId);
-    if (!guildInfo) return;
 
     const message = !reaction.message.author
       ? await reaction.message.fetch()
@@ -67,6 +69,29 @@ export const messageReactionAdd: MessageReactionAddListener = {
     // is self reacting
     if (message.author.id === user.id) return;
 
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: reaction.message.guildId },
+    });
+    if (!guild) return;
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency) return;
+
+    // Fetch the economy guild channel
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel) return;
+
+    // Check if the required data exists
+    if (!guildCurrency || !economyGuildChannel) return;
+
     if (reaction.emoji.name === INCREMENTOR_EMOJI) {
       // has no images
       const numImages = findNumImages(message.attachments);
@@ -78,10 +103,10 @@ export const messageReactionAdd: MessageReactionAddListener = {
           name: message.author.username,
           iconURL: message.author.avatarURL() || undefined,
           guild: {
-            id: guildInfo.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount: 5,
@@ -102,10 +127,10 @@ export const messageReactionAdd: MessageReactionAddListener = {
             name: message.author.username,
             iconURL: message.author.avatarURL() || undefined,
             guild: {
-              id: guildInfo.id,
-              currencyPluralName: guildInfo.currencyPluralName,
-              economyChannelId: guildInfo.channels.economyChannelId,
-              currencyImage: guildInfo.images.currency[0],
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
           },
           cashAmount: 100,
@@ -118,31 +143,41 @@ export const messageReactionAdd: MessageReactionAddListener = {
             name: message.author.username,
             iconURL: message.author.avatarURL() || undefined,
             guild: {
-              id: guildInfo.id,
-              currencyPluralName: guildInfo.currencyPluralName,
-              economyChannelId: guildInfo.channels.economyChannelId,
-              currencyImage: guildInfo.images.currency[0],
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
           },
           cashAmount: 50,
           reason: `Your message ${message.url} received more than 10 reactions!`,
         });
       }
-    } else if (
-      guildInfo.removalReasons &&
-      guildInfo.removalReasons.length > 0 &&
-      reaction.emoji.name === QUESTION_EMOJI
-    ) {
+    } else if (reaction.emoji.name === QUESTION_EMOJI) {
       const member = await reaction.message.guild?.members.fetch(user.id);
-      const requiredRoleId = guildInfo.roles.deleteMessageRoleId; // Replace with the actual role ID
+
+      const deleteMessageGuildRole = await prisma.guildRole.findFirst({
+        where: {
+          guildId: guild.id,
+          name: DELETE_MESSAGE_ROLE_NAME,
+        },
+      });
+      if (!deleteMessageGuildRole) return;
+
+      const requiredRoleId = deleteMessageGuildRole.discordId;
       if (!member?.roles.cache.has(requiredRoleId)) return;
 
-      // Create a dropdown (select menu)
-      const options = guildInfo.removalReasons.map((reaction) => {
+      const guildRemovalReasons = await prisma.guildRemovalReason.findMany({
+        where: { guildId: guild.id },
+      });
+      if (!guildRemovalReasons) return;
+
+      // Create a dropdown (select mencu)
+      const options = guildRemovalReasons.map((removalReason: any) => {
         return {
-          label: reaction.title,
-          value: reaction.value,
-          description: reaction.value,
+          label: removalReason.title,
+          value: removalReason.value,
+          description: removalReason.description,
         };
       });
       const selectMenu = new StringSelectMenuBuilder()

@@ -14,11 +14,18 @@ import {
   TextInputStyle,
 } from "discord.js";
 import { Command } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { validateAmount } from "./utils/validateAmount";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { endInteraction } from "./utils/endnteraction";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  CAPTION_REQUEST_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+  MANAGE_REQUEST_ROLE_NAME,
+  SAUCE_REQUEST_CHANNEL_NAME,
+  TRANSLATION_REQUEST_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export const PaidRequest: Command = {
   name: "paid-request",
@@ -57,8 +64,18 @@ export const PaidRequest: Command = {
       return endInteraction(interaction, "Guild not found.");
 
     const interactionGuild = interaction.guild;
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
 
     const cashBalance = (
       await unbelievaboatClient.getUserBalance(
@@ -76,7 +93,7 @@ export const PaidRequest: Command = {
       amount,
       balance: cashBalance,
       cost: 50,
-      currencyPluralName: guildInfo.currencyPluralName,
+      currencyPluralName: guildCurrency.namePlural,
     });
     if (!isValidAmount) return true;
 
@@ -108,16 +125,65 @@ export const PaidRequest: Command = {
           })
           .addFields({
             name: "Bounty",
-            value: `${amount} ${guildInfo.currencyPluralName}`,
+            value: `${amount} ${guildCurrency.namePlural}`,
             inline: false,
           });
 
+        const economyGuildChannel = await prisma.guildChannel.findFirst({
+          where: {
+            guildId: guild.id,
+            name: ECONOMY_CHANNEL_NAME,
+          },
+        });
+        if (!economyGuildChannel)
+          return endInteraction(
+            interaction,
+            ECONOMY_CHANNEL_NAME + " channel not found."
+          );
+
+        const sauceRequestGuildChannel = await prisma.guildChannel.findFirst({
+          where: {
+            guildId: guild.id,
+            name: SAUCE_REQUEST_CHANNEL_NAME,
+          },
+        });
+        if (!sauceRequestGuildChannel)
+          return endInteraction(
+            interaction,
+            SAUCE_REQUEST_CHANNEL_NAME + " channel not found."
+          );
+
+        const translationRequestGuildChannel =
+          await prisma.guildChannel.findFirst({
+            where: {
+              guildId: guild.id,
+              name: TRANSLATION_REQUEST_CHANNEL_NAME,
+            },
+          });
+        if (!translationRequestGuildChannel)
+          return endInteraction(
+            interaction,
+            TRANSLATION_REQUEST_CHANNEL_NAME + " channel not found."
+          );
+
+        const captionRequestGuildChannel = await prisma.guildChannel.findFirst({
+          where: {
+            guildId: guild.id,
+            name: CAPTION_REQUEST_CHANNEL_NAME,
+          },
+        });
+        if (!captionRequestGuildChannel)
+          return endInteraction(
+            interaction,
+            CAPTION_REQUEST_CHANNEL_NAME + " channel not found."
+          );
+
         const channelId =
           typeValue === "sauce-request"
-            ? guildInfo.channels.sauceRequestChannelId
+            ? sauceRequestGuildChannel.discordId
             : typeValue === "translation-request"
-            ? guildInfo.channels.translationRequestChannelId
-            : guildInfo.channels.captionRequestChannelId;
+            ? translationRequestGuildChannel.discordId
+            : captionRequestGuildChannel.discordId;
 
         const channel = interactionGuild.channels.cache.get(channelId);
         if (!channel || !channel.isTextBased())
@@ -125,7 +191,7 @@ export const PaidRequest: Command = {
 
         const requestMessage = await channel.send({
           embeds: [embed],
-          content: `Respond to this request in the thread below and earn ${amount} ${guildInfo.currencyPluralName} if your response is accepted!`,
+          content: `Respond to this request in the thread below and earn ${amount} ${guildCurrency.namePlural} if your response is accepted!`,
           components: [
             new ActionRowBuilder<ButtonBuilder>().addComponents(
               new ButtonBuilder()
@@ -152,10 +218,10 @@ export const PaidRequest: Command = {
             name: interaction.user.username,
             id: interaction.user.id,
             guild: {
-              id: interactionGuild.id,
-              currencyPluralName: guildInfo.currencyPluralName,
-              economyChannelId: guildInfo.channels.economyChannelId,
-              currencyImage: guildInfo.images.currency[0],
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
             iconURL: interaction.user.displayAvatarURL(),
           },
@@ -185,11 +251,17 @@ export const PaidRequest: Command = {
               return;
             }
 
-            const isAdmin = guildInfo.roles.manageRequestRoleId
-              ? buttonInteraction.member?.roles.cache.has(
-                  guildInfo.roles.manageRequestRoleId
-                )
-              : false;
+            const manageRequestGuildRole = await prisma.guildRole.findFirst({
+              where: {
+                guildId: guild.id,
+                name: MANAGE_REQUEST_ROLE_NAME,
+              },
+            });
+            if (!manageRequestGuildRole) return;
+
+            const isAdmin = buttonInteraction.member?.roles.cache.has(
+              manageRequestGuildRole.discordId
+            );
             const isAuthor = buttonInteraction.user.id === interaction.user.id;
 
             if (!isAdmin && !isAuthor) {
@@ -254,10 +326,10 @@ export const PaidRequest: Command = {
                     name: fulfiller.user.username,
                     id: fulfiller.user.id,
                     guild: {
-                      id: interactionGuild.id,
-                      currencyPluralName: guildInfo.currencyPluralName,
-                      economyChannelId: guildInfo.channels.economyChannelId,
-                      currencyImage: guildInfo.images.currency[0],
+                      id: guild.discordId,
+                      currencyPluralName: guildCurrency.namePlural,
+                      economyChannelId: economyGuildChannel.discordId,
+                      currencyImage: guildCurrency.iconSrc,
                     },
                     iconURL: fulfiller.user.displayAvatarURL(),
                   },
@@ -266,7 +338,7 @@ export const PaidRequest: Command = {
                 });
 
                 await modalInteraction.reply({
-                  content: `The bounty of ${amount} ${guildInfo.currencyPluralName} has been successfully transferred to ${fulfiller.user.username}.`,
+                  content: `The bounty of ${amount} ${guildCurrency.namePlural} has been successfully transferred to ${fulfiller.user.username}.`,
                   ephemeral: true,
                 });
               } catch (error) {

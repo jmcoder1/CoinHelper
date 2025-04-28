@@ -1,4 +1,4 @@
-import { OP_GUILD } from "../discordUtils/constants";
+import { ECONOMY_CHANNEL_NAME, OP_GUILD } from "../prismaUtils/constants";
 import { toBalanceUpdate } from "./toBalanceUpdate";
 
 const DISCORD_CLIENT = {
@@ -78,7 +78,9 @@ describe("toBalanceUpdate from strings", () => {
         guild: {
           id: OP_GUILD.id,
           currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.economyChannelId,
+          economyChannelId: OP_GUILD.channels.find(
+            (channel) => channel.name === ECONOMY_CHANNEL_NAME
+          )?.discordId,
         },
       },
       reason: "leave <@1057036912210231437>",

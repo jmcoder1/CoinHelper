@@ -7,10 +7,14 @@ import {
   TextChannel,
 } from "discord.js";
 import { Listener } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
-import { SERVER_BOOST_ICON } from "../utils/apiUtils/discordUtils/constants";
+import {
+  BOUGHT_COINS_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+  SERVER_BOOST_ICON,
+} from "../utils/apiUtils/prismaUtils/constants";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 export interface GuildMemberUpdateListener extends Listener {
   event: Events.GuildMemberUpdate;
@@ -30,8 +34,25 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
   ) => {
     // SERVER BOOSTED
     if (oldMember.premiumSince !== newMember.premiumSince) {
-      const guildInfo = getGuildInfoById(oldMember.guild.id);
-      if (!guildInfo) return;
+      const guild = await prisma.guild.findUnique({
+        where: { discordId: oldMember.guild.id },
+      });
+      if (!guild) return;
+
+      // Fetch the guild currency
+      const guildCurrency = await prisma.guildCurrency.findFirst({
+        where: { guildId: guild.id },
+      });
+      if (!guildCurrency) return;
+
+      // Fetch the economy guild channel
+      const economyGuildChannel = await prisma.guildChannel.findFirst({
+        where: {
+          guildId: guild.id,
+          name: ECONOMY_CHANNEL_NAME,
+        },
+      });
+      if (!economyGuildChannel) return;
 
       await updateBalance(oldMember.client, {
         user: {
@@ -39,19 +60,27 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
           name: oldMember.displayName,
           iconURL: oldMember.avatarURL() || undefined,
           guild: {
-            id: guildInfo.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            economyChannelId: guildInfo.channels.economyChannelId,
-            currencyImage: guildInfo.images.currency[0],
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount: REWARD_AMOUNT,
-        reason: `You have been awarded ${REWARD_AMOUNT} ${guildInfo.currencyPluralName} for boosting the server`,
+        reason: `You have been awarded ${REWARD_AMOUNT} ${guildCurrency.namePlural} for boosting the server`,
       });
+
+      const boughtCoinsGuildChannel = await prisma.guildChannel.findFirst({
+        where: {
+          guildId: guild.id,
+          name: BOUGHT_COINS_CHANNEL_NAME,
+        },
+      });
+      if (!boughtCoinsGuildChannel) return;
 
       const boughtCoinsChannel = (await getChannelById(
         oldMember.client,
-        guildInfo.channels.boughtCoinsChannelId
+        boughtCoinsGuildChannel.discordId
       )) as TextChannel;
       const embed = new EmbedBuilder()
         .setColor(0x0099ff)

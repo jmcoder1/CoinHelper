@@ -7,11 +7,16 @@ import {
   EmbedBuilder,
 } from "discord.js";
 import { Command } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
+import {
+  ANNOUNCEMENT_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+  NEW_CHANNEL_ROLE_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 export const NewChannel: Command = {
   name: "new-channel",
@@ -48,8 +53,19 @@ export const NewChannel: Command = {
 
     const interactionGuild = interaction.guild;
 
-    const guildInfo = getGuildInfoById(interactionGuild.id);
-    if (!guildInfo) return endInteraction(interaction, "Guild not found.");
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: interactionGuild.id },
+    });
+    if (!guild) return endInteraction(interaction, "Guild not found.");
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency)
+      return endInteraction(interaction, "Guild currency not found.");
+
+    // Fetch the economy guild channel
 
     const name = interaction.options.get("name")?.value as number;
     const duplicateChannelId = interaction.options.get("duplicate-channel")
@@ -60,17 +76,25 @@ export const NewChannel: Command = {
     if (!creditUser)
       return endInteraction(interaction, "Credit user not found.");
 
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel)
+      return endInteraction(interaction, "Economy channel not found.");
+
     const [, errorUpdateBalance] = await tryAsyncAwait(() =>
       updateBalance(client, {
         user: {
           name: creditUser.user.username,
           id: creditUser.user.id,
           guild: {
-            id: interactionGuild.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            economyChannelId: guildInfo.channels.economyChannelId,
-                        currencyImage: guildInfo.images.currency[0],
-
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
           iconURL: creditUser.user.displayAvatarURL(),
         },
@@ -121,24 +145,60 @@ export const NewChannel: Command = {
         value: `"${newChannel.name}" has been created successfully!`,
       });
 
+    const newChannelGuildChannel = await prisma.guildRole.findFirst({
+      where: {
+        guildId: guild.id,
+        name: NEW_CHANNEL_ROLE_NAME,
+      },
+    });
+    if (!newChannelGuildChannel)
+      return endInteraction(
+        interaction,
+        NEW_CHANNEL_ROLE_NAME + " role not found."
+      );
+
     const newChannelModChannel = await getChannelById(
       client,
-      guildInfo.channels.newChannelModId
+      newChannelGuildChannel.discordId
     );
     if (!newChannelModChannel || !newChannelModChannel.isTextBased())
       return endInteraction(interaction, "New channel mod channel not found.");
 
     await newChannelModChannel.send({ embeds: [resultEmbed] });
 
+    const announcementGuildChannel = await prisma.guildRole.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ANNOUNCEMENT_CHANNEL_NAME,
+      },
+    });
+    if (!announcementGuildChannel)
+      return endInteraction(
+        interaction,
+        ANNOUNCEMENT_CHANNEL_NAME + " role not found."
+      );
+
     const announcementChannel = await getChannelById(
       client,
-      guildInfo.channels.announcementChannelId
+      announcementGuildChannel.discordId
     );
     if (!announcementChannel || !announcementChannel.isTextBased())
       return endInteraction(interaction, "Announcement channel not found.");
 
+    const newChannelGuildRole = await prisma.guildRole.findFirst({
+      where: {
+        guildId: guild.id,
+        name: NEW_CHANNEL_ROLE_NAME,
+      },
+    });
+    if (!newChannelGuildRole)
+      return endInteraction(
+        interaction,
+        NEW_CHANNEL_ROLE_NAME + " role not found."
+      );
+
     await announcementChannel.send({
-      content: `<@&${guildInfo.roles.newChannelRoleId}> The new channel <#${newChannel.id}> has been added thanks to <@${creditUser.user.id}>`,
+      content: `<@&${newChannelGuildRole.discordId}> The new channel <#${newChannel.id}> has been added thanks to <@${creditUser.user.id}>`,
     });
 
     return endInteraction(interaction, "New channel created successfully.");

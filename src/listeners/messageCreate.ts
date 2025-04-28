@@ -4,8 +4,14 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
-import { getGuildInfoById } from "../utils/apiUtils/discordUtils/getGuildInfoById";
 import { toUserId } from "./utils/discordUtils/toUserId";
+import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  BOUGHT_COINS_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+  INVITES_CHANNEL_NAME,
+  LEVELS_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export interface MessageCreateListener extends Listener {
   event: Events.MessageCreate;
@@ -16,10 +22,52 @@ export const messageCreate: MessageCreateListener = {
   event: Events.MessageCreate,
   fn: async (message: Message) => {
     if (!message.guildId) return;
-    const guildInfo = getGuildInfoById(message.guildId);
-    if (!guildInfo) return;
 
-    if (guildInfo.channels.invitesChannelId === message.channelId) {
+    const guild = await prisma.guild.findUnique({
+      where: { discordId: message.guildId },
+    });
+    if (!guild) return;
+
+    // Fetch the guild currency
+    const guildCurrency = await prisma.guildCurrency.findFirst({
+      where: { guildId: guild.id },
+    });
+    if (!guildCurrency) return;
+
+    // Fetch the economy guild channel
+    const economyGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ECONOMY_CHANNEL_NAME,
+      },
+    });
+    if (!economyGuildChannel) return;
+
+    const boughtCoinsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: BOUGHT_COINS_CHANNEL_NAME,
+      },
+    });
+    if (!boughtCoinsGuildChannel) return;
+
+    const invitesGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: INVITES_CHANNEL_NAME,
+      },
+    });
+    if (!invitesGuildChannel) return;
+
+    const levelsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: LEVELS_CHANNEL_NAME,
+      },
+    });
+    if (!levelsGuildChannel) return;
+
+    if (invitesGuildChannel.discordId === message.channelId) {
       const balanceUpdate = toBalanceUpdate(message.client, message.content);
       if (balanceUpdate)
         await updateBalance(message.client, {
@@ -29,15 +77,15 @@ export const messageCreate: MessageCreateListener = {
             name: balanceUpdate.user.name,
             iconURL: balanceUpdate.user.iconURL,
             guild: {
-              id: guildInfo.id,
-              currencyPluralName: guildInfo.currencyPluralName,
-              currencyImage: guildInfo.images.currency[0],
-              economyChannelId: guildInfo.channels.economyChannelId,
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
           },
           reason: balanceUpdate.reason,
         });
-    } else if (guildInfo.channels.levelsChannelId === message.channelId) {
+    } else if (levelsGuildChannel.discordId === message.channelId) {
       const recipientMention = message.content.split(" ")[0];
       const recipientUserId = toUserId(recipientMention);
 
@@ -47,17 +95,17 @@ export const messageCreate: MessageCreateListener = {
           id: user.id,
           name: user.username,
           guild: {
-            id: guildInfo.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
-            economyChannelId: guildInfo.channels.economyChannelId,
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
           iconURL: user.avatarURL() || undefined,
         },
         cashAmount: 25,
         reason: "New Level",
       });
-    } else if (guildInfo.channels.boughtCoinsChannelId === message.channelId) {
+    } else if (boughtCoinsGuildChannel.discordId === message.channelId) {
       if (message.author.bot && message.author.username === "DISBOARD") {
         // Check if the message contains the "Bump done!" text
         if (!message.content.includes("Bump done!")) {
@@ -73,14 +121,14 @@ export const messageCreate: MessageCreateListener = {
                 name: message.author.username,
                 iconURL: message.author.avatarURL() || undefined,
                 guild: {
-                  id: guildInfo.id,
-                  currencyPluralName: guildInfo.currencyPluralName,
-                  currencyImage: guildInfo.images.currency[0],
-                  economyChannelId: guildInfo.channels.economyChannelId,
+                  id: guild.discordId,
+                  currencyPluralName: guildCurrency.namePlural,
+                  economyChannelId: economyGuildChannel.discordId,
+                  currencyImage: guildCurrency.iconSrc,
                 },
               },
               cashAmount: BOOST_REWARD_AMOUNT,
-              reason: `You have been rewarded ${BOOST_REWARD_AMOUNT} ${guildInfo.currencyPluralName} for boosting the server.`,
+              reason: `You have been rewarded ${BOOST_REWARD_AMOUNT} ${guildCurrency.namePlural} for boosting the server.`,
             });
           }
         }
@@ -106,10 +154,10 @@ export const messageCreate: MessageCreateListener = {
           name: message.author.username,
           iconURL: message.author.avatarURL() || undefined,
           guild: {
-            id: guildInfo.id,
-            currencyPluralName: guildInfo.currencyPluralName,
-            currencyImage: guildInfo.images.currency[0],
-            economyChannelId: guildInfo.channels.economyChannelId,
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
           },
         },
         cashAmount,

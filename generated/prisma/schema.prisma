@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id                  Int                  @id @default(autoincrement())
+  discordId           String               @unique
+  name                String
+  guildActivity       GuildActivity?       @relation("GuildToActivity")
+  guildChannels       GuildChannel[]
+  guildCurrencies     GuildCurrency[]
+  guildRemovalReasons GuildRemovalReason[]
+  guildRoles          GuildRole[]
+}
+
+model GuildActivity {
+  id                 Int    @id @default(autoincrement())
+  guildId            Int    @unique
+  guild              Guild? @relation("GuildToActivity", fields: [guildId], references: [id])
+  numGuildChannels   Int    @default(0)
+  numGuildCurrencies Int    @default(0)
+  numGuildRoles      Int    @default(0)
+  numRemovalReasons  Int    @default(0)
+}
+
+model GuildChannel {
+  id      Int    @id @default(autoincrement())
+  guildId Int
+  name    String
+  guild   Guild  @relation(fields: [guildId], references: [id])
+}
+
+model GuildCurrency {
+  id      Int    @id @default(autoincrement())
+  guildId Int
+  name    String
+  value   Float
+  guild   Guild  @relation(fields: [guildId], references: [id])
+}
+
+model GuildRemovalReason {
+  id      Int    @id @default(autoincrement())
+  guildId Int
+  reason  String
+  guild   Guild  @relation(fields: [guildId], references: [id])
+}
+
+model GuildRole {
+  id      Int    @id @default(autoincrement())
+  guildId Int
+  name    String
+  guild   Guild  @relation(fields: [guildId], references: [id])
+}
