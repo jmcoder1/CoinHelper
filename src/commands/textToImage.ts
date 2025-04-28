@@ -38,9 +38,13 @@ export const TextToImage: Command = {
       required: true,
     },
   ],
-  run: async (client: Client, interaction: CommandInteraction) => {
+  run: async (
+    client: Client,
+    interaction: CommandInteraction
+  ): Promise<boolean> => {
     const prompt = interaction.options.get("prompt")?.value as string;
-    if (!interaction.guild) return;
+    if (!interaction.guild)
+      return endInteraction(interaction, "Guild not found.");
 
     const interactionGuild = interaction.guild;
 

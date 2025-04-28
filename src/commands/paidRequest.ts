@@ -59,7 +59,10 @@ export const PaidRequest: Command = {
       required: true,
     },
   ],
-  run: async (client: Client, interaction: CommandInteraction) => {
+  run: async (
+    client: Client,
+    interaction: CommandInteraction
+  ): Promise<boolean> => {
     if (!interaction.guild)
       return endInteraction(interaction, "Guild not found.");
 
@@ -366,11 +369,19 @@ export const PaidRequest: Command = {
             }
           }
         );
+
+        return endInteraction(
+          interaction,
+          `Request submitted successfully in <#${channel.id}>`
+        );
       } catch (error) {
         return endInteraction(interaction, "Error creating request." + error);
       }
     }
 
-    return;
+    return endInteraction(
+      interaction,
+      "Invalid request type. Please choose a valid type."
+    );
   },
 };

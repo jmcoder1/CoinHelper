@@ -30,7 +30,10 @@ export const Give: Command = {
       required: true,
     },
   ],
-  run: async (client: Client, interaction: CommandInteraction) => {
+  run: async (
+    client: Client,
+    interaction: CommandInteraction
+  ): Promise<boolean> => {
     if (!interaction.guild)
       return endInteraction(
         interaction,
@@ -101,7 +104,8 @@ export const Give: Command = {
         member.presence &&
         member.presence.status === "online"
     );
-    if (!onlineUsers) return;
+    if (!onlineUsers)
+      return endInteraction(interaction, "No online members found.");
 
     const randomMember = getRandCollectionElement(onlineUsers);
     if (!randomMember)

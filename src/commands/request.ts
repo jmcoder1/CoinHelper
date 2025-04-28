@@ -43,7 +43,7 @@ export const Request: Command = {
       ],
     },
   ],
-  run: async (_: Client, interaction: CommandInteraction) => {
+  run: async (_: Client, interaction: CommandInteraction): Promise<boolean> => {
     if (!interaction.guild)
       return endInteraction(interaction, "Guild not found.");
 

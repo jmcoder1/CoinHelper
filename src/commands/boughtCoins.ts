@@ -35,7 +35,10 @@ export const BoughtCoins: Command = {
       required: true,
     },
   ],
-  run: async (client: Client, interaction: CommandInteraction) => {
+  run: async (
+    client: Client,
+    interaction: CommandInteraction
+  ): Promise<boolean> => {
     if (!interaction.guild)
       return endInteraction(
         interaction,
