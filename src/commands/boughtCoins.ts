@@ -135,6 +135,6 @@ export const BoughtCoins: Command = {
       embeds: [embed],
     });
 
-    return;
+    return endInteraction(interaction, "Command complete successfully.");
   },
 };

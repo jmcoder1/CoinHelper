@@ -67,7 +67,7 @@ export const Balance: Command = {
     const resultEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Balance")
-      .setImage(guildCurrency.namePlural)
+      .setImage(guildCurrency.iconSrc)
       .addFields({
         name: "Total balance",
         value: `${balance.total} ${guildCurrency.namePlural}`,

@@ -106,7 +106,7 @@ export const Preview: Command = {
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Preview channel")
-      .setImage(guildCurrency.namePlural)
+      .setImage(guildCurrency.iconSrc)
       .addFields({
         name: `${channel.name}`,
         value: `A preview of your requested channel has been granted! Please check in <#${previewChannel.id}>`,
