@@ -4,7 +4,6 @@ import {
   ChannelType,
   Client,
   CommandInteraction,
-  EmbedBuilder,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
@@ -140,14 +139,6 @@ export const NewChannel: Command = {
         "Error duplicating channel" + newChannelError
       );
 
-    const resultEmbed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle("New Channel Created")
-      .addFields({
-        name: newChannel.name,
-        value: `"${newChannel.name}" has been created successfully!`,
-      });
-
     const newChannelGuildRole = await prisma.guildRole.findFirst({
       where: {
         guildId: guild.id,
@@ -159,15 +150,6 @@ export const NewChannel: Command = {
         interaction,
         NEW_CHANNEL_ROLE_NAME + " role not found."
       );
-
-    const newChannelModChannel = await getChannelById(
-      client,
-      newChannelGuildRole.discordId
-    );
-    if (!newChannelModChannel || !newChannelModChannel.isTextBased())
-      return endInteraction(interaction, "New channel mod channel not found.");
-
-    await newChannelModChannel.send({ embeds: [resultEmbed] });
 
     const announcementGuildChannel = await prisma.guildChannel.findFirst({
       where: {
