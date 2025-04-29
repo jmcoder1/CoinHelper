@@ -309,6 +309,38 @@ export const Tt_GUILD = {
       name: MANAGE_REQUEST_ROLE_NAME,
     },
   ],
-  removalReasons: undefined,
+  removalReasons: [
+    {
+      title: "Rule 1: You must be 18+",
+      value: "This is an adult-only NSFW server",
+    },
+    {
+      title: "Rule 2: No doxxing",
+      value: "No doxxing",
+    },
+    {
+      title: "Rule 3: Using @everyone ping",
+      value: "Do not use the @everyone ping",
+    },
+    {
+      title: "Rule 4: No paywall content",
+      value: "No paywall content",
+    },
+    { title: "Rule 5: No leaks", value: "No leaks" },
+    { title: "Rule 6: Sissy theme", value: "All content must be sissy-themed" },
+    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
+    {
+      title: "Rule 8: Captions only",
+      value: "Captions must be burned or side by side the media",
+    },
+    {
+      title: "Inappropriate request",
+      value: "Request in the wrong channel",
+    },
+    {
+      title: "Repost",
+      value: "Your post is a repost",
+    },
+  ],
 };
 export const guilds = [OP_GUILD, BMB_GUILD, Tt_GUILD];
