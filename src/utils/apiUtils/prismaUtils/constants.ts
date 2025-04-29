@@ -231,7 +231,7 @@ export const BMB_GUILD = {
 
 export const Tt_GUILD = {
   id: "1323043338903097445",
-  name: "Transtopia",
+  name: "Sissytopia",
   currencyName: "Coin",
   currencyPluralName: "Coins",
   channels: [
@@ -298,7 +298,8 @@ export const Tt_GUILD = {
   },
   roles: [
     { discordId: "1323742269005893652", name: PREVIEW_ROLE_NAME },
-    { discordId: "1323046507552702536", name: NEW_CHANNEL_ROLE_NAME },
+    { discordId: "1323742298126811158", name: NEW_CHANNEL_ROLE_NAME },
+
     {
       discordId: "1362893885528867086",
       name: DELETE_MESSAGE_ROLE_NAME,
