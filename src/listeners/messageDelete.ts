@@ -66,7 +66,7 @@ export const messageDelete: MessageDeleteListener = {
         },
       },
       cashAmount,
-      reason: `${numImages} off topic media removed from <#${message.channel.id}>`,
+      reason: `${numImages} off topic media`,
     });
   },
 };
