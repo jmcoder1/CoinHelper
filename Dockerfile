@@ -1,5 +1,10 @@
 FROM node:18-slim
 
+# Install OpenSSL
+RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get install -y ca-certificates
+RUN update-ca-certificates
+
 # Create app directory
 WORKDIR /usr/src/app
 
@@ -13,7 +18,7 @@ RUN yarn
 COPY . .
 
 # Generate Prisma Client
-# RUN npx prisma generate
+RUN npx prisma generate
 
 # Copy the production environment file
 COPY .env.production .env
@@ -28,7 +33,7 @@ ENV NODE_ENV production
 EXPOSE 8080
 
 # Run the application with a script to handle migrations
-# CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
 
 # Use a non-root user for security
 USER node
