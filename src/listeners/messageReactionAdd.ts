@@ -208,6 +208,15 @@ export const messageReactionAdd: MessageReactionAddListener = {
           if (interaction.customId !== "message-options") return;
 
           try {
+            // Forward the message content to the user
+            await message.author?.send({
+              content: `Your post is being deleted.\n\nReason: ${
+                interaction.values[0]
+              }\n\nMessage content:\n${
+                reaction.message.content || "No content"
+              }`,
+            });
+
             // Delete the original message
             await reaction.message.delete();
           } catch (error) {
@@ -218,13 +227,6 @@ export const messageReactionAdd: MessageReactionAddListener = {
             });
             return;
           }
-
-          // Send the message content to the user
-          await message.author?.send({
-            content: `Your post has been deleted.\n\nReason: ${
-              interaction.values[0]
-            }\n\nMessage content:\n${reaction.message.content || "No content"}`,
-          });
 
           await interaction.reply({
             content:
