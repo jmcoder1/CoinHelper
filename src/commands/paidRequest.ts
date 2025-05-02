@@ -340,6 +340,24 @@ export const PaidRequest: Command = {
                   reason: `Bounty for fulfilling a request.`,
                 });
 
+                // Disable the "Accept" button
+                const updatedComponents =
+                  new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                      .setCustomId("accept")
+                      .setLabel("Accept")
+                      .setStyle(ButtonStyle.Success)
+                      .setDisabled(true), // Disable the button
+                    new ButtonBuilder()
+                      .setCustomId("delete")
+                      .setLabel("Delete")
+                      .setStyle(ButtonStyle.Danger)
+                  );
+
+                await requestMessage.edit({
+                  components: [updatedComponents],
+                });
+
                 await modalInteraction.reply({
                   content: `The bounty of ${amount} ${guildCurrency.namePlural} has been successfully transferred to ${fulfiller.user.username}.`,
                   ephemeral: true,
