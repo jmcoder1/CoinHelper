@@ -33,7 +33,10 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
     newMember: GuildMember
   ) => {
     // SERVER BOOSTED
-    if (oldMember.premiumSince !== newMember.premiumSince) {
+    if (
+      oldMember.premiumSince !== newMember.premiumSince &&
+      newMember.premiumSince !== null
+    ) {
       const guild = await prisma.guild.findUnique({
         where: { discordId: oldMember.guild.id },
       });
@@ -54,11 +57,22 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
       });
       if (!economyGuildChannel) return;
 
+      // Ensure the boost is legitimate by checking the boost count
+      const currentBoostCount = newMember.guild.premiumSubscriptionCount || 0;
+      const previousBoostCount = oldMember.guild.premiumSubscriptionCount || 0;
+
+      if (currentBoostCount <= previousBoostCount) {
+        console.warn(
+          `Potential boost exploit detected for user ${newMember.user.username} (${newMember.id}).`
+        );
+        return;
+      }
+
       await updateBalance(oldMember.client, {
         user: {
-          id: oldMember.id,
-          name: oldMember.displayName,
-          iconURL: oldMember.avatarURL() || undefined,
+          id: newMember.id,
+          name: newMember.displayName,
+          iconURL: newMember.avatarURL() || undefined,
           guild: {
             id: guild.discordId,
             currencyPluralName: guildCurrency.namePlural,
