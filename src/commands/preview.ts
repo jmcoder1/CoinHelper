@@ -3,7 +3,6 @@ import {
   ApplicationCommandType,
   Client,
   CommandInteraction,
-  EmbedBuilder,
   TextChannel,
 } from "discord.js";
 import { Command } from "./utils/types";
@@ -106,20 +105,7 @@ export const Preview: Command = {
     );
     if (!previewChannel || !previewChannel.isTextBased())
       return endInteraction(interaction, "Preview channel not found.");
-    const embed = new EmbedBuilder()
-      .setColor(0x0099ff)
-      .setTitle("Preview channel")
-      .setImage(guildCurrency.iconSrc)
-      .addFields({
-        name: `${channel.name}`,
-        value: `A preview of your requested channel has been granted! Please check in <#${previewChannel.id}>`,
-      });
-    await tryAsyncAwait(() =>
-      interaction.reply({
-        ephemeral: true,
-        embeds: [embed],
-      })
-    );
+
     const userId = interaction.user.id;
     const economyGuildChannel = await prisma.guildChannel.findFirst({
       where: {
@@ -148,8 +134,10 @@ export const Preview: Command = {
         reason: `<@${userId}> you have been charged ${PREVIEW_COST} ${guildCurrency.namePlural} for requesting a preview.`,
       })
     );
-    if (!errorBalance)
+    if (errorBalance) {
+      console.error("Error updating balance:", errorBalance);
       return endInteraction(interaction, "Error updating balance.");
+    }
 
     const randomFiles = [];
     const usedIndices = new Set<number>(); // To track already used indices
@@ -180,11 +168,19 @@ export const Preview: Command = {
         PREVIEW_ROLE_NAME + " role not found."
       );
 
-    previewChannel.send({
-      content: `<@&${previewGuildRole.discordId}> here is your preview of <#${channelId}>`,
-      files: randomFiles,
-    });
+    try {
+      previewChannel.send({
+        content: `<@&${previewGuildRole.discordId}> here is your preview of <#${channelId}>`,
+        files: randomFiles,
+      });
+    } catch (error) {
+      console.error("Error sending preview:", error);
+      return endInteraction(interaction, "Error sending preview.");
+    }
 
-    return endInteraction(interaction, `Preview sent to <#${channelId}>`);
+    return endInteraction(
+      interaction,
+      `Preview sent to <#${previewChannel.id}>`
+    );
   },
 };
