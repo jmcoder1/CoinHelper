@@ -109,7 +109,39 @@ export const OP_GUILD = {
       name: MANAGE_REQUEST_ROLE_NAME,
     },
   ],
-  removalReasons: undefined,
+  removalReasons: [
+    {
+      title: "Rule 1: You must be 18+",
+      value: "This is an adult-only NSFW server",
+    },
+    {
+      title: "Rule 2: No doxxing",
+      value: "No doxxing",
+    },
+    {
+      title: "Rule 3: Using @everyone ping",
+      value: "Do not use the @everyone ping",
+    },
+    {
+      title: "Rule 4: No paywall content",
+      value: "No paywall content",
+    },
+    { title: "Rule 5: No leaks", value: "No leaks" },
+    { title: "Rule 6: OP theme", value: "All content must be OP-themed" },
+    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
+    {
+      title: "Rule 8: Captions only",
+      value: "Captions must be burned or side by side the media",
+    },
+    {
+      title: "Inappropriate request",
+      value: "Request in the wrong channel",
+    },
+    {
+      title: "Repost",
+      value: "Your post is a repost",
+    },
+  ],
 };
 
 export const BMB_GUILD = {
@@ -343,4 +375,121 @@ export const Tt_GUILD = {
     },
   ],
 };
-export const guilds = [OP_GUILD, BMB_GUILD, Tt_GUILD];
+
+export const CUCK_GUILD = {
+  id: "1367954490237386882",
+  name: "CuckCaptions",
+  currencyName: "Coin",
+  currencyPluralName: "Coins",
+  channels: [
+    {
+      discordId: "1367954492619755621",
+      name: ANNOUNCEMENT_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301578",
+      name: LEVELS_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954492619755619",
+      name: INVITES_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301580",
+      name: ECONOMY_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301581",
+      name: PLAY_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954492821078067",
+      name: PREVIEW_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954492821078076",
+      name: BOUGHT_COINS_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301582",
+      name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954497803911189",
+      name: NEW_CHANNEL_MOD_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493299359823",
+      name: DM_REQUEST_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493484044358",
+      name: ROLEPLAY_REQUEST_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493484044361",
+      name: SAUCE_REQUEST_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493484044362",
+      name: CAPTION_REQUEST_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493484044363",
+      name: TRANSLATION_REQUEST_CHANNEL_NAME,
+    },
+  ],
+  images: {
+    currency:
+      "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzhqd2I1OHhycXNmNTAwb3UybzU4NHcweDF0Y2t2Y21sbm1ya2p4byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/4ZcXo1CQTZypGNpR4z/giphy.webp",
+  },
+  roles: [
+    { discordId: "1367954490237386886", name: PREVIEW_ROLE_NAME },
+    {
+      discordId: "1367954490237386887",
+      name: NEW_CHANNEL_ROLE_NAME,
+    },
+    {
+      discordId: "1367954490329796639",
+      name: DELETE_MESSAGE_ROLE_NAME,
+    },
+    {
+      discordId: "1367954490329796638",
+      name: MANAGE_REQUEST_ROLE_NAME,
+    },
+  ],
+  removalReasons: [
+    {
+      title: "Rule 1: You must be 18+",
+      value: "This is an adult-only NSFW server",
+    },
+    {
+      title: "Rule 2: No doxxing",
+      value: "No doxxing",
+    },
+    {
+      title: "Rule 3: Using @everyone ping",
+      value: "Do not use the @everyone ping",
+    },
+    {
+      title: "Rule 4: No paywall content",
+      value: "No paywall content",
+    },
+    { title: "Rule 5: No leaks", value: "No leaks" },
+    { title: "Rule 6: Cuck theme", value: "All content must be cuck-themed" },
+    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
+    {
+      title: "Rule 8: Captions only",
+      value: "Captions must be burned or side by side the media",
+    },
+    {
+      title: "Inappropriate request",
+      value: "Request in the wrong channel",
+    },
+    {
+      title: "Repost",
+      value: "Your post is a repost",
+    },
+  ],
+};
+export const guilds = [OP_GUILD, BMB_GUILD, Tt_GUILD, CUCK_GUILD];
