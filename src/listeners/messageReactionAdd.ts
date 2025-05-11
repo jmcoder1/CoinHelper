@@ -165,7 +165,8 @@ export const messageReactionAdd: MessageReactionAddListener = {
       if (!deleteMessageGuildRole) return;
 
       const requiredRoleId = deleteMessageGuildRole.discordId;
-      if (!member?.roles.cache.has(requiredRoleId)) return;
+      const hasRequiredRole = member?.roles.cache.has(requiredRoleId);
+      if (!hasRequiredRole) return;
 
       const guildRemovalReasons = await prisma.guildRemovalReason.findMany({
         where: { guildId: guild.id },
@@ -207,6 +208,18 @@ export const messageReactionAdd: MessageReactionAddListener = {
         async (interaction: StringSelectMenuInteraction) => {
           if (interaction.customId !== "message-options") return;
 
+          // Check if the user has the required role
+          const member = await reaction.message.guild?.members.fetch(
+            interaction.user.id
+          );
+          if (!member?.roles.cache.has(requiredRoleId)) {
+            await interaction.reply({
+              content:
+                "You do not have the required role to perform this action.",
+              ephemeral: true, // Only visible to the user
+            });
+            return;
+          }
           try {
             // Forward the message content to the user
             await message.author?.send({
