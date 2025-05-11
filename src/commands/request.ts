@@ -21,6 +21,8 @@ import {
   ROLEPLAY_REQUEST_CHANNEL_NAME,
 } from "../utils/apiUtils/prismaUtils/constants";
 
+const COMMAND_COST = 25;
+
 export const Request: Command = {
   name: "request",
   description: "Request something from another member",
@@ -167,21 +169,7 @@ export const Request: Command = {
         return endInteraction(interaction, "Target channel not found.");
 
       // Check if the user has created a request in the last 24 hours
-      const messages = await targetChannel.messages.fetch({ limit: 100 });
-      const now = Date.now();
       const userAvatarURL = interaction.user.avatarURL() || undefined;
-
-      const hasRecentRequest = messages.some((message) => {
-        if (!message.embeds.length) return false;
-        const embed = message.embeds[0];
-        const embedAuthorIcon = embed.author?.iconURL;
-        const embedTimestamp = message.createdTimestamp;
-
-        return (
-          embedAuthorIcon === userAvatarURL &&
-          now - embedTimestamp < 24 * 60 * 60 * 1000
-        );
-      });
 
       const economyGuildChannel = await prisma.guildChannel.findFirst({
         where: {
@@ -195,28 +183,29 @@ export const Request: Command = {
           ECONOMY_CHANNEL_NAME + " channel not found."
         );
 
-      if (hasRecentRequest) {
-        // Deduct 100 coins from the user
-        const [, errorBalance] = await tryAsyncAwait(() =>
-          updateBalance(interaction.client, {
-            user: {
-              id: interaction.user.id,
-              name: interaction.user.username,
-              iconURL: userAvatarURL,
-              guild: {
-                id: guild.discordId,
-                currencyPluralName: guildCurrency.namePlural,
-                economyChannelId: economyGuildChannel.discordId,
-                currencyImage: guildCurrency.iconSrc,
-              },
+      const [, errorBalance] = await tryAsyncAwait(() =>
+        updateBalance(interaction.client, {
+          user: {
+            id: interaction.user.id,
+            name: interaction.user.username,
+            iconURL: userAvatarURL,
+            guild: {
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
             },
-            cashAmount: -100,
-            reason: "You created a request in the last 24 hours.",
-          })
-        );
-        if (errorBalance)
-          return endInteraction(interaction, "Error updating balance.");
-      }
+          },
+          cashAmount: -COMMAND_COST,
+          reason:
+            "You have been charged " +
+            COMMAND_COST +
+            " " +
+            guildCurrency.namePlural,
+        })
+      );
+      if (errorBalance)
+        return endInteraction(interaction, "Error updating balance.");
 
       // Send the embed to the appropriate channel
       await targetChannel.send({
