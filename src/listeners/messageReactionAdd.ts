@@ -222,13 +222,21 @@ export const messageReactionAdd: MessageReactionAddListener = {
           }
           try {
             // Forward the message content to the user
-            await message.author?.send({
-              content: `Your post is being deleted.\n\nReason: ${
-                interaction.values[0]
-              }\n\nMessage content:\n${
-                reaction.message.content || "No content"
-              }`,
-            });
+            // Check if the message author is still a member of the guild
+            const authorMember = message.author
+              ? await reaction.message.guild?.members
+                  .fetch(message.author.id)
+                  .catch(() => null)
+              : null;
+
+            if (message.author && authorMember)
+              await message.author.send({
+                content: `Your post is being deleted.\n\nReason: ${
+                  interaction.values[0]
+                }\n\nMessage content:\n${
+                  reaction.message.content || "No content"
+                }`,
+              });
 
             // Delete the original message
             await reaction.message.delete();
