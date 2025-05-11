@@ -61,7 +61,8 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
       const currentBoostCount = newMember.guild.premiumSubscriptionCount || 0;
       const previousBoostCount = oldMember.guild.premiumSubscriptionCount || 0;
 
-      if (currentBoostCount <= previousBoostCount) {
+      // Allow the reward if this is the user's first boost or if the boost count has increased
+      if (currentBoostCount < previousBoostCount) {
         console.warn(
           `Potential boost exploit detected for user ${newMember.user.username} (${newMember.id}).`
         );
