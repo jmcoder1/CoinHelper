@@ -363,9 +363,16 @@ export const PaidRequest: Command = {
                   ephemeral: true,
                 });
               } catch (error) {
-                console.error("Error handling modal submission:", error);
+                if (error.name === "Error [INTERACTION_COLLECTOR_ERROR]") {
+                  console.log("Modal submission was canceled or timed out.");
+                } else {
+                  console.error("Error handling modal submission:", error);
+                }
+
+                // Notify the user that the action was canceled
                 await buttonInteraction.followUp({
-                  content: "There was an error processing the request.",
+                  content:
+                    "The action was canceled or timed out. No points were awarded.",
                   ephemeral: true,
                 });
               }
