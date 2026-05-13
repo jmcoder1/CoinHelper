@@ -11,7 +11,9 @@ import {
   TextInputStyle,
 } from "discord.js";
 import { Command } from "./utils/types";
+import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { validateAmount } from "./utils/validateAmount";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
@@ -65,6 +67,49 @@ export const Request: Command = {
 
     const type = interaction.options.get("type")?.value as string;
 
+    const dmRequestGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: DM_REQUEST_CHANNEL_NAME,
+      },
+    });
+    if (!dmRequestGuildChannel)
+      return endInteraction(
+        interaction,
+        DM_REQUEST_CHANNEL_NAME + " channel not found."
+      );
+
+    const roleplayRequestGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: ROLEPLAY_REQUEST_CHANNEL_NAME,
+      },
+    });
+    if (!roleplayRequestGuildChannel)
+      return endInteraction(
+        interaction,
+        ROLEPLAY_REQUEST_CHANNEL_NAME + " channel not found."
+      );
+
+    const channelId =
+      type === "dm-request"
+        ? dmRequestGuildChannel.discordId
+        : roleplayRequestGuildChannel.discordId;
+
+    const cashBalance = (
+      await unbelievaboatClient.getUserBalance(
+        interactionGuild.id,
+        interaction.user.id
+      )
+    ).cash;
+    const isValidAmount = validateAmount(interaction, {
+      amount: COMMAND_COST,
+      balance: cashBalance,
+      cost: COMMAND_COST,
+      currencyPluralName: guildCurrency.namePlural,
+    });
+    if (!isValidAmount) return true;
+
     const modal = new ModalBuilder()
       .setCustomId(`${type}-form`)
       .setTitle(
@@ -101,35 +146,6 @@ export const Request: Command = {
     }
 
     await interaction.showModal(modal);
-
-    const dmRequestGuildChannel = await prisma.guildChannel.findFirst({
-      where: {
-        guildId: guild.id,
-        name: DM_REQUEST_CHANNEL_NAME,
-      },
-    });
-    if (!dmRequestGuildChannel)
-      return endInteraction(
-        interaction,
-        DM_REQUEST_CHANNEL_NAME + " channel not found."
-      );
-
-    const roleplayRequestGuildChannel = await prisma.guildChannel.findFirst({
-      where: {
-        guildId: guild.id,
-        name: ROLEPLAY_REQUEST_CHANNEL_NAME,
-      },
-    });
-    if (!roleplayRequestGuildChannel)
-      return endInteraction(
-        interaction,
-        ROLEPLAY_REQUEST_CHANNEL_NAME + " channel not found."
-      );
-
-    const channelId =
-      type === "dm-request"
-        ? dmRequestGuildChannel.discordId
-        : roleplayRequestGuildChannel.discordId;
 
     try {
       const modalInteraction = await interaction.awaitModalSubmit({
