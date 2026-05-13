@@ -11,6 +11,13 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import {
+  REACTION_REWARD_AMOUNT,
+  TEN_PLUS_REACTION_BONUS,
+  TEN_PLUS_REACTION_THRESHOLD,
+  TWENTY_FIVE_PLUS_REACTION_BONUS,
+  TWENTY_FIVE_PLUS_REACTION_THRESHOLD,
+} from "./utils/reactionThresholds";
 
 export interface MessageReactionRemoveListener extends Listener {
   event: Events.MessageReactionRemove;
@@ -28,7 +35,24 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser
   ) => {
-    if (reaction.emoji.name != INCREMENTOR_EMOJI) return;
+    if (reaction.emoji.name !== INCREMENTOR_EMOJI) return;
+
+    if (reaction.partial)
+      try {
+        await reaction.fetch();
+      } catch (error) {
+        console.error("Failed to fetch reaction:", error);
+        return;
+      }
+
+    if (user.partial)
+      try {
+        await user.fetch();
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        return;
+      }
+
     if (!reaction.message.guildId) return;
 
     const message = !reaction.message.author
@@ -81,9 +105,46 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
           currencyImage: guildCurrency.iconSrc,
         },
       },
-      cashAmount: -5,
+      cashAmount: -REACTION_REWARD_AMOUNT,
       reason: `<@${user.id}> negatively reacted to your message ${message.url}`,
     });
+
+    const incrementorReactionCount = reaction.count;
+
+    // Only remove the threshold bonus when the 🔥 reaction count crosses down.
+    if (incrementorReactionCount === TWENTY_FIVE_PLUS_REACTION_THRESHOLD) {
+      await updateBalance(message.client, {
+        user: {
+          id: message.author.id,
+          name: message.author.username,
+          iconURL: message.author.avatarURL() || undefined,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
+        },
+        cashAmount: -TWENTY_FIVE_PLUS_REACTION_BONUS,
+        reason: `Your message ${message.url} dropped below the ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD}+ reactions threshold.`,
+      });
+    } else if (incrementorReactionCount === TEN_PLUS_REACTION_THRESHOLD) {
+      await updateBalance(message.client, {
+        user: {
+          id: message.author.id,
+          name: message.author.username,
+          iconURL: message.author.avatarURL() || undefined,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
+        },
+        cashAmount: -TEN_PLUS_REACTION_BONUS,
+        reason: `Your message ${message.url} dropped below the ${TEN_PLUS_REACTION_THRESHOLD}+ reactions threshold.`,
+      });
+    }
 
     return;
   },

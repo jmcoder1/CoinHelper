@@ -18,6 +18,13 @@ import {
   DELETE_MESSAGE_ROLE_NAME,
   ECONOMY_CHANNEL_NAME,
 } from "../utils/apiUtils/prismaUtils/constants";
+import {
+  REACTION_REWARD_AMOUNT,
+  TEN_PLUS_REACTION_BONUS,
+  TEN_PLUS_REACTION_THRESHOLD,
+  TWENTY_FIVE_PLUS_REACTION_BONUS,
+  TWENTY_FIVE_PLUS_REACTION_THRESHOLD,
+} from "./utils/reactionThresholds";
 
 export interface MessageReactionAddListener extends Listener {
   event: Events.MessageReactionAdd;
@@ -109,18 +116,17 @@ export const messageReactionAdd: MessageReactionAddListener = {
             currencyImage: guildCurrency.iconSrc,
           },
         },
-        cashAmount: 5,
+        cashAmount: REACTION_REWARD_AMOUNT,
         reason: `<@${user.id}> positively reacted to your message ${message.url}`,
       });
 
-      // Check the total number of reactions on the message
-      const totalReactions = reaction.message.reactions.cache.reduce(
-        (count, reaction) => count + reaction.count,
-        0
-      );
+      const incrementorReactionCount = reaction.count;
 
-      // Award additional coins based on reaction thresholds
-      if (totalReactions > 25) {
+      // Only award the threshold bonus when the 🔥 reaction count crosses up.
+      if (
+        incrementorReactionCount ===
+        TWENTY_FIVE_PLUS_REACTION_THRESHOLD + 1
+      ) {
         await updateBalance(message.client, {
           user: {
             id: message.author.id,
@@ -133,10 +139,13 @@ export const messageReactionAdd: MessageReactionAddListener = {
               currencyImage: guildCurrency.iconSrc,
             },
           },
-          cashAmount: 100,
-          reason: `Your message ${message.url} received more than 25 reactions!`,
+          cashAmount: TWENTY_FIVE_PLUS_REACTION_BONUS,
+          reason: `Your message ${message.url} received more than ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD} reactions!`,
         });
-      } else if (totalReactions > 10) {
+      } else if (
+        incrementorReactionCount ===
+        TEN_PLUS_REACTION_THRESHOLD + 1
+      ) {
         await updateBalance(message.client, {
           user: {
             id: message.author.id,
@@ -149,8 +158,8 @@ export const messageReactionAdd: MessageReactionAddListener = {
               currencyImage: guildCurrency.iconSrc,
             },
           },
-          cashAmount: 50,
-          reason: `Your message ${message.url} received more than 10 reactions!`,
+          cashAmount: TEN_PLUS_REACTION_BONUS,
+          reason: `Your message ${message.url} received more than ${TEN_PLUS_REACTION_THRESHOLD} reactions!`,
         });
       }
     } else if (reaction.emoji.name === QUESTION_EMOJI) {
