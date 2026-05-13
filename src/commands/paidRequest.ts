@@ -1,17 +1,9 @@
 import {
-  ActionRowBuilder,
   ApplicationCommandOptionType,
   ApplicationCommandType,
-  ButtonBuilder,
-  ButtonInteraction,
-  ButtonStyle,
   Client,
   CommandInteraction,
-  ComponentType,
   EmbedBuilder,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } from "discord.js";
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
@@ -22,10 +14,10 @@ import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import {
   CAPTION_REQUEST_CHANNEL_NAME,
   ECONOMY_CHANNEL_NAME,
-  MANAGE_REQUEST_ROLE_NAME,
   SAUCE_REQUEST_CHANNEL_NAME,
   TRANSLATION_REQUEST_CHANNEL_NAME,
 } from "../utils/apiUtils/prismaUtils/constants";
+import { createPaidRequestActionRow } from "./utils/paidRequestInteractions";
 
 export const PaidRequest: Command = {
   name: "paid-request",
@@ -195,209 +187,58 @@ export const PaidRequest: Command = {
         const requestMessage = await channel.send({
           embeds: [embed],
           content: `Respond to this request in the thread below and earn ${amount} ${guildCurrency.namePlural} if your response is accepted!`,
-          components: [
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-              new ButtonBuilder()
-                .setCustomId("accept")
-                .setLabel("Accept")
-                .setStyle(ButtonStyle.Success),
-              new ButtonBuilder()
-                .setCustomId("delete")
-                .setLabel("Delete")
-                .setStyle(ButtonStyle.Danger)
-            ),
-          ],
+          components: [createPaidRequestActionRow(interaction.user.id, amount)],
         });
 
-        // Create a thread for the request
-        await requestMessage.startThread({
-          name: `Respond to request`,
-          autoArchiveDuration: 1440 * 7, // 7 days
-        });
+        let requestThread = null;
+        try {
+          requestThread = await requestMessage.startThread({
+            name: `Respond to request`,
+            autoArchiveDuration: 1440 * 7, // 7 days
+          });
+        } catch (error) {
+          await requestMessage.delete().catch(() => null);
+          return endInteraction(
+            interaction,
+            "Error creating request thread. Please try again later."
+          );
+        }
+        if (!requestThread)
+          return endInteraction(
+            interaction,
+            "Error creating request thread. Please try again later."
+          );
 
         // Deduct coins from the user
-        await updateBalance(client, {
-          user: {
-            name: interaction.user.username,
-            id: interaction.user.id,
-            guild: {
-              id: guild.discordId,
-              currencyPluralName: guildCurrency.namePlural,
-              economyChannelId: economyGuildChannel.discordId,
-              currencyImage: guildCurrency.iconSrc,
-            },
-            iconURL: interaction.user.displayAvatarURL(),
-          },
-          cashAmount: -amount,
-          reason: `${embedTitle} created in <#${channel.id}>`,
-        });
-
-        // Handle button interactions
-        const collector = requestMessage.createMessageComponentCollector({
-          componentType: ComponentType.Button,
-          time: 600000, // 10 minutes
-        });
-
-        endInteraction(
-          interaction,
-          "Request sent. Please enter more details in the thread."
-        );
-
-        collector.on(
-          "collect",
-          async (buttonInteraction: ButtonInteraction<"cached">) => {
-            if (!buttonInteraction.member) {
-              buttonInteraction.reply({
-                content: "This action can only be performed in a server.",
-                ephemeral: true,
-              });
-              return;
-            }
-
-            const manageRequestGuildRole = await prisma.guildRole.findFirst({
-              where: {
-                guildId: guild.id,
-                name: MANAGE_REQUEST_ROLE_NAME,
+        try {
+          await updateBalance(client, {
+            user: {
+              name: interaction.user.username,
+              id: interaction.user.id,
+              guild: {
+                id: guild.discordId,
+                currencyPluralName: guildCurrency.namePlural,
+                economyChannelId: economyGuildChannel.discordId,
+                currencyImage: guildCurrency.iconSrc,
               },
-            });
-            if (!manageRequestGuildRole) return;
+              iconURL: interaction.user.displayAvatarURL(),
+            },
+            cashAmount: -amount,
+            reason: `${embedTitle} created in <#${channel.id}>`,
+          });
+        } catch (error) {
+          console.error("Error charging for paid request:", error);
+          await requestMessage.delete().catch(() => null);
 
-            const isAdmin = buttonInteraction.member?.roles.cache.has(
-              manageRequestGuildRole.discordId
-            );
-            const isAuthor = buttonInteraction.user.id === interaction.user.id;
-
-            if (!isAdmin && !isAuthor) {
-              buttonInteraction.reply({
-                content: "You do not have permission to perform this action.",
-                ephemeral: true,
-              });
-              return;
-            }
-
-            if (buttonInteraction.customId === "accept") {
-              // Create and show the modal
-              const modal = new ModalBuilder()
-                .setCustomId("accept-modal")
-                .setTitle("Accept Request");
-
-              const usernameInput = new TextInputBuilder()
-                .setCustomId("username")
-                .setLabel("Enter the username of the fulfiller")
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
-
-              modal.addComponents(
-                new ActionRowBuilder<TextInputBuilder>().addComponents(
-                  usernameInput
-                )
-              );
-
-              await buttonInteraction.showModal(modal);
-
-              try {
-                const modalInteraction =
-                  await buttonInteraction.awaitModalSubmit({
-                    time: 15 * 60 * 1000, // 15 minutes timeout
-                    filter: (i) =>
-                      i.customId === "accept-modal" &&
-                      i.user.id === buttonInteraction.user.id,
-                  });
-
-                const enteredUsername =
-                  modalInteraction.fields.getTextInputValue("username");
-
-                // Find the user in the guild
-                const fulfiller = interactionGuild.members.cache.find(
-                  (member) =>
-                    member.user.username.toLowerCase() ===
-                    enteredUsername.toLowerCase()
-                );
-
-                if (!fulfiller) {
-                  // User not found
-                  await modalInteraction.reply({
-                    content: `User "${enteredUsername}" not found in the server.`,
-                    ephemeral: true,
-                  });
-                  return;
-                }
-
-                // Update the balance of the user
-                await updateBalance(client, {
-                  user: {
-                    name: fulfiller.user.username,
-                    id: fulfiller.user.id,
-                    guild: {
-                      id: guild.discordId,
-                      currencyPluralName: guildCurrency.namePlural,
-                      economyChannelId: economyGuildChannel.discordId,
-                      currencyImage: guildCurrency.iconSrc,
-                    },
-                    iconURL: fulfiller.user.displayAvatarURL(),
-                  },
-                  cashAmount: amount,
-                  reason: `Bounty for fulfilling a request.`,
-                });
-
-                // Disable the "Accept" button
-                const updatedComponents =
-                  new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new ButtonBuilder()
-                      .setCustomId("accept")
-                      .setLabel("Accept")
-                      .setStyle(ButtonStyle.Success)
-                      .setDisabled(true), // Disable the button
-                    new ButtonBuilder()
-                      .setCustomId("delete")
-                      .setLabel("Delete")
-                      .setStyle(ButtonStyle.Danger)
-                  );
-
-                await requestMessage.edit({
-                  components: [updatedComponents],
-                });
-
-                await modalInteraction.reply({
-                  content: `The bounty of ${amount} ${guildCurrency.namePlural} has been successfully transferred to ${fulfiller.user.username}.`,
-                  ephemeral: true,
-                });
-              } catch (error) {
-                if (error.name === "Error [INTERACTION_COLLECTOR_ERROR]") {
-                  console.log("Modal submission was canceled or timed out.");
-                } else {
-                  console.error("Error handling modal submission:", error);
-                }
-
-                // Notify the user that the action was canceled
-                await buttonInteraction.followUp({
-                  content:
-                    "The action was canceled or timed out. No points were awarded.",
-                  ephemeral: true,
-                });
-              }
-            } else if (buttonInteraction.customId === "delete") {
-              try {
-                await requestMessage.delete();
-                await buttonInteraction.reply({
-                  content: "The request has been deleted.",
-                  ephemeral: true,
-                });
-              } catch (error) {
-                console.error("Error deleting the request:", error);
-                await buttonInteraction.reply({
-                  content:
-                    "Failed to delete the request. Please try again later.",
-                  ephemeral: true,
-                });
-              }
-            }
-          }
-        );
+          return endInteraction(
+            interaction,
+            "Error updating balance. Please try again later."
+          );
+        }
 
         return endInteraction(
           interaction,
-          `Request submitted successfully in <#${channel.id}>`
+          `Request sent. Please enter more details in <#${requestThread.id}>.`
         );
       } catch (error) {
         return endInteraction(interaction, "Error creating request." + error);

@@ -1,0 +1,447 @@
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
+  Client,
+  GuildMember,
+  Message,
+  ModalBuilder,
+  ModalSubmitInteraction,
+  TextInputBuilder,
+  TextInputStyle,
+} from "discord.js";
+import { updateBalance } from "../../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { prisma } from "../../utils/apiUtils/prismaUtils/prisma";
+import {
+  ECONOMY_CHANNEL_NAME,
+  MANAGE_REQUEST_ROLE_NAME,
+} from "../../utils/apiUtils/prismaUtils/constants";
+
+const PAID_REQUEST_ACCEPT_BUTTON_ID = "paid-request-accept";
+const PAID_REQUEST_DELETE_BUTTON_ID = "paid-request-delete";
+const PAID_REQUEST_ACCEPT_MODAL_ID = "paid-request-accept-modal";
+
+const pendingPaidRequests = new Set<string>();
+
+const USER_MENTION_REGEX = /^<@!?(\d+)>$/;
+const USER_ID_REGEX = /^\d{17,20}$/;
+
+interface PaidRequestButtonData {
+  amount: number;
+  requesterId: string;
+}
+
+interface PaidRequestModalData extends PaidRequestButtonData {
+  channelId: string;
+  messageId: string;
+}
+
+export const createPaidRequestAcceptButtonId = (
+  requesterId: string,
+  amount: number
+) => `${PAID_REQUEST_ACCEPT_BUTTON_ID}:${requesterId}:${amount}`;
+
+export const createPaidRequestDeleteButtonId = (requesterId: string) =>
+  `${PAID_REQUEST_DELETE_BUTTON_ID}:${requesterId}`;
+
+const createPaidRequestAcceptModalId = ({
+  amount,
+  channelId,
+  messageId,
+  requesterId,
+}: PaidRequestModalData) =>
+  `${PAID_REQUEST_ACCEPT_MODAL_ID}:${requesterId}:${amount}:${channelId}:${messageId}`;
+
+export const createPaidRequestActionRow = (
+  requesterId: string,
+  amount: number,
+  isClosed = false
+) =>
+  new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(createPaidRequestAcceptButtonId(requesterId, amount))
+      .setLabel("Accept")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(isClosed),
+    new ButtonBuilder()
+      .setCustomId(createPaidRequestDeleteButtonId(requesterId))
+      .setLabel("Delete")
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(isClosed)
+  );
+
+const parseAmount = (value: string) => {
+  const amount = Number.parseInt(value, 10);
+  return Number.isNaN(amount) ? null : amount;
+};
+
+const parseAcceptButtonData = (customId: string): PaidRequestButtonData | null => {
+  if (!customId.startsWith(`${PAID_REQUEST_ACCEPT_BUTTON_ID}:`)) return null;
+
+  const [, requesterId, amountValue] = customId.split(":");
+  const amount = parseAmount(amountValue);
+  if (!requesterId || amount === null) return null;
+
+  return { requesterId, amount };
+};
+
+const parseDeleteButtonData = (customId: string): Pick<
+  PaidRequestButtonData,
+  "requesterId"
+> | null => {
+  if (!customId.startsWith(`${PAID_REQUEST_DELETE_BUTTON_ID}:`)) return null;
+
+  const [, requesterId] = customId.split(":");
+  if (!requesterId) return null;
+
+  return { requesterId };
+};
+
+const parseAcceptModalData = (customId: string): PaidRequestModalData | null => {
+  if (!customId.startsWith(`${PAID_REQUEST_ACCEPT_MODAL_ID}:`)) return null;
+
+  const [, requesterId, amountValue, channelId, messageId] = customId.split(":");
+  const amount = parseAmount(amountValue);
+  if (!requesterId || amount === null || !channelId || !messageId) return null;
+
+  return { requesterId, amount, channelId, messageId };
+};
+
+const parseLegacyPaidRequestButtonData = (
+  interaction: ButtonInteraction
+): PaidRequestButtonData | null => {
+  const message = interaction.message as any;
+  const requesterId =
+    message?.interactionMetadata?.user?.id ?? message?.interaction?.user?.id;
+  const bountyField = interaction.message.embeds[0]?.fields.find(
+    (field) => field.name === "Bounty"
+  );
+  const amount = parseAmount(bountyField?.value ?? "");
+
+  if (!requesterId || amount === null) return null;
+
+  return { requesterId, amount };
+};
+
+const isPaidRequestClosed = (message: Message) =>
+  message.components.some((row: any) =>
+    row.components.some(
+      (component: any) =>
+        typeof component.customId === "string" &&
+        (component.customId === "accept" ||
+          component.customId.startsWith(PAID_REQUEST_ACCEPT_BUTTON_ID)) &&
+        component.disabled
+    )
+  );
+
+const findMemberByInput = async (
+  member: GuildMember,
+  rawInput: string
+): Promise<GuildMember | null> => {
+  const input = rawInput.trim();
+  const mentionMatch = input.match(USER_MENTION_REGEX);
+  const userId = mentionMatch?.[1] ?? (USER_ID_REGEX.test(input) ? input : null);
+
+  if (userId)
+    return member.guild.members.fetch(userId).catch(() => null) as Promise<GuildMember | null>;
+
+  const normalizedInput = input.toLowerCase();
+  return (
+    member.guild.members.cache.find((candidate) => {
+      const username = candidate.user.username.toLowerCase();
+      const displayName = candidate.displayName.toLowerCase();
+
+      return (
+        username === normalizedInput || displayName === normalizedInput
+      );
+    }) ?? null
+  );
+};
+
+const canManagePaidRequest = async (
+  member: GuildMember,
+  requesterId: string
+) => {
+  if (member.user.id === requesterId) return true;
+
+  const guild = await prisma.guild.findUnique({
+    where: { discordId: member.guild.id },
+  });
+  if (!guild) return false;
+
+  const manageRequestGuildRole = await prisma.guildRole.findFirst({
+    where: {
+      guildId: guild.id,
+      name: MANAGE_REQUEST_ROLE_NAME,
+    },
+  });
+  if (!manageRequestGuildRole) return false;
+
+  return member.roles.cache.has(manageRequestGuildRole.discordId);
+};
+
+export const handlePaidRequestButtonInteraction = async (
+  interaction: ButtonInteraction
+): Promise<void> => {
+  const isLegacyAccept = interaction.customId === "accept";
+  const isLegacyDelete = interaction.customId === "delete";
+
+  const acceptData = parseAcceptButtonData(interaction.customId);
+  const deleteData = parseDeleteButtonData(interaction.customId);
+
+  if (!acceptData && !deleteData && !isLegacyAccept && !isLegacyDelete) return;
+
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This action can only be performed in a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const member = await interaction.guild.members
+    .fetch(interaction.user.id)
+    .catch(() => null);
+  if (!member) {
+    await interaction.reply({
+      content: "This action can only be performed in a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const fallbackData = parseLegacyPaidRequestButtonData(interaction);
+  const buttonData = acceptData ?? deleteData ?? fallbackData;
+  if (!buttonData) {
+    await interaction.reply({
+      content:
+        "This request was created with an older format and can no longer be managed.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const hasPermission = await canManagePaidRequest(
+    member,
+    buttonData.requesterId
+  );
+  if (!hasPermission) {
+    await interaction.reply({
+      content: "You do not have permission to perform this action.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  if (pendingPaidRequests.has(interaction.message.id)) {
+    await interaction.reply({
+      content: "This request is already being processed.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  if (deleteData || isLegacyDelete) {
+    try {
+      await interaction.message.delete();
+      await interaction.reply({
+        content: "The request has been deleted.",
+        ephemeral: true,
+      });
+    } catch (error) {
+      console.error("Error deleting the request:", error);
+      await interaction.reply({
+        content: "Failed to delete the request. Please try again later.",
+        ephemeral: true,
+      });
+    }
+
+    return;
+  }
+
+  const acceptButtonData = acceptData ?? (isLegacyAccept ? fallbackData : null);
+  if (!acceptButtonData) {
+    await interaction.reply({
+      content: "This request could not be opened for acceptance.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(
+      createPaidRequestAcceptModalId({
+        amount: acceptButtonData.amount,
+        channelId: interaction.channelId,
+        messageId: interaction.message.id,
+        requesterId: acceptButtonData.requesterId,
+      })
+    )
+    .setTitle("Accept Request");
+
+  const usernameInput = new TextInputBuilder()
+    .setCustomId("username")
+    .setLabel("Enter the username, mention or ID of the fulfiller")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput)
+  );
+
+  await interaction.showModal(modal);
+};
+
+export const handlePaidRequestModalSubmit = async (
+  interaction: ModalSubmitInteraction,
+  client: Client
+): Promise<void> => {
+  const modalData = parseAcceptModalData(interaction.customId);
+  if (!modalData) return;
+
+  if (!interaction.guild) {
+    await interaction.reply({
+      content: "This action can only be performed in a server.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const actingMember = await interaction.guild.members
+    .fetch(interaction.user.id)
+    .catch(() => null);
+  if (!actingMember) {
+    await interaction.editReply("This action can only be performed in a server.");
+    return;
+  }
+
+  const hasPermission = await canManagePaidRequest(
+    actingMember,
+    modalData.requesterId
+  );
+  if (!hasPermission) {
+    await interaction.editReply(
+      "You do not have permission to perform this action."
+    );
+    return;
+  }
+
+  const guild = await prisma.guild.findUnique({
+    where: { discordId: interaction.guild.id },
+  });
+  if (!guild) {
+    await interaction.editReply("Guild not found.");
+    return;
+  }
+
+  const guildCurrency = await prisma.guildCurrency.findFirst({
+    where: { guildId: guild.id },
+  });
+  if (!guildCurrency) {
+    await interaction.editReply("Guild currency not found.");
+    return;
+  }
+
+  const economyGuildChannel = await prisma.guildChannel.findFirst({
+    where: {
+      guildId: guild.id,
+      name: ECONOMY_CHANNEL_NAME,
+    },
+  });
+  if (!economyGuildChannel) {
+    await interaction.editReply(ECONOMY_CHANNEL_NAME + " channel not found.");
+    return;
+  }
+
+  const channel = await client.channels.fetch(modalData.channelId).catch(() => null);
+  if (!channel?.isTextBased() || !("messages" in channel)) {
+    await interaction.editReply("Request channel not found.");
+    return;
+  }
+
+  const requestMessage = await channel.messages
+    .fetch(modalData.messageId)
+    .catch(() => null);
+  if (!requestMessage) {
+    await interaction.editReply("Request message not found.");
+    return;
+  }
+
+  if (isPaidRequestClosed(requestMessage)) {
+    await interaction.editReply(
+      "This request has already been completed or closed."
+    );
+    return;
+  }
+
+  if (pendingPaidRequests.has(requestMessage.id)) {
+    await interaction.editReply("This request is already being processed.");
+    return;
+  }
+
+  pendingPaidRequests.add(requestMessage.id);
+
+  try {
+    const fulfillerInput = interaction.fields.getTextInputValue("username");
+    const fulfiller = await findMemberByInput(actingMember, fulfillerInput);
+    if (!fulfiller) {
+      await interaction.editReply(
+        `User "${fulfillerInput}" not found in the server.`
+      );
+      return;
+    }
+
+    await requestMessage.edit({
+      components: [
+        createPaidRequestActionRow(
+          modalData.requesterId,
+          modalData.amount,
+          true
+        ),
+      ],
+    });
+
+    try {
+      await updateBalance(client, {
+        user: {
+          name: fulfiller.user.username,
+          id: fulfiller.user.id,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
+          iconURL: fulfiller.user.displayAvatarURL(),
+        },
+        cashAmount: modalData.amount,
+        reason: `Bounty for fulfilling a request.`,
+      });
+    } catch (error) {
+      console.error("Error awarding paid request bounty:", error);
+      await requestMessage.edit({
+        components: [
+          createPaidRequestActionRow(
+            modalData.requesterId,
+            modalData.amount,
+            false
+          ),
+        ],
+      });
+
+      await interaction.editReply(
+        "There was an error awarding the bounty. No coins were awarded."
+      );
+      return;
+    }
+
+    await interaction.editReply(
+      `The bounty of ${modalData.amount} ${guildCurrency.namePlural} has been successfully transferred to ${fulfiller.user.username}.`
+    );
+  } finally {
+    pendingPaidRequests.delete(requestMessage.id);
+  }
+};

@@ -16,5 +16,5 @@ export const handleSlashCommand = async (
 
   // await interaction.deferReply();
 
-  slashCommand.run(client, interaction);
+  await slashCommand.run(client, interaction);
 };
