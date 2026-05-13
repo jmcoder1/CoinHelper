@@ -3,6 +3,7 @@ export const ANNOUNCEMENT_CHANNEL_NAME = "announcement";
 export const LEVELS_CHANNEL_NAME = "levels";
 export const INVITES_CHANNEL_NAME = "invites";
 export const ECONOMY_CHANNEL_NAME = "economy";
+export const COMMANDS_CHANNEL_NAME = "commands";
 export const PLAY_CHANNEL_NAME = "play";
 export const PREVIEW_CHANNEL_NAME = "preview";
 export const BOUGHT_COINS_CHANNEL_NAME = "bought-coins";
@@ -45,6 +46,10 @@ export const OP_GUILD = {
     {
       discordId: "1272985796844191765",
       name: ECONOMY_CHANNEL_NAME,
+    },
+    {
+      discordId: "1273675917910081589",
+      name: COMMANDS_CHANNEL_NAME,
     },
     {
       discordId: "1278903155836456961",
@@ -167,6 +172,10 @@ export const BMB_GUILD = {
       name: ECONOMY_CHANNEL_NAME,
     },
     {
+      discordId: "1283233956828811388",
+      name: COMMANDS_CHANNEL_NAME,
+    },
+    {
       discordId: "1283234433763115122",
       name: PLAY_CHANNEL_NAME,
     },
@@ -284,6 +293,10 @@ export const Tt_GUILD = {
       name: ECONOMY_CHANNEL_NAME,
     },
     {
+      discordId: "1323760643580624896",
+      name: COMMANDS_CHANNEL_NAME,
+    },
+    {
       discordId: "1323747470295171142",
       name: PLAY_CHANNEL_NAME,
     },
@@ -397,6 +410,10 @@ export const CUCK_GUILD = {
     {
       discordId: "1367954493144301580",
       name: ECONOMY_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301579",
+      name: COMMANDS_CHANNEL_NAME,
     },
     {
       discordId: "1367954493144301581",

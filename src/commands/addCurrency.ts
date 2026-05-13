@@ -9,7 +9,10 @@ import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalanc
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
-import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
+import {
+  COMMANDS_CHANNEL_NAME,
+  ECONOMY_CHANNEL_NAME,
+} from "../utils/apiUtils/prismaUtils/constants";
 
 export const AddCurrency: Command = {
   name: "add-currency",
@@ -78,6 +81,22 @@ export const AddCurrency: Command = {
         ECONOMY_CHANNEL_NAME + " channel not found."
       );
 
+    const commandsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: COMMANDS_CHANNEL_NAME,
+      },
+    });
+    if (!commandsGuildChannel)
+      return endInteraction(
+        interaction,
+        COMMANDS_CHANNEL_NAME + " channel not found."
+      );
+
+    const currentChannel = await client.channels.fetch(interaction.channelId);
+    if (!currentChannel || !currentChannel.isTextBased())
+      return endInteraction(interaction, "Current channel not found.");
+
     const [, error] = await tryAsyncAwait(() =>
       updateBalance(client, {
         user: {
@@ -99,6 +118,17 @@ export const AddCurrency: Command = {
       return endInteraction(
         interaction,
         "Error updating balance. Please try again later."
+      );
+
+    const [, sendMessageError] = await tryAsyncAwait(() =>
+      currentChannel.send(
+        `<@${recipient.id}> ${amount} ${guildCurrency.namePlural} have been added. Please check the Economy Commands in <#${commandsGuildChannel.discordId}>`
+      )
+    );
+    if (sendMessageError)
+      return endInteraction(
+        interaction,
+        "Balance updated, but the confirmation message could not be sent."
       );
 
     return endInteraction(
