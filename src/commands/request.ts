@@ -17,6 +17,7 @@ import { validateAmount } from "./utils/validateAmount";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import { createRequestDeleteActionRow } from "./utils/paidRequestInteractions";
 import {
   DM_REQUEST_CHANNEL_NAME,
   ECONOMY_CHANNEL_NAME,
@@ -227,6 +228,7 @@ export const Request: Command = {
       await targetChannel.send({
         content: `Request submitted by <@${interaction.user.id}>.`,
         embeds: [embed],
+        components: [createRequestDeleteActionRow(interaction.user.id)],
       });
 
       await modalInteraction.reply({

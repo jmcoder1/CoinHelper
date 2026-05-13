@@ -21,10 +21,12 @@ import {
 const PAID_REQUEST_ACCEPT_BUTTON_ID = "paid-request-accept";
 const PAID_REQUEST_DELETE_BUTTON_ID = "paid-request-delete";
 const PAID_REQUEST_ACCEPT_MODAL_ID = "paid-request-accept-modal";
+const REQUEST_DELETE_BUTTON_ID = "request-delete";
 
 const pendingPaidRequests = new Set<string>();
 
 const USER_MENTION_REGEX = /^<@!?(\d+)>$/;
+const USER_MENTION_SEARCH_REGEX = /<@!?(\d+)>/;
 const USER_ID_REGEX = /^\d{17,20}$/;
 
 interface PaidRequestButtonData {
@@ -45,6 +47,9 @@ export const createPaidRequestAcceptButtonId = (
 export const createPaidRequestDeleteButtonId = (requesterId: string) =>
   `${PAID_REQUEST_DELETE_BUTTON_ID}:${requesterId}`;
 
+export const createRequestDeleteButtonId = (requesterId: string) =>
+  `${REQUEST_DELETE_BUTTON_ID}:${requesterId}`;
+
 const createPaidRequestAcceptModalId = ({
   amount,
   channelId,
@@ -53,23 +58,38 @@ const createPaidRequestAcceptModalId = ({
 }: PaidRequestModalData) =>
   `${PAID_REQUEST_ACCEPT_MODAL_ID}:${requesterId}:${amount}:${channelId}:${messageId}`;
 
-export const createPaidRequestActionRow = (
+export const createRequestDeleteActionRow = (
+  requesterId: string,
+  isClosed = false,
+  customId = createRequestDeleteButtonId(requesterId)
+) =>
+  new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(customId)
+      .setLabel("Delete Request")
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(isClosed)
+  );
+
+export const createPaidRequestActionRows = (
   requesterId: string,
   amount: number,
   isClosed = false
 ) =>
-  new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId(createPaidRequestAcceptButtonId(requesterId, amount))
-      .setLabel("Accept")
-      .setStyle(ButtonStyle.Success)
-      .setDisabled(isClosed),
-    new ButtonBuilder()
-      .setCustomId(createPaidRequestDeleteButtonId(requesterId))
-      .setLabel("Delete")
-      .setStyle(ButtonStyle.Danger)
-      .setDisabled(isClosed)
-  );
+  [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(createPaidRequestAcceptButtonId(requesterId, amount))
+        .setLabel("Accept")
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(isClosed)
+    ),
+    createRequestDeleteActionRow(
+      requesterId,
+      isClosed,
+      createPaidRequestDeleteButtonId(requesterId)
+    ),
+  ];
 
 const parseAmount = (value: string) => {
   const amount = Number.parseInt(value, 10);
@@ -91,6 +111,18 @@ const parseDeleteButtonData = (customId: string): Pick<
   "requesterId"
 > | null => {
   if (!customId.startsWith(`${PAID_REQUEST_DELETE_BUTTON_ID}:`)) return null;
+
+  const [, requesterId] = customId.split(":");
+  if (!requesterId) return null;
+
+  return { requesterId };
+};
+
+const parseRequestDeleteButtonData = (customId: string): Pick<
+  PaidRequestButtonData,
+  "requesterId"
+> | null => {
+  if (!customId.startsWith(`${REQUEST_DELETE_BUTTON_ID}:`)) return null;
 
   const [, requesterId] = customId.split(":");
   if (!requesterId) return null;
@@ -122,6 +154,14 @@ const parseLegacyPaidRequestButtonData = (
   if (!requesterId || amount === null) return null;
 
   return { requesterId, amount };
+};
+
+const parseRequesterIdFromMessageMention = (message: Message) => {
+  const requesterMatch =
+    message.embeds[0]?.description?.match(USER_MENTION_SEARCH_REGEX) ??
+    message.content.match(USER_MENTION_SEARCH_REGEX);
+
+  return requesterMatch?.[1] ?? null;
 };
 
 const isPaidRequestClosed = (message: Message) =>
@@ -189,8 +229,16 @@ export const handlePaidRequestButtonInteraction = async (
 
   const acceptData = parseAcceptButtonData(interaction.customId);
   const deleteData = parseDeleteButtonData(interaction.customId);
+  const requestDeleteData = parseRequestDeleteButtonData(interaction.customId);
 
-  if (!acceptData && !deleteData && !isLegacyAccept && !isLegacyDelete) return;
+  if (
+    !acceptData &&
+    !deleteData &&
+    !requestDeleteData &&
+    !isLegacyAccept &&
+    !isLegacyDelete
+  )
+    return;
 
   if (!interaction.guild) {
     await interaction.reply({
@@ -212,8 +260,13 @@ export const handlePaidRequestButtonInteraction = async (
   }
 
   const fallbackData = parseLegacyPaidRequestButtonData(interaction);
-  const buttonData = acceptData ?? deleteData ?? fallbackData;
-  if (!buttonData) {
+  const requesterId =
+    requestDeleteData?.requesterId ??
+    deleteData?.requesterId ??
+    acceptData?.requesterId ??
+    fallbackData?.requesterId ??
+    parseRequesterIdFromMessageMention(interaction.message);
+  if (!requesterId) {
     await interaction.reply({
       content:
         "This request was created with an older format and can no longer be managed.",
@@ -222,27 +275,15 @@ export const handlePaidRequestButtonInteraction = async (
     return;
   }
 
-  const hasPermission = await canManagePaidRequest(
-    member,
-    buttonData.requesterId
-  );
-  if (!hasPermission) {
-    await interaction.reply({
-      content: "You do not have permission to perform this action.",
-      ephemeral: true,
-    });
-    return;
-  }
+  if (requestDeleteData || deleteData || isLegacyDelete) {
+    if (member.user.id !== requesterId) {
+      await interaction.reply({
+        content: "You cannot delete this request.",
+        ephemeral: true,
+      });
+      return;
+    }
 
-  if (pendingPaidRequests.has(interaction.message.id)) {
-    await interaction.reply({
-      content: "This request is already being processed.",
-      ephemeral: true,
-    });
-    return;
-  }
-
-  if (deleteData || isLegacyDelete) {
     try {
       await interaction.message.delete();
       await interaction.reply({
@@ -257,6 +298,23 @@ export const handlePaidRequestButtonInteraction = async (
       });
     }
 
+    return;
+  }
+
+  const hasPermission = await canManagePaidRequest(member, requesterId);
+  if (!hasPermission) {
+    await interaction.reply({
+      content: "You do not have permission to perform this action.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  if (pendingPaidRequests.has(interaction.message.id)) {
+    await interaction.reply({
+      content: "This request is already being processed.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -396,7 +454,7 @@ export const handlePaidRequestModalSubmit = async (
 
     await requestMessage.edit({
       components: [
-        createPaidRequestActionRow(
+        ...createPaidRequestActionRows(
           modalData.requesterId,
           modalData.amount,
           true
@@ -424,7 +482,7 @@ export const handlePaidRequestModalSubmit = async (
       console.error("Error awarding paid request bounty:", error);
       await requestMessage.edit({
         components: [
-          createPaidRequestActionRow(
+          ...createPaidRequestActionRows(
             modalData.requesterId,
             modalData.amount,
             false

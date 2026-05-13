@@ -17,7 +17,7 @@ import {
   SAUCE_REQUEST_CHANNEL_NAME,
   TRANSLATION_REQUEST_CHANNEL_NAME,
 } from "../utils/apiUtils/prismaUtils/constants";
-import { createPaidRequestActionRow } from "./utils/paidRequestInteractions";
+import { createPaidRequestActionRows } from "./utils/paidRequestInteractions";
 
 export const PaidRequest: Command = {
   name: "paid-request",
@@ -187,7 +187,7 @@ export const PaidRequest: Command = {
         const requestMessage = await channel.send({
           embeds: [embed],
           content: `Respond to this request in the thread below and earn ${amount} ${guildCurrency.namePlural} if your response is accepted!`,
-          components: [createPaidRequestActionRow(interaction.user.id, amount)],
+          components: createPaidRequestActionRows(interaction.user.id, amount),
         });
 
         let requestThread = null;
