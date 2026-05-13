@@ -13,6 +13,7 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import {
   BOUGHT_COINS_CHANNEL_NAME,
+  COMMANDS_CHANNEL_NAME,
   ECONOMY_CHANNEL_NAME,
 } from "../utils/apiUtils/prismaUtils/constants";
 
@@ -126,6 +127,22 @@ export const BoughtCoins: Command = {
         "Bought coins channel is not a text channel."
       );
 
+    const commandsGuildChannel = await prisma.guildChannel.findFirst({
+      where: {
+        guildId: guild.id,
+        name: COMMANDS_CHANNEL_NAME,
+      },
+    });
+    if (!commandsGuildChannel)
+      return endInteraction(
+        interaction,
+        COMMANDS_CHANNEL_NAME + " channel not found."
+      );
+
+    const currentChannel = await client.channels.fetch(interaction.channelId);
+    if (!currentChannel || !currentChannel.isTextBased())
+      return endInteraction(interaction, "Current channel not found.");
+
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle(titleReason)
@@ -137,6 +154,17 @@ export const BoughtCoins: Command = {
     boughtCoinsChannel.send({
       embeds: [embed],
     });
+
+    const [, sendMessageError] = await tryAsyncAwait(() =>
+      currentChannel.send(
+        `<@${buyer.id}> ${amount} ${guildCurrency.namePlural} have been added. Please check the Economy Commands in <#${commandsGuildChannel.discordId}>`
+      )
+    );
+    if (sendMessageError)
+      return endInteraction(
+        interaction,
+        "Balance updated, but the confirmation message could not be sent."
+      );
 
     return endInteraction(interaction, "Command complete successfully.");
   },
