@@ -107,19 +107,23 @@ export const messageCreate: MessageCreateListener = {
       });
     } else if (boughtCoinsGuildChannel.discordId === message.channelId) {
       if (message.author.bot && message.author.username === "DISBOARD") {
-        // Check if the message contains the "Bump done!" text
-        if (!message.content.includes("Bump done!")) {
+        const hasSuccessfulBumpMessage =
+          message.content.includes("Bump done!") ||
+          message.embeds.some((embed) =>
+            embed.description?.includes("Bump done!")
+          );
+
+        if (hasSuccessfulBumpMessage) {
           const user = message.mentions.users.first(); // Get the user who bumped
           if (user) {
             console.log(`${user.username} used the /bump command.`);
-            // Perform any additional actions, such as logging or rewarding the user
 
             const BOOST_REWARD_AMOUNT = 100;
             await updateBalance(message.client, {
               user: {
-                id: message.author.id,
-                name: message.author.username,
-                iconURL: message.author.avatarURL() || undefined,
+                id: user.id,
+                name: user.username,
+                iconURL: user.avatarURL() || undefined,
                 guild: {
                   id: guild.discordId,
                   currencyPluralName: guildCurrency.namePlural,
