@@ -30,7 +30,7 @@ import {
 } from "../utils/apiUtils/prismaUtils/constants";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
-const COMMAND_COST = 25;
+const COMMAND_COST = 200;
 const BANNED_WORD_COST = 1000;
 
 export const TextToImage: Command = {
