@@ -248,22 +248,54 @@ export const handlePaidRequestButtonInteraction = async (
     return;
   }
 
-  const member = await interaction.guild.members
-    .fetch(interaction.user.id)
-    .catch(() => null);
-  if (!member) {
-    await interaction.reply({
-      content: "This action can only be performed in a server.",
-      ephemeral: true,
-    });
+  const fallbackData = parseLegacyPaidRequestButtonData(interaction);
+
+  if (acceptData || isLegacyAccept) {
+    const acceptButtonData = acceptData ?? fallbackData;
+    if (!acceptButtonData) {
+      await interaction.reply({
+        content: "This request could not be opened for acceptance.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (pendingPaidRequests.has(interaction.message.id)) {
+      await interaction.reply({
+        content: "This request is already being processed.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(
+        createPaidRequestAcceptModalId({
+          amount: acceptButtonData.amount,
+          channelId: interaction.channelId,
+          messageId: interaction.message.id,
+          requesterId: acceptButtonData.requesterId,
+        })
+      )
+      .setTitle("Accept Request");
+
+    const usernameInput = new TextInputBuilder()
+      .setCustomId("username")
+      .setLabel("Enter the username, mention or ID of the fulfiller")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput)
+    );
+
+    await interaction.showModal(modal);
     return;
   }
 
-  const fallbackData = parseLegacyPaidRequestButtonData(interaction);
   const requesterId =
     requestDeleteData?.requesterId ??
     deleteData?.requesterId ??
-    acceptData?.requesterId ??
     fallbackData?.requesterId ??
     parseRequesterIdFromMessageMention(interaction.message);
   if (!requesterId) {
@@ -275,80 +307,27 @@ export const handlePaidRequestButtonInteraction = async (
     return;
   }
 
-  if (requestDeleteData || deleteData || isLegacyDelete) {
-    if (member.user.id !== requesterId) {
-      await interaction.reply({
-        content: "You cannot delete this request.",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    try {
-      await interaction.message.delete();
-      await interaction.reply({
-        content: "The request has been deleted.",
-        ephemeral: true,
-      });
-    } catch (error) {
-      console.error("Error deleting the request:", error);
-      await interaction.reply({
-        content: "Failed to delete the request. Please try again later.",
-        ephemeral: true,
-      });
-    }
-
-    return;
-  }
-
-  const hasPermission = await canManagePaidRequest(member, requesterId);
-  if (!hasPermission) {
+  if (interaction.user.id !== requesterId) {
     await interaction.reply({
-      content: "You do not have permission to perform this action.",
+      content: "You cannot delete this request.",
       ephemeral: true,
     });
     return;
   }
 
-  if (pendingPaidRequests.has(interaction.message.id)) {
+  try {
+    await interaction.message.delete();
     await interaction.reply({
-      content: "This request is already being processed.",
+      content: "The request has been deleted.",
       ephemeral: true,
     });
-    return;
-  }
-
-  const acceptButtonData = acceptData ?? (isLegacyAccept ? fallbackData : null);
-  if (!acceptButtonData) {
+  } catch (error) {
+    console.error("Error deleting the request:", error);
     await interaction.reply({
-      content: "This request could not be opened for acceptance.",
+      content: "Failed to delete the request. Please try again later.",
       ephemeral: true,
     });
-    return;
   }
-
-  const modal = new ModalBuilder()
-    .setCustomId(
-      createPaidRequestAcceptModalId({
-        amount: acceptButtonData.amount,
-        channelId: interaction.channelId,
-        messageId: interaction.message.id,
-        requesterId: acceptButtonData.requesterId,
-      })
-    )
-    .setTitle("Accept Request");
-
-  const usernameInput = new TextInputBuilder()
-    .setCustomId("username")
-    .setLabel("Enter the username, mention or ID of the fulfiller")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
-
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput)
-  );
-
-  await interaction.showModal(modal);
 };
 
 export const handlePaidRequestModalSubmit = async (

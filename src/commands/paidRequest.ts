@@ -194,8 +194,16 @@ export const PaidRequest: Command = {
         try {
           requestThread = await requestMessage.startThread({
             name: `Respond to request`,
-            autoArchiveDuration: 1440 * 7, // 7 days
+            autoArchiveDuration: 1440,
           });
+          if (requestThread?.isTextBased()) {
+            await requestThread.members
+              .add(interaction.user.id)
+              .catch(() => null);
+            await requestThread.send(
+              `<@${interaction.user.id}> use this thread to add more details about your request. Anyone interested in fulfilling it can also reply here.`
+            );
+          }
         } catch (error) {
           await requestMessage.delete().catch(() => null);
           return endInteraction(
