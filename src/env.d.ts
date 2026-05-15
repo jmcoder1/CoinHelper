@@ -8,11 +8,9 @@ declare global {
       DISCORD_CLIENT_SECRET: string;
       DISCORD_TOKEN: string;
       UNBELIEVABOAT_TOKEN: string;
-      NOVEL_API_USERNAME: string;
-      NOVEL_API_PASSWORD: string;
-      NOVEL_API_PERSISTENT_TOEKN: string;
       AWS_S3_ACCESS_KEY_ID: string;
       AWS_S3_SECRET_ACCESS_KEY: string;
+      HF_TOKEN: string;
     }
   }
 }

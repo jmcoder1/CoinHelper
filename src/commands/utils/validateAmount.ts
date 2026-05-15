@@ -8,33 +8,32 @@ interface ValidateAmountDataProps {
   currencyPluralName: string;
 }
 
+/** For flows that already used `deferReply` — use `editReply` with this message. */
+export const getValidateAmountErrorMessage = (
+  data: ValidateAmountDataProps
+): string | null => {
+  const { amount, cost, balance, currencyPluralName } = data;
+
+  if (amount < 0) return "Please enter a positive amount";
+
+  if (amount < cost)
+    return `Please enter an amount greater or equal to ${cost}`;
+
+  if (balance < amount)
+    return `You do not have enough ${currencyPluralName}! Please enter a lower amount`;
+
+  return null;
+};
+
 export const validateAmount = (
   interaction: CommandInteraction,
   data: ValidateAmountDataProps
 ): Boolean => {
-  const { amount, cost, balance, currencyPluralName } = data;
-
-  let isSuccesful = true;
-  if (amount < 0) {
-    endInteraction(interaction, "Please enter a positive amount");
-    isSuccesful = false;
+  const message = getValidateAmountErrorMessage(data);
+  if (message) {
+    void endInteraction(interaction, message);
+    return false;
   }
 
-  if (amount < cost) {
-    endInteraction(
-      interaction,
-      `Please enter an amount greater or equal to ${cost}`
-    );
-    isSuccesful = false;
-  }
-
-  if (balance < amount) {
-    endInteraction(
-      interaction,
-      `You do not have enough ${currencyPluralName}! Please enter a lower amount`
-    );
-    isSuccesful = false;
-  }
-
-  return isSuccesful;
+  return true;
 };

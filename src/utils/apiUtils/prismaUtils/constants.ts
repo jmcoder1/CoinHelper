@@ -8,6 +8,7 @@ export const PLAY_CHANNEL_NAME = "play";
 export const PREVIEW_CHANNEL_NAME = "preview";
 export const BOUGHT_COINS_CHANNEL_NAME = "bought-coins";
 export const AI_GEN_IMAGE_TIPS_CHANNEL_NAME = "ai-gen-image-tips";
+export const AI_IMAGE_CHANNEL_NAME = "ai-image";
 export const NEW_CHANNEL_MOD_CHANNEL_NAME = "new-channel-mod";
 export const DM_REQUEST_CHANNEL_NAME = "dm-request";
 export const ROLEPLAY_REQUEST_CHANNEL_NAME = "roleplay-request";
@@ -65,7 +66,7 @@ export const OP_GUILD = {
     },
     {
       discordId: "1283114792248147998",
-      name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+      name: AI_IMAGE_CHANNEL_NAME,
     },
     {
       discordId: "1362130473173913760",
@@ -192,6 +193,10 @@ export const BMB_GUILD = {
       name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
     },
     {
+      discordId: "1295968174839435306",
+      name: AI_IMAGE_CHANNEL_NAME,
+    },
+    {
       discordId: "1359643627269390336",
       name: NEW_CHANNEL_MOD_CHANNEL_NAME,
     },
@@ -310,7 +315,7 @@ export const Tt_GUILD = {
     },
     {
       discordId: "1323760824572968970",
-      name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+      name: AI_IMAGE_CHANNEL_NAME,
     },
     {
       discordId: "1362130610595827863",
@@ -430,6 +435,10 @@ export const CUCK_GUILD = {
     {
       discordId: "1367954493144301582",
       name: AI_GEN_IMAGE_TIPS_CHANNEL_NAME,
+    },
+    {
+      discordId: "1367954493144301583",
+      name: AI_IMAGE_CHANNEL_NAME,
     },
     {
       discordId: "1367954497803911189",
