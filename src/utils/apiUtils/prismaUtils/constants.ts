@@ -21,6 +21,26 @@ export const PREVIEW_ROLE_NAME = "preview";
 export const NEW_CHANNEL_ROLE_NAME = "new-channel";
 export const DELETE_MESSAGE_ROLE_NAME = "delete-message";
 export const MANAGE_REQUEST_ROLE_NAME = "manage-request";
+export const BRONZE_ROLE_NAME = "bronze";
+export const SILVER_ROLE_NAME = "silver";
+export const GOLD_ROLE_NAME = "gold";
+export const DIAMOND_ROLE_NAME = "diamond";
+
+export const TIER_ROLE_NAMES = [
+  BRONZE_ROLE_NAME,
+  SILVER_ROLE_NAME,
+  GOLD_ROLE_NAME,
+  DIAMOND_ROLE_NAME,
+] as const;
+
+/** Max images per message by tier role name. New members (no tier role) use 1. Diamond is unlimited. */
+export const TIER_IMAGE_LIMIT_BY_ROLE_NAME: Record<string, number> = {
+  [BRONZE_ROLE_NAME]: 3,
+  [SILVER_ROLE_NAME]: 4,
+  [GOLD_ROLE_NAME]: 5,
+};
+
+export const NEW_MEMBER_IMAGE_LIMIT = 1;
 
 export const APP_NAME = "CoinHelper";
 export const SERVER_BOOST_ICON =
@@ -114,6 +134,10 @@ export const OP_GUILD = {
       discordId: "1363636566160834640",
       name: MANAGE_REQUEST_ROLE_NAME,
     },
+    { discordId: "1272730232792809472", name: BRONZE_ROLE_NAME },
+    { discordId: "1272730425357504512", name: SILVER_ROLE_NAME },
+    { discordId: "1272730473319108668", name: GOLD_ROLE_NAME },
+    { discordId: "1272730498300379217", name: DIAMOND_ROLE_NAME },
   ],
   removalReasons: [
     {
@@ -239,6 +263,10 @@ export const BMB_GUILD = {
       discordId: "1363636001674756096",
       name: MANAGE_REQUEST_ROLE_NAME,
     },
+    { discordId: "1283227873418940488", name: BRONZE_ROLE_NAME },
+    { discordId: "1283227827553959977", name: SILVER_ROLE_NAME },
+    { discordId: "1283227791441264743", name: GOLD_ROLE_NAME },
+    { discordId: "1283227691251794044", name: DIAMOND_ROLE_NAME },
   ],
   removalReasons: [
     {
@@ -358,6 +386,10 @@ export const Tt_GUILD = {
       discordId: "1363636851793199314",
       name: MANAGE_REQUEST_ROLE_NAME,
     },
+    { discordId: "1323436068741054475", name: BRONZE_ROLE_NAME },
+    { discordId: "1323435938109718582", name: SILVER_ROLE_NAME },
+    { discordId: "1323435890231742474", name: GOLD_ROLE_NAME },
+    { discordId: "1323435854261125140", name: DIAMOND_ROLE_NAME },
   ],
   removalReasons: [
     {
@@ -483,6 +515,10 @@ export const CUCK_GUILD = {
       discordId: "1367954490329796638",
       name: MANAGE_REQUEST_ROLE_NAME,
     },
+    { discordId: "1367954490317344911", name: BRONZE_ROLE_NAME },
+    { discordId: "1367954490317344912", name: SILVER_ROLE_NAME },
+    { discordId: "1367954490317344913", name: GOLD_ROLE_NAME },
+    { discordId: "1367954490317344914", name: DIAMOND_ROLE_NAME },
   ],
   removalReasons: [
     {
