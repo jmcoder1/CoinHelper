@@ -281,7 +281,8 @@ export const handlePaidRequestButtonInteraction = async (
 
     const usernameInput = new TextInputBuilder()
       .setCustomId("username")
-      .setLabel("Enter the username, mention or ID of the fulfiller")
+      .setLabel("Who fulfilled this request?")
+      .setPlaceholder("username, @mention, or user ID")
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
@@ -289,7 +290,20 @@ export const handlePaidRequestButtonInteraction = async (
       new ActionRowBuilder<TextInputBuilder>().addComponents(usernameInput)
     );
 
-    await interaction.showModal(modal);
+    try {
+      await interaction.showModal(modal);
+    } catch (error) {
+      console.error("Error showing paid request accept modal:", error);
+      if (interaction.replied || interaction.deferred) return;
+
+      await interaction
+        .reply({
+          content:
+            "Could not open the accept form. Please try again in a moment. If this keeps happening, contact staff.",
+          ephemeral: true,
+        })
+        .catch(() => null);
+    }
     return;
   }
 
