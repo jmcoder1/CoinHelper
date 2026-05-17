@@ -7,9 +7,9 @@ import { getMemberImagePostLimit } from "./utils/discordUtils/getMemberImagePost
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
 import { toUserId } from "./utils/discordUtils/toUserId";
+import { handleDisboardBump } from "./utils/handleDisboardBump";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import {
-  BOUGHT_COINS_CHANNEL_NAME,
   ECONOMY_CHANNEL_NAME,
   INVITES_CHANNEL_NAME,
   LEVELS_CHANNEL_NAME,
@@ -45,13 +45,14 @@ export const messageCreate: MessageCreateListener = {
     });
     if (!economyGuildChannel) return;
 
-    const boughtCoinsGuildChannel = await prisma.guildChannel.findFirst({
-      where: {
-        guildId: guild.id,
-        name: BOUGHT_COINS_CHANNEL_NAME,
-      },
-    });
-    if (!boughtCoinsGuildChannel) return;
+    const bumpContext = {
+      guildDiscordId: guild.discordId,
+      currencyPluralName: guildCurrency.namePlural,
+      currencyImage: guildCurrency.iconSrc,
+      economyChannelId: economyGuildChannel.discordId,
+    };
+
+    if (await handleDisboardBump(message.client, message, bumpContext)) return;
 
     const invitesGuildChannel = await prisma.guildChannel.findFirst({
       where: {
@@ -107,38 +108,6 @@ export const messageCreate: MessageCreateListener = {
         cashAmount: 25,
         reason: "New Level",
       });
-    } else if (boughtCoinsGuildChannel.discordId === message.channelId) {
-      if (message.author.bot && message.author.username === "DISBOARD") {
-        const hasSuccessfulBumpMessage =
-          message.content.includes("Bump done!") ||
-          message.embeds.some((embed) =>
-            embed.description?.includes("Bump done!")
-          );
-
-        if (hasSuccessfulBumpMessage) {
-          const user = message.mentions.users.first(); // Get the user who bumped
-          if (user) {
-            console.log(`${user.username} used the /bump command.`);
-
-            const BOOST_REWARD_AMOUNT = 100;
-            await updateBalance(message.client, {
-              user: {
-                id: user.id,
-                name: user.username,
-                iconURL: user.avatarURL() || undefined,
-                guild: {
-                  id: guild.discordId,
-                  currencyPluralName: guildCurrency.namePlural,
-                  economyChannelId: economyGuildChannel.discordId,
-                  currencyImage: guildCurrency.iconSrc,
-                },
-              },
-              cashAmount: BOOST_REWARD_AMOUNT,
-              reason: `You have been rewarded ${BOOST_REWARD_AMOUNT} ${guildCurrency.namePlural} for boosting the server.`,
-            });
-          }
-        }
-      }
     } else {
       const num = findNumImages(message.attachments);
       if (!num || num === 0) return;
