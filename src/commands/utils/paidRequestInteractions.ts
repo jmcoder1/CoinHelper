@@ -71,25 +71,45 @@ export const createRequestDeleteActionRow = (
       .setDisabled(isClosed)
   );
 
+interface PaidRequestActionRowOptions {
+  acceptDisabled?: boolean;
+  deleteDisabled?: boolean;
+}
+
+const toActionRowOptions = (
+  options: boolean | PaidRequestActionRowOptions = false
+): Required<PaidRequestActionRowOptions> => {
+  if (typeof options === "boolean") {
+    return { acceptDisabled: options, deleteDisabled: options };
+  }
+  return {
+    acceptDisabled: options.acceptDisabled ?? false,
+    deleteDisabled: options.deleteDisabled ?? false,
+  };
+};
+
 export const createPaidRequestActionRows = (
   requesterId: string,
   amount: number,
-  isClosed = false
-) =>
-  [
+  options: boolean | PaidRequestActionRowOptions = false
+) => {
+  const { acceptDisabled, deleteDisabled } = toActionRowOptions(options);
+
+  return [
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(createPaidRequestAcceptButtonId(requesterId, amount))
         .setLabel("Accept")
         .setStyle(ButtonStyle.Success)
-        .setDisabled(isClosed)
+        .setDisabled(acceptDisabled)
     ),
     createRequestDeleteActionRow(
       requesterId,
-      isClosed,
+      deleteDisabled,
       createPaidRequestDeleteButtonId(requesterId)
     ),
   ];
+};
 
 const parseAmount = (value: string) => {
   const amount = Number.parseInt(value, 10);
@@ -450,7 +470,7 @@ export const handlePaidRequestModalSubmit = async (
         ...createPaidRequestActionRows(
           modalData.requesterId,
           modalData.amount,
-          true
+          { acceptDisabled: true, deleteDisabled: false }
         ),
       ],
     });

@@ -19,6 +19,9 @@ import {
 } from "../utils/apiUtils/prismaUtils/constants";
 import { createPaidRequestActionRows } from "./utils/paidRequestInteractions";
 
+/** Guards against duplicate /paid-request runs from the same user in the same guild. */
+const inFlightPaidRequests = new Set<string>();
+
 export const PaidRequest: Command = {
   name: "paid-request",
   description: "Pay another member of the server fulfil a request",
@@ -60,6 +63,36 @@ export const PaidRequest: Command = {
 
     const interactionGuild = interaction.guild;
 
+    // Acknowledge immediately so we don't blow the 3s interaction window
+    // while we hit Prisma, UnbelievaBoat, channel.send, startThread, etc.
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction
+        .deferReply({ ephemeral: true })
+        .catch((error) => console.error("Error deferring paid request:", error));
+    }
+
+    const inFlightKey = `${interactionGuild.id}:${interaction.user.id}`;
+    if (inFlightPaidRequests.has(inFlightKey)) {
+      return endInteraction(
+        interaction,
+        "You already have a paid request being created. Please wait for it to finish."
+      );
+    }
+    inFlightPaidRequests.add(inFlightKey);
+
+    try {
+      return await runPaidRequest(client, interaction, interactionGuild);
+    } finally {
+      inFlightPaidRequests.delete(inFlightKey);
+    }
+  },
+};
+
+const runPaidRequest = async (
+  client: Client,
+  interaction: CommandInteraction,
+  interactionGuild: NonNullable<CommandInteraction["guild"]>
+): Promise<boolean> => {
     const guild = await prisma.guild.findUnique({
       where: { discordId: interactionGuild.id },
     });
@@ -257,5 +290,4 @@ export const PaidRequest: Command = {
       interaction,
       "Invalid request type. Please choose a valid type."
     );
-  },
 };
