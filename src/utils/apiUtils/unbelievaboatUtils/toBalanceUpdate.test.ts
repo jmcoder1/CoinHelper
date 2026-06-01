@@ -1,4 +1,3 @@
-import { ECONOMY_CHANNEL_NAME, OP_GUILD } from "../prismaUtils/constants";
 import { toBalanceUpdate } from "./toBalanceUpdate";
 
 const DISCORD_CLIENT = {
@@ -18,12 +17,11 @@ const DISCORD_CLIENT = {
 
 describe("toBalanceUpdate from strings", () => {
   it("normal join = amount, userId, reason", async () => {
-    // normal join
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> just joined. They were invited by <@1206422067919061032> who now has 12 invites!"
-      )
+        "<@1057036912210231437> just joined. They were invited by <@1206422067919061032> who now has 12 invites!",
+      ),
     ).toEqual({
       cashAmount: 100,
       user: {
@@ -36,12 +34,11 @@ describe("toBalanceUpdate from strings", () => {
   });
 
   it("invited herself = null", async () => {
-    // invited himself
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has invited himself!"
-      )
+        "<@1057036912210231437> has invited himself!",
+      ),
     ).toEqual(null);
   });
 
@@ -49,8 +46,8 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "I am unable to tell you who invited <@1057036912210231437>. Maybe a temporary invite.!"
-      )
+        "I am unable to tell you who invited <@1057036912210231437>. Maybe a temporary invite.!",
+      ),
     ).toEqual(null);
   });
 
@@ -58,8 +55,8 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has arrived by using the vanity invite 12"
-      )
+        "<@1057036912210231437> has arrived by using the vanity invite 12",
+      ),
     ).toEqual(null);
   });
 
@@ -67,21 +64,14 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> has left. He was invited by <@1206422067919061032>"
-      )
+        "<@1057036912210231437> has left. He was invited by <@1206422067919061032>",
+      ),
     ).toEqual({
       cashAmount: -110,
       user: {
         id: "1057036912210231437",
         name: "bobicus",
         iconURL: "testdoao",
-        guild: {
-          id: OP_GUILD.id,
-          currencyPluralName: OP_GUILD.currencyPluralName,
-          economyChannelId: OP_GUILD.channels.find(
-            (channel) => channel.name === ECONOMY_CHANNEL_NAME
-          )?.discordId,
-        },
       },
       reason: "leave <@1057036912210231437>",
     });
@@ -91,8 +81,8 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "I don't know who invited <@1057036912210231437>"
-      )
+        "I don't know who invited <@1057036912210231437>",
+      ),
     ).toEqual(null);
   });
 
@@ -100,8 +90,8 @@ describe("toBalanceUpdate from strings", () => {
     expect(
       toBalanceUpdate(
         DISCORD_CLIENT,
-        "<@1057036912210231437> was invited using a vanity invite."
-      )
+        "<@1057036912210231437> was invited using a vanity invite.",
+      ),
     ).toEqual(null);
   });
 });

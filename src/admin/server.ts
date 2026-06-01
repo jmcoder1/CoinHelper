@@ -1,14 +1,13 @@
+import "./envBootstrap";
 import path from "path";
 import express from "express";
 import { assertProdDatabase } from "./assertProdDatabase";
+import { isAdminDatabaseTunnel } from "./isAdminDatabaseTunnel";
 import { isAdminReadOnly } from "./isAdminReadOnly";
-import { loadAdminEnv } from "./loadAdminEnv";
 import { apiKeyAuth } from "./middleware/apiKeyAuth";
 import { readOnlyGuard } from "./middleware/readOnlyGuard";
 import { apiRouter } from "./routes/api";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
-
-loadAdminEnv();
 
 const databaseHost = assertProdDatabase();
 
@@ -34,9 +33,13 @@ app.use("/api", apiKeyAuth, readOnlyGuard, apiRouter);
 
 const server = app.listen(port, host, () => {
   console.log(`CoinHelper admin running at http://${host}:${port}/app`);
+  console.log(`Env loaded from: .env.production`);
   console.log(`Connected to production database: ${databaseHost}`);
   if (isAdminReadOnly()) {
     console.log("READ ONLY mode enabled (ADMIN_READ_ONLY) — writes are disabled");
+  }
+  if (isAdminDatabaseTunnel()) {
+    console.log("Database tunnel mode (ADMIN_DATABASE_TUNNEL) — localhost URL allowed");
   }
 });
 

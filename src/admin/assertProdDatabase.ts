@@ -1,4 +1,5 @@
 import { getDatabaseHost } from "../utils/string/getDatabaseHost";
+import { isAdminDatabaseTunnel } from "./isAdminDatabaseTunnel";
 
 const LOCAL_HOSTS = new Set([
   "localhost",
@@ -13,9 +14,10 @@ const isInternalDokkuPostgresHost = (host: string): boolean =>
 export const assertProdDatabase = (): string => {
   const host = getDatabaseHost();
 
-  if (LOCAL_HOSTS.has(host)) {
+  if (LOCAL_HOSTS.has(host) && !isAdminDatabaseTunnel()) {
     throw new Error(
-      `Admin refused to start: DATABASE_URL host "${host}" looks like a local database. Use .env.production with the exposed prod Postgres URL.`,
+      `Admin refused to start: DATABASE_URL host "${host}" looks like a local database. ` +
+        `Use the exposed prod Postgres URL (e.g. your server IP), or set ADMIN_DATABASE_TUNNEL=true if using an SSH tunnel to prod.`,
     );
   }
 

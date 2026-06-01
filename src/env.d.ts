@@ -14,6 +14,7 @@ declare global {
       ADMIN_API_KEY: string;
       ADMIN_PORT: string;
       ADMIN_READ_ONLY: string;
+      ADMIN_DATABASE_TUNNEL: string;
     }
   }
 }

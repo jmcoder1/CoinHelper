@@ -1,9 +1,11 @@
 import { prisma } from "../../utils/apiUtils/prismaUtils/prisma";
+import { getDefaultTierImageLimit } from "../../utils/apiUtils/prismaUtils/tierImageLimits";
 import { isRoleSlotName } from "./isRoleSlotName";
 
 export const upsertGuildRoles = async (
   guildId: number,
   slots: Record<string, string>,
+  imageLimits: Record<string, number | null> = {},
 ): Promise<void> => {
   for (const [name, discordId] of Object.entries(slots)) {
     if (!isRoleSlotName(name)) {
@@ -22,14 +24,25 @@ export const upsertGuildRoles = async (
       continue;
     }
 
+    const imageLimit =
+      name in imageLimits ? imageLimits[name] : getDefaultTierImageLimit(name);
+
     if (existing) {
       await prisma.guildRole.update({
         where: { id: existing.id },
-        data: { discordId: trimmedId },
+        data: {
+          discordId: trimmedId,
+          ...(name in imageLimits ? { imageLimit } : {}),
+        },
       });
     } else {
       await prisma.guildRole.create({
-        data: { guildId, name, discordId: trimmedId },
+        data: {
+          guildId,
+          name,
+          discordId: trimmedId,
+          imageLimit: imageLimit ?? undefined,
+        },
       });
     }
   }
