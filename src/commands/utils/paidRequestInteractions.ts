@@ -350,6 +350,12 @@ export const handlePaidRequestButtonInteraction = async (
   }
 
   try {
+    const thread = interaction.message.thread;
+    if (thread) {
+      await thread.delete().catch((error: unknown) => {
+        console.error("Error deleting paid request thread:", error);
+      });
+    }
     await interaction.message.delete();
     await interaction.reply({
       content: "The request has been deleted.",
@@ -358,7 +364,8 @@ export const handlePaidRequestButtonInteraction = async (
   } catch (error) {
     console.error("Error deleting the request:", error);
     await interaction.reply({
-      content: "Failed to delete the request. Please try again later.",
+      content:
+        "Failed to delete the request. The bot may be missing the Manage Threads permission. Please contact staff.",
       ephemeral: true,
     });
   }
