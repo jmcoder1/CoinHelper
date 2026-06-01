@@ -1,0 +1,249 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f1117;
+  color: #e8eaed;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.error {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.login-card {
+  width: min(420px, 92vw);
+  padding: 2rem;
+  background: #1a1d27;
+  border: 1px solid #2d3348;
+  border-radius: 12px;
+}
+
+.login-card h1 {
+  margin: 0 0 0.5rem;
+}
+
+.login-card input {
+  width: 100%;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #3d4663;
+  background: #0f1117;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  background: #4c6ef5;
+  color: white;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: #343a55;
+}
+
+button.danger {
+  background: #c92a2a;
+}
+
+.prod-banner {
+  background: #862e2e;
+  color: #fff;
+  padding: 0.65rem 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 42px);
+}
+
+.sidebar {
+  border-right: 1px solid #2d3348;
+  background: #141824;
+  padding: 1rem;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+#guild-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#guild-list li {
+  margin-bottom: 0.35rem;
+}
+
+#guild-list button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+#guild-list button.active,
+#guild-list button:hover {
+  background: #1f2435;
+  border-color: #3d4663;
+}
+
+.main-panel {
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.placeholder {
+  color: #9aa0b5;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.panel-header h2 {
+  margin: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  background: #343a55;
+}
+
+.tab.active {
+  background: #4c6ef5;
+}
+
+.tab-panel {
+  background: #1a1d27;
+  border: 1px solid #2d3348;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.field-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+label {
+  color: #b5bdd3;
+  font-size: 0.92rem;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #3d4663;
+  background: #0f1117;
+  color: inherit;
+}
+
+textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reason-card {
+  border: 1px solid #2d3348;
+  border-radius: 10px;
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.reason-card h4 {
+  margin: 0 0 0.75rem;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.modal-card {
+  width: min(480px, 92vw);
+  background: #1a1d27;
+  border: 1px solid #2d3348;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}

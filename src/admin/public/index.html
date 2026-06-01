@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoinHelper Admin</title>
+    <link rel="stylesheet" href="/app/styles.css" />
+  </head>
+  <body>
+    <div id="login-screen" class="login-screen">
+      <div class="login-card">
+        <h1>CoinHelper Admin</h1>
+        <p>Enter your admin API key to connect to production.</p>
+        <input
+          id="api-key-input"
+          type="password"
+          placeholder="ADMIN_API_KEY"
+          autocomplete="off"
+        />
+        <button id="login-btn" type="button">Connect</button>
+        <p id="login-error" class="error hidden"></p>
+      </div>
+    </div>
+
+    <div id="app" class="app hidden">
+      <header class="prod-banner">
+        <strong>PRODUCTION</strong>
+        <span id="db-host"></span>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <h2>Guilds</h2>
+            <button id="add-guild-btn" type="button">+ Add</button>
+          </div>
+          <ul id="guild-list"></ul>
+        </aside>
+
+        <main id="main-panel" class="main-panel">
+          <p class="placeholder">Select a guild or create a new one.</p>
+        </main>
+      </div>
+    </div>
+
+    <div id="confirm-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3 id="confirm-title">Confirm</h3>
+        <p id="confirm-message"></p>
+        <div class="modal-actions">
+          <button id="confirm-cancel" type="button">Cancel</button>
+          <button id="confirm-ok" type="button" class="danger">Save to production</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app/app.js"></script>
+  </body>
+</html>
