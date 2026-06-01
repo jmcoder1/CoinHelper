@@ -6,6 +6,7 @@ const apiKeyInput = document.getElementById("api-key-input");
 const loginBtn = document.getElementById("login-btn");
 const loginError = document.getElementById("login-error");
 const dbHostEl = document.getElementById("db-host");
+const readOnlyBadgeEl = document.getElementById("read-only-badge");
 const guildListEl = document.getElementById("guild-list");
 const mainPanel = document.getElementById("main-panel");
 const addGuildBtn = document.getElementById("add-guild-btn");
@@ -23,6 +24,21 @@ let activeTab = "settings";
 let confirmResolver = null;
 
 const getApiKey = () => apiKey;
+
+const isReadOnly = () => meta?.readOnly === true;
+
+const applyReadOnlyUi = () => {
+  const readOnly = isReadOnly();
+
+  readOnlyBadgeEl.classList.toggle("hidden", !readOnly);
+  addGuildBtn.disabled = readOnly;
+
+  mainPanel
+    .querySelectorAll("button, input, textarea, select")
+    .forEach((element) => {
+      element.disabled = readOnly;
+    });
+};
 
 const apiFetch = async (path, options = {}) => {
   const headers = {
@@ -83,6 +99,7 @@ const showLogin = () => {
 const loadMeta = async () => {
   meta = await apiFetch("/meta");
   dbHostEl.textContent = `Database: ${meta.databaseHost}`;
+  applyReadOnlyUi();
 };
 
 const loadGuilds = async () => {
@@ -627,6 +644,7 @@ const renderGuildPanel = async () => {
   }
 
   mainPanel.appendChild(panel);
+  applyReadOnlyUi();
 };
 
 const escapeHtml = (value) =>

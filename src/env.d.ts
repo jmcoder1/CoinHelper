@@ -13,6 +13,7 @@ declare global {
       HF_TOKEN: string;
       ADMIN_API_KEY: string;
       ADMIN_PORT: string;
+      ADMIN_READ_ONLY: string;
     }
   }
 }

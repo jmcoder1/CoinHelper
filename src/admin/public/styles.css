@@ -73,6 +73,24 @@ button.danger {
   display: flex;
   gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.read-only-badge {
+  background: #1e3a5f;
+  border: 1px solid #60a5fa;
+  color: #bfdbfe;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .layout {

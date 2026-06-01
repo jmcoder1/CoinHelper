@@ -1,8 +1,10 @@
 import path from "path";
 import express from "express";
 import { assertProdDatabase } from "./assertProdDatabase";
+import { isAdminReadOnly } from "./isAdminReadOnly";
 import { loadAdminEnv } from "./loadAdminEnv";
 import { apiKeyAuth } from "./middleware/apiKeyAuth";
+import { readOnlyGuard } from "./middleware/readOnlyGuard";
 import { apiRouter } from "./routes/api";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
@@ -28,11 +30,14 @@ app.get("/", (_req, res) => {
   res.redirect("/app");
 });
 
-app.use("/api", apiKeyAuth, apiRouter);
+app.use("/api", apiKeyAuth, readOnlyGuard, apiRouter);
 
 const server = app.listen(port, host, () => {
   console.log(`CoinHelper admin running at http://${host}:${port}/app`);
   console.log(`Connected to production database: ${databaseHost}`);
+  if (isAdminReadOnly()) {
+    console.log("READ ONLY mode enabled (ADMIN_READ_ONLY) — writes are disabled");
+  }
 });
 
 const shutdown = async (): Promise<void> => {

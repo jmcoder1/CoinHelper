@@ -15,6 +15,7 @@ import {
 } from "../utils/discord/suggestSlotMappings";
 import { upsertGuildChannels } from "../utils/upsertGuildChannels";
 import { upsertGuildRoles } from "../utils/upsertGuildRoles";
+import { deleteGuildWithRelations } from "../utils/deleteGuildWithRelations";
 
 export const guildsRouter = Router();
 
@@ -268,11 +269,7 @@ guildsRouter.delete("/:id", async (req, res) => {
   const guild = await getGuildOr404(guildId, res);
   if (!guild) return;
 
-  await prisma.guildRole.deleteMany({ where: { guildId } });
-  await prisma.guildChannel.deleteMany({ where: { guildId } });
-  await prisma.guildCurrency.deleteMany({ where: { guildId } });
-  await prisma.guildRemovalReason.deleteMany({ where: { guildId } });
-  await prisma.guild.delete({ where: { id: guildId } });
+  await deleteGuildWithRelations(guildId);
 
   res.json({ ok: true });
 });
