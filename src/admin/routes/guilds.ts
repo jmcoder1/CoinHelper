@@ -8,6 +8,13 @@ import {
 } from "../slotNames";
 import { isChannelSlotName } from "../utils/isChannelSlotName";
 import { isRoleSlotName } from "../utils/isRoleSlotName";
+import { fetchGuildDiscordResources } from "../utils/discord/fetchGuildDiscordResources";
+import {
+  getUnmappedSlots,
+  suggestSlotMappings,
+} from "../utils/discord/suggestSlotMappings";
+import { upsertGuildChannels } from "../utils/upsertGuildChannels";
+import { upsertGuildRoles } from "../utils/upsertGuildRoles";
 
 export const guildsRouter = Router();
 
@@ -100,6 +107,110 @@ guildsRouter.get("/:id", async (req, res) => {
   });
 });
 
+guildsRouter.get("/:id/discord-resources", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  try {
+    const discordResources = await fetchGuildDiscordResources(guild.discordId);
+    const [dbChannels, dbRoles] = await Promise.all([
+      prisma.guildChannel.findMany({ where: { guildId } }),
+      prisma.guildRole.findMany({ where: { guildId } }),
+    ]);
+
+    const suggestedChannels = suggestSlotMappings(
+      CHANNEL_SLOT_NAMES,
+      discordResources.channels,
+      dbChannels,
+    );
+    const suggestedRoles = suggestSlotMappings(
+      ROLE_SLOT_NAMES,
+      discordResources.roles,
+      dbRoles,
+    );
+
+    res.json({
+      discord: discordResources,
+      suggestedChannels,
+      suggestedRoles,
+      missingChannels: getUnmappedSlots(CHANNEL_SLOT_NAMES, suggestedChannels),
+      missingRoles: getUnmappedSlots(ROLE_SLOT_NAMES, suggestedRoles),
+    });
+  } catch (error) {
+    res.status(502).json({
+      error: error instanceof Error ? error.message : "Failed to fetch from Discord",
+    });
+  }
+});
+
+guildsRouter.post("/:id/discord-sync", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const { channels, roles } = req.body as {
+    channels?: Record<string, string>;
+    roles?: Record<string, string>;
+  };
+
+  if (!channels || typeof channels !== "object") {
+    res.status(400).json({ error: "channels object is required" });
+    return;
+  }
+
+  if (!roles || typeof roles !== "object") {
+    res.status(400).json({ error: "roles object is required" });
+    return;
+  }
+
+  try {
+    await upsertGuildChannels(guildId, channels);
+    await upsertGuildRoles(guildId, roles);
+  } catch (error) {
+    res.status(400).json({
+      error: error instanceof Error ? error.message : "Failed to sync mappings",
+    });
+    return;
+  }
+
+  const [savedChannels, savedRoles] = await Promise.all([
+    prisma.guildChannel.findMany({ where: { guildId } }),
+    prisma.guildRole.findMany({ where: { guildId } }),
+  ]);
+
+  const channelMappings = mapSlots(savedChannels, CHANNEL_SLOT_NAMES).reduce<
+    Record<string, string>
+  >((acc, row) => {
+    acc[row.name] = row.discordId;
+    return acc;
+  }, {});
+
+  const roleMappings = mapSlots(savedRoles, ROLE_SLOT_NAMES).reduce<
+    Record<string, string>
+  >((acc, row) => {
+    acc[row.name] = row.discordId;
+    return acc;
+  }, {});
+
+  res.json({
+    channels: mapSlots(savedChannels, CHANNEL_SLOT_NAMES),
+    roles: mapSlots(savedRoles, ROLE_SLOT_NAMES),
+    missingChannels: getUnmappedSlots(CHANNEL_SLOT_NAMES, channelMappings),
+    missingRoles: getUnmappedSlots(ROLE_SLOT_NAMES, roleMappings),
+  });
+});
+
 guildsRouter.patch("/:id", async (req, res) => {
   const guildId = parseId(req.params.id);
   if (!guildId) {
@@ -182,34 +293,13 @@ guildsRouter.put("/:id/channels", async (req, res) => {
     return;
   }
 
-  for (const [name, discordId] of Object.entries(slots)) {
-    if (!isChannelSlotName(name)) {
-      res.status(400).json({ error: `Unknown channel slot: ${name}` });
-      return;
-    }
-
-    const trimmedId = typeof discordId === "string" ? discordId.trim() : "";
-    const existing = await prisma.guildChannel.findFirst({
-      where: { guildId, name },
+  try {
+    await upsertGuildChannels(guildId, slots);
+  } catch (error) {
+    res.status(400).json({
+      error: error instanceof Error ? error.message : "Failed to save channels",
     });
-
-    if (!trimmedId) {
-      if (existing) {
-        await prisma.guildChannel.delete({ where: { id: existing.id } });
-      }
-      continue;
-    }
-
-    if (existing) {
-      await prisma.guildChannel.update({
-        where: { id: existing.id },
-        data: { discordId: trimmedId },
-      });
-    } else {
-      await prisma.guildChannel.create({
-        data: { guildId, name, discordId: trimmedId },
-      });
-    }
+    return;
   }
 
   const channels = await prisma.guildChannel.findMany({ where: { guildId } });
@@ -252,34 +342,13 @@ guildsRouter.put("/:id/roles", async (req, res) => {
     return;
   }
 
-  for (const [name, discordId] of Object.entries(slots)) {
-    if (!isRoleSlotName(name)) {
-      res.status(400).json({ error: `Unknown role slot: ${name}` });
-      return;
-    }
-
-    const trimmedId = typeof discordId === "string" ? discordId.trim() : "";
-    const existing = await prisma.guildRole.findFirst({
-      where: { guildId, name },
+  try {
+    await upsertGuildRoles(guildId, slots);
+  } catch (error) {
+    res.status(400).json({
+      error: error instanceof Error ? error.message : "Failed to save roles",
     });
-
-    if (!trimmedId) {
-      if (existing) {
-        await prisma.guildRole.delete({ where: { id: existing.id } });
-      }
-      continue;
-    }
-
-    if (existing) {
-      await prisma.guildRole.update({
-        where: { id: existing.id },
-        data: { discordId: trimmedId },
-      });
-    } else {
-      await prisma.guildRole.create({
-        data: { guildId, name, discordId: trimmedId },
-      });
-    }
+    return;
   }
 
   const roles = await prisma.guildRole.findMany({ where: { guildId } });

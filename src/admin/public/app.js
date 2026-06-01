@@ -114,6 +114,7 @@ const renderGuildList = () => {
 const renderTabs = (guild) => {
   const tabs = [
     ["settings", "Settings"],
+    ["sync", "Sync from Discord"],
     ["channels", "Channels"],
     ["roles", "Roles"],
     ["currency", "Currency"],
@@ -182,6 +183,73 @@ const collectSlots = (prefix) => {
   return slots;
 };
 
+const renderWarningBox = (missingChannels, missingRoles) => {
+  if (missingChannels.length === 0 && missingRoles.length === 0) return null;
+
+  const box = document.createElement("div");
+  box.className = "warning-box";
+  const parts = [];
+
+  if (missingChannels.length > 0) {
+    parts.push(`Unmapped channels: ${missingChannels.join(", ")}`);
+  }
+  if (missingRoles.length > 0) {
+    parts.push(`Unmapped roles: ${missingRoles.join(", ")}`);
+  }
+
+  box.textContent = parts.join(" · ");
+  return box;
+};
+
+const renderSlotSelectForm = (slotNames, mappings, discordItems, prefix) => {
+  const grid = document.createElement("div");
+  grid.className = "field-grid";
+
+  slotNames.forEach((slotName) => {
+    const row = document.createElement("div");
+    row.className = "field-row";
+
+    const label = document.createElement("label");
+    label.textContent = slotName;
+    label.setAttribute("for", `${prefix}-${slotName}`);
+
+    const select = document.createElement("select");
+    select.id = `${prefix}-${slotName}`;
+    select.dataset.slotName = slotName;
+
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.textContent = "— Not mapped —";
+    select.appendChild(emptyOption);
+
+    discordItems.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = `${item.name} (${item.id})`;
+      select.appendChild(option);
+    });
+
+    select.value = mappings[slotName] || "";
+    row.appendChild(label);
+    row.appendChild(select);
+    grid.appendChild(row);
+  });
+
+  return grid;
+};
+
+const collectSlotSelects = (prefix) => {
+  const selects = mainPanel.querySelectorAll(`select[data-slot-name]`);
+  const slots = {};
+
+  selects.forEach((select) => {
+    if (!select.id.startsWith(prefix)) return;
+    slots[select.dataset.slotName] = select.value.trim();
+  });
+
+  return slots;
+};
+
 const renderGuildPanel = async () => {
   if (!selectedGuildId) {
     mainPanel.innerHTML = `<p class="placeholder">Select a guild or create a new one.</p>`;
@@ -245,6 +313,114 @@ const renderGuildPanel = async () => {
       selectedGuildId = null;
       await loadGuilds();
       mainPanel.innerHTML = `<p class="placeholder">Guild deleted. Select another guild.</p>`;
+    });
+  }
+
+  if (activeTab === "sync") {
+    panel.innerHTML = `
+      <p>Fetch channels and roles from Discord, assign semantic slots, then save to production.</p>
+      <div class="actions">
+        <button type="button" id="fetch-discord-btn">Fetch from Discord</button>
+      </div>
+      <div id="sync-content" class="sync-content">
+        <p class="placeholder">Click "Fetch from Discord" to load channels and roles.</p>
+      </div>
+    `;
+
+    const syncContent = panel.querySelector("#sync-content");
+    let syncData = null;
+
+    const renderSyncForm = () => {
+      if (!syncData) return;
+
+      syncContent.innerHTML = "";
+      const warning = renderWarningBox(
+        syncData.missingChannels,
+        syncData.missingRoles,
+      );
+      if (warning) syncContent.appendChild(warning);
+
+      const channelsHeading = document.createElement("h3");
+      channelsHeading.textContent = "Channel slots";
+      syncContent.appendChild(channelsHeading);
+      syncContent.appendChild(
+        renderSlotSelectForm(
+          meta.channelSlotNames,
+          syncData.suggestedChannels,
+          syncData.discord.channels,
+          "sync-channel",
+        ),
+      );
+
+      const rolesHeading = document.createElement("h3");
+      rolesHeading.textContent = "Role slots";
+      syncContent.appendChild(rolesHeading);
+      syncContent.appendChild(
+        renderSlotSelectForm(
+          meta.roleSlotNames,
+          syncData.suggestedRoles,
+          syncData.discord.roles,
+          "sync-role",
+        ),
+      );
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.textContent = "Save mappings to production";
+      saveBtn.addEventListener("click", async () => {
+        const channels = collectSlotSelects("sync-channel");
+        const roles = collectSlotSelects("sync-role");
+        const missingChannels = meta.channelSlotNames.filter(
+          (name) => !channels[name],
+        );
+        const missingRoles = meta.roleSlotNames.filter((name) => !roles[name]);
+
+        let message = "You are editing PRODUCTION. Save these Discord mappings?";
+        if (missingChannels.length > 0 || missingRoles.length > 0) {
+          message += `\n\nWarning: some slots are still unmapped.`;
+          if (missingChannels.length > 0) {
+            message += `\nChannels: ${missingChannels.join(", ")}`;
+          }
+          if (missingRoles.length > 0) {
+            message += `\nRoles: ${missingRoles.join(", ")}`;
+          }
+        }
+
+        const confirmed = await confirmProduction("Save Discord sync", message);
+        if (!confirmed) return;
+
+        const result = await apiFetch(`/guilds/${guild.id}/discord-sync`, {
+          method: "POST",
+          body: JSON.stringify({ channels, roles }),
+        });
+
+        syncData = {
+          ...syncData,
+          suggestedChannels: Object.fromEntries(
+            result.channels.map((row) => [row.name, row.discordId]),
+          ),
+          suggestedRoles: Object.fromEntries(
+            result.roles.map((row) => [row.name, row.discordId]),
+          ),
+          missingChannels: result.missingChannels,
+          missingRoles: result.missingRoles,
+        };
+        renderSyncForm();
+      });
+      actions.appendChild(saveBtn);
+      syncContent.appendChild(actions);
+    };
+
+    panel.querySelector("#fetch-discord-btn").addEventListener("click", async () => {
+      syncContent.innerHTML = `<p class="placeholder">Fetching from Discord...</p>`;
+      try {
+        syncData = await apiFetch(`/guilds/${guild.id}/discord-resources`);
+        renderSyncForm();
+      } catch (error) {
+        syncContent.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+      }
     });
   }
 
@@ -478,7 +654,7 @@ addGuildBtn.addEventListener("click", async () => {
   });
 
   selectedGuildId = data.guild.id;
-  activeTab = "channels";
+  activeTab = "sync";
   await loadGuilds();
   await renderGuildPanel();
 });
