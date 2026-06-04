@@ -93,6 +93,16 @@ select:disabled {
   cursor: not-allowed;
 }
 
+.sidebar-settings-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.field-row small {
+  color: #9aa0b5;
+  font-size: 0.82rem;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 260px 1fr;

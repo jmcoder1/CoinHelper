@@ -1,5 +1,6 @@
 import { guilds } from "./constants";
 import { prisma } from "./prisma";
+import { getDefaultTierImageLimit } from "./tierImageLimits";
 
 export const startMigration = async () => {
   try {
@@ -40,6 +41,7 @@ export const startMigration = async () => {
             guildId: guild.id,
             discordId: roleData.discordId,
             name: roleData.name,
+            imageLimit: getDefaultTierImageLimit(roleData.name) ?? undefined,
           },
         });
       }

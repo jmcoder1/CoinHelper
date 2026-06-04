@@ -12,8 +12,8 @@ import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import {
   BOUGHT_COINS_CHANNEL_NAME,
   ECONOMY_CHANNEL_NAME,
-  SERVER_BOOST_ICON,
 } from "../utils/apiUtils/prismaUtils/constants";
+import { getServerBoostIconUrl } from "../utils/apiUtils/prismaUtils/getServerBoostIconUrl";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 
 export interface GuildMemberUpdateListener extends Listener {
@@ -106,7 +106,7 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
     const embed = new EmbedBuilder()
       .setColor(0x0099ff)
       .setTitle("Server Boosted")
-      .setImage(SERVER_BOOST_ICON)
+      .setImage(await getServerBoostIconUrl())
       .setAuthor({
         name: oldMember.user.username,
         iconURL: oldMember.user.avatarURL() || undefined,

@@ -1,12 +1,15 @@
 import { GuildMember, Message } from "discord.js";
 import { prisma } from "../../../utils/apiUtils/prismaUtils/prisma";
+import { getAppSettingNumber } from "../../../utils/apiUtils/prismaUtils/getAppSetting";
+import {
+  APP_SETTING_NEW_MEMBER_IMAGE_LIMIT,
+  DEFAULT_NEW_MEMBER_IMAGE_LIMIT,
+} from "../../../utils/apiUtils/prismaUtils/tierImageLimits";
 import {
   BRONZE_ROLE_NAME,
   DIAMOND_ROLE_NAME,
   GOLD_ROLE_NAME,
-  NEW_MEMBER_IMAGE_LIMIT,
   SILVER_ROLE_NAME,
-  TIER_IMAGE_LIMIT_BY_ROLE_NAME,
   TIER_ROLE_NAMES,
 } from "../../../utils/apiUtils/prismaUtils/constants";
 
@@ -32,7 +35,7 @@ const TIER_PRIORITY: ImagePostLimitTier[] = [
 
 const resolveTierFromRoles = (
   memberRoleIds: Set<string>,
-  tierRoleIdByName: Map<string, string>
+  tierRoleIdByName: Map<string, string>,
 ): ImagePostLimitTier => {
   for (const tierName of TIER_PRIORITY) {
     const roleId = tierRoleIdByName.get(tierName);
@@ -41,17 +44,33 @@ const resolveTierFromRoles = (
   return "new";
 };
 
-const limitForTier = (tier: ImagePostLimitTier): number | null => {
-  if (tier === DIAMOND_ROLE_NAME) return null;
-  if (tier === "new") return NEW_MEMBER_IMAGE_LIMIT;
-  return TIER_IMAGE_LIMIT_BY_ROLE_NAME[tier] ?? NEW_MEMBER_IMAGE_LIMIT;
+const limitForTier = (
+  tier: ImagePostLimitTier,
+  tierImageLimitByName: Map<string, number | null>,
+  newMemberLimit: number,
+): number | null => {
+  if (tier === DIAMOND_ROLE_NAME) {
+    return tierImageLimitByName.get(DIAMOND_ROLE_NAME) ?? null;
+  }
+
+  if (tier === "new") return newMemberLimit;
+
+  const tierLimit = tierImageLimitByName.get(tier);
+  if (tierLimit !== undefined) return tierLimit;
+
+  return newMemberLimit;
 };
 
 export const getMemberImagePostLimit = async (
   message: Message,
-  guildId: number
+  guildId: number,
 ): Promise<MemberImagePostLimit | null> => {
   if (!message.guild) return null;
+
+  const newMemberLimit = await getAppSettingNumber(
+    APP_SETTING_NEW_MEMBER_IMAGE_LIMIT,
+    DEFAULT_NEW_MEMBER_IMAGE_LIMIT,
+  );
 
   const tierRoles = await prisma.guildRole.findMany({
     where: {
@@ -61,7 +80,10 @@ export const getMemberImagePostLimit = async (
   });
 
   const tierRoleIdByName = new Map(
-    tierRoles.map((role) => [role.name, role.discordId])
+    tierRoles.map((role) => [role.name, role.discordId]),
+  );
+  const tierImageLimitByName = new Map(
+    tierRoles.map((role) => [role.name, role.imageLimit]),
   );
 
   let member: GuildMember | null = message.member;
@@ -70,13 +92,13 @@ export const getMemberImagePostLimit = async (
       .fetch(message.author.id)
       .catch(() => null);
   }
-  if (!member) return { maxImages: NEW_MEMBER_IMAGE_LIMIT, tier: "new" };
+  if (!member) return { maxImages: newMemberLimit, tier: "new" };
 
   const memberRoleIds = new Set(member.roles.cache.keys());
   const tier = resolveTierFromRoles(memberRoleIds, tierRoleIdByName);
 
   return {
     tier,
-    maxImages: limitForTier(tier),
+    maxImages: limitForTier(tier, tierImageLimitByName, newMemberLimit),
   };
 };

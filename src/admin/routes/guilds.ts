@@ -32,6 +32,25 @@ const mapSlots = <T extends { name: string; discordId: string; id: number }>(
     };
   });
 
+const mapRoleSlots = (
+  rows: {
+    id: number;
+    name: string;
+    discordId: string;
+    imageLimit: number | null;
+  }[],
+  slotNames: readonly string[],
+) =>
+  slotNames.map((name) => {
+    const row = rows.find((r) => r.name === name);
+    return {
+      id: row?.id ?? null,
+      name,
+      discordId: row?.discordId ?? "",
+      imageLimit: row?.imageLimit ?? null,
+    };
+  });
+
 const getGuildOr404 = async (guildId: number, res: Response) => {
   const guild = await prisma.guild.findUnique({ where: { id: guildId } });
   if (!guild) {
@@ -102,7 +121,7 @@ guildsRouter.get("/:id", async (req, res) => {
       name: guild.name,
     },
     channels: mapSlots(guild.guildChannels, CHANNEL_SLOT_NAMES),
-    roles: mapSlots(guild.guildRoles, ROLE_SLOT_NAMES),
+    roles: mapRoleSlots(guild.guildRoles, ROLE_SLOT_NAMES),
     currency: guild.guildCurrencies[0] ?? null,
     removalReasons: guild.guildRemovalReasons,
   });
@@ -206,7 +225,7 @@ guildsRouter.post("/:id/discord-sync", async (req, res) => {
 
   res.json({
     channels: mapSlots(savedChannels, CHANNEL_SLOT_NAMES),
-    roles: mapSlots(savedRoles, ROLE_SLOT_NAMES),
+    roles: mapRoleSlots(savedRoles, ROLE_SLOT_NAMES),
     missingChannels: getUnmappedSlots(CHANNEL_SLOT_NAMES, channelMappings),
     missingRoles: getUnmappedSlots(ROLE_SLOT_NAMES, roleMappings),
   });
@@ -333,14 +352,17 @@ guildsRouter.put("/:id/roles", async (req, res) => {
   const guild = await getGuildOr404(guildId, res);
   if (!guild) return;
 
-  const { slots } = req.body as { slots?: Record<string, string> };
+  const { slots, imageLimits } = req.body as {
+    slots?: Record<string, string>;
+    imageLimits?: Record<string, number | null>;
+  };
   if (!slots || typeof slots !== "object") {
     res.status(400).json({ error: "slots object is required" });
     return;
   }
 
   try {
-    await upsertGuildRoles(guildId, slots);
+    await upsertGuildRoles(guildId, slots, imageLimits ?? {});
   } catch (error) {
     res.status(400).json({
       error: error instanceof Error ? error.message : "Failed to save roles",
@@ -349,7 +371,7 @@ guildsRouter.put("/:id/roles", async (req, res) => {
   }
 
   const roles = await prisma.guildRole.findMany({ where: { guildId } });
-  res.json({ roles: mapSlots(roles, ROLE_SLOT_NAMES) });
+  res.json({ roles: mapRoleSlots(roles, ROLE_SLOT_NAMES) });
 });
 
 guildsRouter.delete("/:id/roles/:slotName", async (req, res) => {

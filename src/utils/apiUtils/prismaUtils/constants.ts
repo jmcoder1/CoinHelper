@@ -33,19 +33,6 @@ export const TIER_ROLE_NAMES = [
   DIAMOND_ROLE_NAME,
 ] as const;
 
-/** Max images per message by tier role name. New members (no tier role) use 1. Diamond is unlimited. */
-export const TIER_IMAGE_LIMIT_BY_ROLE_NAME: Record<string, number> = {
-  [BRONZE_ROLE_NAME]: 3,
-  [SILVER_ROLE_NAME]: 4,
-  [GOLD_ROLE_NAME]: 5,
-};
-
-export const NEW_MEMBER_IMAGE_LIMIT = 1;
-
-export const APP_NAME = "CoinHelper";
-export const SERVER_BOOST_ICON =
-  "https://media.sketchfab.com/models/7218d808cf2d46db9fcca7f96aebd76f/thumbnails/40a5430b011647bbafa078d38b0c919e/5fc1f8cf89ea4cfa8bbc77eb1ba2ce31.jpeg";
-
 export const OP_GUILD = {
   id: "1271527781716725973",
   name: "OnePieceHentaiZ",

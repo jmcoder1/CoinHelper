@@ -52,9 +52,15 @@ model GuildRemovalReason {
 }
 
 model GuildRole {
-  id      Int    @id @default(autoincrement())
-  guildId Int
-  name    String
-  discordId              String        @unique
-  guild   Guild @relation(fields: [guildId], references: [id])
+  id          Int     @id @default(autoincrement())
+  guildId     Int
+  name        String
+  discordId   String  @unique
+  imageLimit  Int?
+  guild       Guild   @relation(fields: [guildId], references: [id])
+}
+
+model AppSetting {
+  key   String @id
+  value String
 }

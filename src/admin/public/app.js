@@ -10,6 +10,7 @@ const readOnlyBadgeEl = document.getElementById("read-only-badge");
 const guildListEl = document.getElementById("guild-list");
 const mainPanel = document.getElementById("main-panel");
 const addGuildBtn = document.getElementById("add-guild-btn");
+const appSettingsBtn = document.getElementById("app-settings-btn");
 const confirmModal = document.getElementById("confirm-modal");
 const confirmTitle = document.getElementById("confirm-title");
 const confirmMessage = document.getElementById("confirm-message");
@@ -267,7 +268,75 @@ const collectSlotSelects = (prefix) => {
   return slots;
 };
 
+const collectRoleData = () => {
+  const slots = collectSlots("role");
+  const imageLimits = {};
+
+  (meta?.tierRoleSlotNames ?? []).forEach((name) => {
+    const input = document.getElementById(`role-limit-${name}`);
+    if (!input) return;
+    const value = input.value.trim();
+    imageLimits[name] = value === "" ? null : Number(value);
+  });
+
+  return { slots, imageLimits };
+};
+
+const renderAppSettingsPanel = async () => {
+  mainPanel.innerHTML = `<p class="placeholder">Loading...</p>`;
+  const settings = await apiFetch("/settings");
+
+  mainPanel.innerHTML = "";
+  const header = document.createElement("div");
+  header.className = "panel-header";
+  header.innerHTML = `<h2>App settings</h2>`;
+  mainPanel.appendChild(header);
+
+  const panel = document.createElement("div");
+  panel.className = "tab-panel";
+  panel.innerHTML = `
+    <div class="field-grid">
+      <div class="field-row">
+        <label for="new-member-image-limit">New member image limit</label>
+        <input id="new-member-image-limit" type="number" min="0" value="${settings.newMemberImageLimit}" />
+      </div>
+      <div class="field-row">
+        <label for="server-boost-icon-url">Server boost icon URL</label>
+        <input id="server-boost-icon-url" type="text" value="${escapeHtml(settings.serverBoostIconUrl)}" />
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" id="save-app-settings-btn">Save app settings</button>
+    </div>
+  `;
+
+  panel.querySelector("#save-app-settings-btn").addEventListener("click", async () => {
+    const confirmed = await confirmProduction(
+      "Save app settings",
+      "You are editing PRODUCTION. Save global app settings?",
+    );
+    if (!confirmed) return;
+
+    await apiFetch("/settings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        newMemberImageLimit: Number(panel.querySelector("#new-member-image-limit").value),
+        serverBoostIconUrl: panel.querySelector("#server-boost-icon-url").value.trim(),
+      }),
+    });
+    await renderAppSettingsPanel();
+  });
+
+  mainPanel.appendChild(panel);
+  applyReadOnlyUi();
+};
+
 const renderGuildPanel = async () => {
+  if (activeTab === "app-settings") {
+    await renderAppSettingsPanel();
+    return;
+  }
+
   if (!selectedGuildId) {
     mainPanel.innerHTML = `<p class="placeholder">Select a guild or create a new one.</p>`;
     return;
@@ -471,11 +540,53 @@ const renderGuildPanel = async () => {
   }
 
   if (activeTab === "roles") {
-    const form = renderSlotForm(roles, "role");
-    form.querySelectorAll("input").forEach((input) => {
-      input.id = `role-${input.dataset.slotName}`;
+    const tierNames = new Set(meta?.tierRoleSlotNames ?? []);
+    const grid = document.createElement("div");
+    grid.className = "field-grid";
+
+    roles.forEach((role) => {
+      const row = document.createElement("div");
+      row.className = "field-row";
+
+      const label = document.createElement("label");
+      label.textContent = role.name;
+      label.setAttribute("for", `role-${role.name}`);
+
+      const fields = document.createElement("div");
+      fields.className = "field-grid";
+
+      const idInput = document.createElement("input");
+      idInput.type = "text";
+      idInput.id = `role-${role.name}`;
+      idInput.dataset.slotName = role.name;
+      idInput.value = role.discordId || "";
+      idInput.placeholder = "Discord role ID";
+      fields.appendChild(idInput);
+
+      if (tierNames.has(role.name)) {
+        const limitInput = document.createElement("input");
+        limitInput.type = "number";
+        limitInput.min = "0";
+        limitInput.id = `role-limit-${role.name}`;
+        limitInput.value =
+          role.imageLimit === null || role.imageLimit === undefined
+            ? ""
+            : String(role.imageLimit);
+        limitInput.placeholder = role.name === "diamond" ? "Empty = unlimited" : "Image limit";
+        fields.appendChild(limitInput);
+        if (role.name === "diamond") {
+          const hint = document.createElement("small");
+          hint.textContent = "Leave empty for unlimited (diamond).";
+          fields.appendChild(hint);
+        }
+      }
+
+      row.appendChild(label);
+      row.appendChild(fields);
+      grid.appendChild(row);
     });
-    panel.appendChild(form);
+
+    panel.appendChild(grid);
 
     const actions = document.createElement("div");
     actions.className = "actions";
@@ -485,13 +596,14 @@ const renderGuildPanel = async () => {
     saveBtn.addEventListener("click", async () => {
       const confirmed = await confirmProduction(
         "Save roles",
-        "You are editing PRODUCTION. Save role mappings for this guild?",
+        "You are editing PRODUCTION. Save role mappings and tier image limits for this guild?",
       );
       if (!confirmed) return;
 
+      const { slots, imageLimits } = collectRoleData();
       await apiFetch(`/guilds/${guild.id}/roles`, {
         method: "PUT",
-        body: JSON.stringify({ slots: collectSlots("role") }),
+        body: JSON.stringify({ slots, imageLimits }),
       });
       await renderGuildPanel();
     });
@@ -653,6 +765,13 @@ const escapeHtml = (value) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+
+appSettingsBtn.addEventListener("click", () => {
+  selectedGuildId = null;
+  activeTab = "app-settings";
+  renderGuildList();
+  void renderGuildPanel();
+});
 
 addGuildBtn.addEventListener("click", async () => {
   const name = prompt("Guild display name:");
