@@ -9,6 +9,7 @@ export const PREVIEW_CHANNEL_NAME = "preview";
 export const BOUGHT_COINS_CHANNEL_NAME = "bought-coins";
 export const AI_GEN_IMAGE_TIPS_CHANNEL_NAME = "ai-gen-image-tips";
 export const AI_IMAGE_CHANNEL_NAME = "ai-image";
+export const AI_ROLEPLAY_CHANNEL_NAME = "ai-roleplay";
 export const NEW_CHANNEL_MOD_CHANNEL_NAME = "new-channel-mod";
 export const DM_REQUEST_CHANNEL_NAME = "dm-request";
 export const ROLEPLAY_REQUEST_CHANNEL_NAME = "roleplay-request";

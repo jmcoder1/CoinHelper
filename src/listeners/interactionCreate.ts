@@ -3,6 +3,7 @@ import {
   handlePaidRequestButtonInteraction,
   handlePaidRequestModalSubmit,
 } from "../commands/utils/paidRequestInteractions";
+import { tryHandleAiRoleplayButton } from "../modules/aiRoleplay";
 import { handleSlashCommand } from "./utils/handleSlashCommand";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { Listener } from "./utils/types";
@@ -16,6 +17,11 @@ export const interactionCreate: InteractionCreateListener = {
   event: Events.InteractionCreate,
   fn: async (interaction: Interaction, client: Client) => {
     if (interaction.isButton()) {
+      const [handled] = await tryAsyncAwait(() =>
+        tryHandleAiRoleplayButton(client, interaction),
+      );
+      if (handled) return;
+
       await tryAsyncAwait(() => handlePaidRequestButtonInteraction(interaction));
       return;
     }

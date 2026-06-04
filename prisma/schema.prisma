@@ -21,6 +21,47 @@ model Guild {
   guildCurrencies        GuildCurrency[]
   guildRemovalReasons    GuildRemovalReason[]
   guildRoles             GuildRole[]
+  aiRoleplayConfig       GuildAiRoleplayConfig?
+  roleplaySessions       RoleplaySession[]
+}
+
+model GuildAiRoleplayConfig {
+  guildId               Int     @id
+  triggerEmoji          String
+  systemPrompt          String  @db.Text
+  buttonCost            Int
+  authorRewardOnTrigger Int
+  authorRewardOnChoice  Int
+  thinkingMode          Boolean
+  guild                 Guild   @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model RoleplaySession {
+  id                String   @id @default(cuid())
+  guildId           Int
+  sourceMessageId   String
+  sourceChannelId   String
+  sourceAuthorId    String
+  initiatorId       String
+  sourceMessageUrl  String
+  sourceCaption     String   @db.Text
+  sourceImageUrl    String?
+  outputMessageId   String?
+  outputChannelId   String?
+  pendingChoices    Json?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  guild             Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  turns             RoleplayTurn[]
+}
+
+model RoleplayTurn {
+  id        Int             @id @default(autoincrement())
+  sessionId String
+  role      String
+  content   String          @db.Text
+  session   RoleplaySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 

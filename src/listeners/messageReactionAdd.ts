@@ -12,6 +12,7 @@ import {
 } from "discord.js";
 import { Listener } from "./utils/types";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
+import { tryHandleAiRoleplayReaction } from "../modules/aiRoleplay";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import {
@@ -72,6 +73,13 @@ export const messageReactionAdd: MessageReactionAddListener = {
 
     // is bot
     if (user.bot) return;
+
+    const aiRoleplayHandled = await tryHandleAiRoleplayReaction(
+      message.client,
+      reaction,
+      user,
+    );
+    if (aiRoleplayHandled) return;
 
     // is self reacting
     if (message.author.id === user.id) return;

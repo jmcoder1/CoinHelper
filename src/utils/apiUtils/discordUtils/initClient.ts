@@ -1,8 +1,11 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { attachListeners } from "../../../listeners/utils/attachListeners";
+import { registerAiRoleplay } from "../../../modules/aiRoleplay";
 import { tryAsyncAwait } from "../../tryAsyncAwait";
 
 export const initClient = async () => {
+  registerAiRoleplay();
+
   const client = new Client({
     intents: [
       GatewayIntentBits.DirectMessages,

@@ -2,6 +2,7 @@ import { Response, Router } from "express";
 import { prisma } from "../../utils/apiUtils/prismaUtils/prisma";
 import { isNonEmptyString } from "../../utils/string/isNonEmptyString";
 import { parseId } from "../../utils/string/parseId";
+import { parseNonNegativeInt } from "../../utils/string/parseNonNegativeInt";
 import {
   CHANNEL_SLOT_NAMES,
   ROLE_SLOT_NAMES,
@@ -106,6 +107,7 @@ guildsRouter.get("/:id", async (req, res) => {
       guildRoles: true,
       guildCurrencies: true,
       guildRemovalReasons: { orderBy: { id: "asc" } },
+      aiRoleplayConfig: true,
     },
   });
 
@@ -124,6 +126,7 @@ guildsRouter.get("/:id", async (req, res) => {
     roles: mapRoleSlots(guild.guildRoles, ROLE_SLOT_NAMES),
     currency: guild.guildCurrencies[0] ?? null,
     removalReasons: guild.guildRemovalReasons,
+    aiRoleplay: guild.aiRoleplayConfig,
   });
 });
 
@@ -552,4 +555,95 @@ guildsRouter.delete("/:id/removal-reasons/:reasonId", async (req, res) => {
 
   await prisma.guildRemovalReason.delete({ where: { id: reasonId } });
   res.json({ ok: true });
+});
+
+guildsRouter.get("/:id/ai-roleplay", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const config = await prisma.guildAiRoleplayConfig.findUnique({
+    where: { guildId },
+  });
+
+  res.json({ aiRoleplay: config });
+});
+
+guildsRouter.put("/:id/ai-roleplay", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const {
+    triggerEmoji,
+    systemPrompt,
+    buttonCost,
+    authorRewardOnTrigger,
+    authorRewardOnChoice,
+    thinkingMode,
+  } = req.body as {
+    triggerEmoji?: string;
+    systemPrompt?: string;
+    buttonCost?: number;
+    authorRewardOnTrigger?: number;
+    authorRewardOnChoice?: number;
+    thinkingMode?: boolean;
+  };
+
+  if (!isNonEmptyString(triggerEmoji) || !isNonEmptyString(systemPrompt)) {
+    res.status(400).json({
+      error: "triggerEmoji and systemPrompt are required",
+    });
+    return;
+  }
+
+  const parsedButtonCost = parseNonNegativeInt(buttonCost);
+  const parsedAuthorRewardOnTrigger = parseNonNegativeInt(authorRewardOnTrigger);
+  const parsedAuthorRewardOnChoice = parseNonNegativeInt(authorRewardOnChoice);
+
+  if (
+    parsedButtonCost === null ||
+    parsedAuthorRewardOnTrigger === null ||
+    parsedAuthorRewardOnChoice === null ||
+    typeof thinkingMode !== "boolean"
+  ) {
+    res.status(400).json({
+      error:
+        "buttonCost, authorRewardOnTrigger, authorRewardOnChoice (non-negative integers) and thinkingMode (boolean) are required",
+    });
+    return;
+  }
+
+  const aiRoleplay = await prisma.guildAiRoleplayConfig.upsert({
+    where: { guildId },
+    create: {
+      guildId,
+      triggerEmoji: triggerEmoji.trim(),
+      systemPrompt: systemPrompt.trim(),
+      buttonCost: parsedButtonCost,
+      authorRewardOnTrigger: parsedAuthorRewardOnTrigger,
+      authorRewardOnChoice: parsedAuthorRewardOnChoice,
+      thinkingMode,
+    },
+    update: {
+      triggerEmoji: triggerEmoji.trim(),
+      systemPrompt: systemPrompt.trim(),
+      buttonCost: parsedButtonCost,
+      authorRewardOnTrigger: parsedAuthorRewardOnTrigger,
+      authorRewardOnChoice: parsedAuthorRewardOnChoice,
+      thinkingMode,
+    },
+  });
+
+  res.json({ aiRoleplay });
 });

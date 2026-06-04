@@ -136,6 +136,7 @@ const renderTabs = (guild) => {
     ["channels", "Channels"],
     ["roles", "Roles"],
     ["currency", "Currency"],
+    ["ai-roleplay", "AI Roleplay"],
     ["reasons", "Removal Reasons"],
   ];
 
@@ -344,7 +345,7 @@ const renderGuildPanel = async () => {
 
   mainPanel.innerHTML = `<p class="placeholder">Loading...</p>`;
   const data = await apiFetch(`/guilds/${selectedGuildId}`);
-  const { guild, channels, roles, currency, removalReasons } = data;
+  const { guild, channels, roles, currency, removalReasons, aiRoleplay } = data;
 
   mainPanel.innerHTML = "";
   mainPanel.appendChild(renderTabs(guild));
@@ -645,6 +646,73 @@ const renderGuildPanel = async () => {
           name: panel.querySelector("#currency-name").value.trim(),
           namePlural: panel.querySelector("#currency-plural").value.trim(),
           iconSrc: panel.querySelector("#currency-icon").value.trim(),
+        }),
+      });
+      await renderGuildPanel();
+    });
+  }
+
+  if (activeTab === "ai-roleplay") {
+    panel.innerHTML = `
+      <p>Configure reaction-triggered AI roleplay for this guild. Map the <code>ai-roleplay</code> channel on the Channels tab first.</p>
+      <div class="field-grid">
+        <div class="field-row">
+          <label for="ai-rp-trigger-emoji">Trigger emoji</label>
+          <input id="ai-rp-trigger-emoji" type="text" value="${escapeHtml(aiRoleplay?.triggerEmoji || "")}" placeholder="e.g. 🎭" />
+        </div>
+        <div class="field-row">
+          <label for="ai-rp-button-cost">Button click cost (coins)</label>
+          <input id="ai-rp-button-cost" type="number" min="0" step="1" value="${aiRoleplay?.buttonCost ?? ""}" />
+        </div>
+        <div class="field-row">
+          <label for="ai-rp-author-reward-trigger">Author reward on trigger (coins)</label>
+          <input id="ai-rp-author-reward-trigger" type="number" min="0" step="1" value="${aiRoleplay?.authorRewardOnTrigger ?? ""}" />
+        </div>
+        <div class="field-row">
+          <label for="ai-rp-author-reward-choice">Author reward on button click (coins)</label>
+          <input id="ai-rp-author-reward-choice" type="number" min="0" step="1" value="${aiRoleplay?.authorRewardOnChoice ?? ""}" />
+        </div>
+        <div class="field-row">
+          <label for="ai-rp-thinking-mode">Thinking mode</label>
+          <select id="ai-rp-thinking-mode">
+            <option value="false" ${aiRoleplay?.thinkingMode ? "" : "selected"}>Off (faster)</option>
+            <option value="true" ${aiRoleplay?.thinkingMode ? "selected" : ""}>On</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="ai-rp-system-prompt">System prompt</label>
+          <textarea id="ai-rp-system-prompt" rows="10">${escapeHtml(aiRoleplay?.systemPrompt || "")}</textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="save-ai-roleplay-btn">Save AI roleplay settings</button>
+      </div>
+    `;
+
+    panel.querySelector("#save-ai-roleplay-btn").addEventListener("click", async () => {
+      const confirmed = await confirmProduction(
+        "Save AI roleplay",
+        "You are editing PRODUCTION. Save AI roleplay settings for this guild?",
+      );
+      if (!confirmed) return;
+
+      const buttonCost = Number(panel.querySelector("#ai-rp-button-cost").value);
+      const authorRewardOnTrigger = Number(
+        panel.querySelector("#ai-rp-author-reward-trigger").value,
+      );
+      const authorRewardOnChoice = Number(
+        panel.querySelector("#ai-rp-author-reward-choice").value,
+      );
+
+      await apiFetch(`/guilds/${guild.id}/ai-roleplay`, {
+        method: "PUT",
+        body: JSON.stringify({
+          triggerEmoji: panel.querySelector("#ai-rp-trigger-emoji").value.trim(),
+          systemPrompt: panel.querySelector("#ai-rp-system-prompt").value.trim(),
+          buttonCost,
+          authorRewardOnTrigger,
+          authorRewardOnChoice,
+          thinkingMode: panel.querySelector("#ai-rp-thinking-mode").value === "true",
         }),
       });
       await renderGuildPanel();
