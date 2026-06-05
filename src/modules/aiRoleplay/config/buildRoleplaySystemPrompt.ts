@@ -1,3 +1,5 @@
+import { DUO_ROLEPLAY_INSTRUCTION } from "../constants";
+
 export interface BuildRoleplaySystemPromptOptions {
   duoTurn?: boolean;
 }
@@ -15,9 +17,7 @@ export const buildRoleplaySystemPrompt = (
   }
 
   if (options?.duoTurn) {
-    parts.push(
-      `Duo turn: Write this response only from the active player's role above. "You" means that role — not the other player. Generate 3 choices that role would take next.`,
-    );
+    parts.push(DUO_ROLEPLAY_INSTRUCTION);
   }
 
   return parts.join("\n\n");
