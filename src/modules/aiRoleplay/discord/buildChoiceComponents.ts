@@ -1,7 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { MAX_CHOICES } from "../constants";
+import { DISCORD_BUTTON_LABEL_MAX, MAX_CHOICES } from "../constants";
 import { createChoiceButtonId } from "./createChoiceButtonId";
-import { truncateLabel } from "./truncateLabel";
 
 export const buildChoiceComponents = (
   sessionId: string,
@@ -13,7 +12,7 @@ export const buildChoiceComponents = (
     row.addComponents(
       new ButtonBuilder()
         .setCustomId(createChoiceButtonId(sessionId, index))
-        .setLabel(truncateLabel(choice))
+        .setLabel(choice.slice(0, DISCORD_BUTTON_LABEL_MAX))
         .setStyle(ButtonStyle.Primary),
     );
   });

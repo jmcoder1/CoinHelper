@@ -1,5 +1,5 @@
-import { MAX_CHOICES } from "../constants";
 import { ParsedRoleplayResponse } from "../types";
+import { normalizeChoices } from "./normalizeChoices";
 
 export const tryParseJson = (raw: string): ParsedRoleplayResponse | null => {
   const trimmed = raw.trim();
@@ -16,11 +16,12 @@ export const tryParseJson = (raw: string): ParsedRoleplayResponse | null => {
     if (typeof parsed.story !== "string" || !Array.isArray(parsed.choices))
       return null;
 
-    const choices = parsed.choices
-      .filter((choice): choice is string => typeof choice === "string")
-      .map((choice) => choice.trim())
-      .filter(Boolean)
-      .slice(0, MAX_CHOICES);
+    const choices = normalizeChoices(
+      parsed.choices
+        .filter((choice): choice is string => typeof choice === "string")
+        .map((choice) => choice.trim())
+        .filter(Boolean),
+    );
 
     if (choices.length === 0) return null;
 

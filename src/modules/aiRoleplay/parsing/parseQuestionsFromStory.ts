@@ -1,6 +1,7 @@
 import { MAX_CHOICES } from "../constants";
 import { ParsedRoleplayResponse } from "../types";
 import { extractQuestionChoices } from "./extractQuestionChoices";
+import { normalizeChoices } from "./normalizeChoices";
 import { splitParagraphs } from "./splitParagraphs";
 
 export const parseQuestionsFromStory = (
@@ -29,12 +30,12 @@ export const parseQuestionsFromStory = (
 
     return {
       story: storyParagraphs.length > 0 ? story : paragraphs[0],
-      choices: fallbackChoices,
+      choices: normalizeChoices(fallbackChoices),
     };
   }
 
   return {
     story,
-    choices,
+    choices: normalizeChoices(choices),
   };
 };
