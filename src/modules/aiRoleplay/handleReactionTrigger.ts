@@ -62,7 +62,7 @@ export const tryHandleAiRoleplayReaction = async (
   if (!extracted) {
     await notifyReactor(
       user as User,
-      "This message needs a caption or image (no video or audio).",
+      "React on a message that has text (a caption).",
     );
     return true;
   }
