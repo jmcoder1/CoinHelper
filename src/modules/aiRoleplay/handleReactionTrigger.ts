@@ -5,7 +5,7 @@ import {
   PartialUser,
   User,
 } from "discord.js";
-import { callRoleplayModel } from "./api/roleplayClient";
+import { generateRoleplayResponse } from "./generateRoleplayResponse";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMessage";
@@ -21,7 +21,6 @@ import { notifyReactor } from "./discord/notifyReactor";
 import { rewardUser } from "./economy/rewardUser";
 import { extractRoleplayInput } from "./extraction/extractRoleplayInput";
 import { containsBannedWord } from "./parsing/containsBannedWord";
-import { parseModelResponse } from "./parsing/parseModelResponse";
 import { createRoleplaySession } from "./sessions/createRoleplaySession";
 import { updateSessionOutput } from "./sessions/updateSessionOutput";
 import { AiRoleplayDeps } from "./types";
@@ -88,13 +87,11 @@ export const tryHandleAiRoleplayReaction = async (
       sourceImageUrl: extracted.imageUrl,
     });
 
-    const raw = await callRoleplayModel({
+    const parsed = await generateRoleplayResponse({
       systemPrompt: config.systemPrompt,
       thinkingMode: config.thinkingMode,
       messages: [{ role: "user", content: extracted.caption }],
     });
-
-    const parsed = parseModelResponse(raw);
     if (!parsed) {
       await notifyReactor(user as User, buildGenerationFailedMessage());
       return true;

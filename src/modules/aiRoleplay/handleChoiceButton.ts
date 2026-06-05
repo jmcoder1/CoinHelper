@@ -1,5 +1,5 @@
 import { ButtonInteraction, Client } from "discord.js";
-import { callRoleplayModel } from "./api/roleplayClient";
+import { generateRoleplayResponse } from "./generateRoleplayResponse";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMessage";
@@ -17,7 +17,6 @@ import { parseChoiceButtonId } from "./discord/parseChoiceButtonId";
 import { chargeUser } from "./economy/chargeUser";
 import { rewardUser } from "./economy/rewardUser";
 import { containsBannedWord } from "./parsing/containsBannedWord";
-import { parseModelResponse } from "./parsing/parseModelResponse";
 import { appendSessionTurn } from "./sessions/appendSessionTurn";
 import { getSessionWithTurns } from "./sessions/getSessionWithTurns";
 import { isSessionExpired } from "./sessions/isSessionExpired";
@@ -132,13 +131,11 @@ export const tryHandleAiRoleplayButton = async (
       { role: "user" as const, content: selectedChoice },
     ];
 
-    const raw = await callRoleplayModel({
+    const parsed = await generateRoleplayResponse({
       systemPrompt: config.systemPrompt,
       thinkingMode: config.thinkingMode,
       messages,
     });
-
-    const parsed = parseModelResponse(raw);
     if (!parsed) {
       await interaction.followUp({
         content: buildGenerationFailedMessage(),

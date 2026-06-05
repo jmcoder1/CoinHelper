@@ -1,8 +1,10 @@
+import { MIN_CHOICES } from "../constants";
 import { ParsedRoleplayResponse } from "../types";
 import { normalizeChoices } from "./normalizeChoices";
+import { stripJsonCodeFences } from "./stripJsonCodeFences";
 
 export const tryParseJson = (raw: string): ParsedRoleplayResponse | null => {
-  const trimmed = raw.trim();
+  const trimmed = stripJsonCodeFences(raw);
   const jsonStart = trimmed.indexOf("{");
   const jsonEnd = trimmed.lastIndexOf("}");
   if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) return null;
@@ -23,7 +25,7 @@ export const tryParseJson = (raw: string): ParsedRoleplayResponse | null => {
         .filter(Boolean),
     );
 
-    if (choices.length === 0) return null;
+    if (choices.length < MIN_CHOICES) return null;
 
     return {
       story: parsed.story.trim(),

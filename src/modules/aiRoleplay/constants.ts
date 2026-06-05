@@ -5,6 +5,7 @@ export const HF_ROLEPLAY_MODEL = "deepseek-ai/DeepSeek-V4-Pro:novita";
 
 export const SESSION_TTL_MS = 60 * 60 * 1000;
 
+export const MIN_CHOICES = 3;
 export const MAX_CHOICES = 3;
 export const CHOICE_MAX_LENGTH = 50;
 export const DISCORD_BUTTON_LABEL_MAX = 80;
@@ -30,4 +31,11 @@ Respond with valid JSON only, no markdown fences:
 Provide exactly 3 choices in the choices array.
 Each choice must be a short action phrase, maximum ${CHOICE_MAX_LENGTH} characters.
 No full sentences. Examples: "Beg for mercy", "Stay silent", "Fight back".
+Escape double quotes inside story text with backslash. Use \\n for line breaks inside strings, not literal newlines.
+`.trim();
+
+export const PARSE_RETRY_INSTRUCTION = `
+Your previous response was not valid JSON. Reply with valid JSON only, no markdown fences.
+{"story":"...","choices":["choice 1","choice 2","choice 3"]}
+Provide exactly 3 choices. Escape double quotes in story text. Use \\n for line breaks inside strings.
 `.trim();
