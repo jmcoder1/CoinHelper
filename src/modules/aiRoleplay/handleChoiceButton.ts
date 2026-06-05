@@ -8,6 +8,7 @@ import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBalanceMessage";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
+import { buildNotSessionInitiatorMessage } from "./discord/buildNotSessionInitiatorMessage";
 import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
 import { buildSourceMessageReply } from "./discord/buildSourceMessageReply";
 import { buildSessionExpiredMessage } from "./discord/buildSessionExpiredMessage";
@@ -67,6 +68,14 @@ export const tryHandleAiRoleplayButton = async (
   if (!session || session.guildId !== config.guildId) {
     await interaction.reply({
       content: "This roleplay session could not be found.",
+      ephemeral: true,
+    });
+    return true;
+  }
+
+  if (interaction.user.id !== session.initiatorId) {
+    await interaction.reply({
+      content: buildNotSessionInitiatorMessage(),
       ephemeral: true,
     });
     return true;
