@@ -13,7 +13,9 @@ import { buildGeneratingMessage } from "./discord/buildGeneratingMessage";
 import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
-import { buildRoleplayMessagePayload } from "./discord/buildRoleplayMessagePayload";
+import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
+import { buildRoleplayThreadStarter } from "./discord/buildRoleplayThreadStarter";
+import { createRoleplayThread } from "./discord/createRoleplayThread";
 import { emojiMatchesTrigger } from "./discord/emojiMatchesTrigger";
 import { notifyReactor } from "./discord/notifyReactor";
 import { rewardUser } from "./economy/rewardUser";
@@ -104,22 +106,28 @@ export const tryHandleAiRoleplayReaction = async (
       return true;
     }
 
-    const payload = buildRoleplayMessagePayload(
-      parsed,
-      {
-        sourceAuthorId: message.author.id,
-        sourceMessageUrl: message.url,
-        imageUrl: extracted.imageUrl,
-        actorUserId: user.id,
-        actorAction: "triggered",
-      },
-      session.id,
+    const messageContext = {
+      sourceAuthorId: message.author.id,
+      sourceMessageUrl: message.url,
+      sourceCaption: extracted.caption,
+      imageUrl: extracted.imageUrl,
+      actorUserId: user.id,
+      actorAction: "triggered" as const,
+    };
+
+    const starterMessage = await outputChannel.send(
+      buildRoleplayThreadStarter(messageContext),
+    );
+    const thread = await createRoleplayThread(starterMessage);
+
+    const storyMessage = await thread.send(
+      buildRoleplayStoryPayload(parsed, messageContext, session.id),
     );
 
-    const outputMessage = await outputChannel.send(payload);
-
     await updateSessionOutput(deps.prisma, session.id, {
-      outputMessageId: outputMessage.id,
+      starterMessageId: starterMessage.id,
+      threadId: thread.id,
+      outputMessageId: storyMessage.id,
       outputChannelId: outputChannel.id,
       pendingChoices: parsed.choices,
       assistantStory: parsed.story,

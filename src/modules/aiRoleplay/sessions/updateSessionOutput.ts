@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import { SESSION_TTL_MS } from "../constants";
 
 export interface UpdateSessionOutputParams {
+  starterMessageId?: string;
+  threadId?: string;
   outputMessageId?: string;
   outputChannelId?: string;
   pendingChoices: string[];
@@ -18,6 +20,8 @@ export const updateSessionOutput = async (
   const sessionUpdate: {
     pendingChoices: string[];
     expiresAt: Date;
+    starterMessageId?: string;
+    threadId?: string;
     outputMessageId?: string;
     outputChannelId?: string;
   } = {
@@ -25,6 +29,8 @@ export const updateSessionOutput = async (
     expiresAt,
   };
 
+  if (data.starterMessageId) sessionUpdate.starterMessageId = data.starterMessageId;
+  if (data.threadId) sessionUpdate.threadId = data.threadId;
   if (data.outputMessageId) sessionUpdate.outputMessageId = data.outputMessageId;
   if (data.outputChannelId) sessionUpdate.outputChannelId = data.outputChannelId;
 

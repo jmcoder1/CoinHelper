@@ -46,6 +46,8 @@ model RoleplaySession {
   sourceMessageUrl  String
   sourceCaption     String   @db.Text
   sourceImageUrl    String?
+  starterMessageId  String?
+  threadId          String?
   outputMessageId   String?
   outputChannelId   String?
   pendingChoices    Json?

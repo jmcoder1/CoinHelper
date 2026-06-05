@@ -43,7 +43,8 @@ export interface ExtractRoleplayInputResult {
 export interface RoleplayMessageContext {
   sourceAuthorId: string;
   sourceMessageUrl: string;
-  imageUrl: string | null;
+  sourceCaption?: string;
+  imageUrl?: string | null;
   actorUserId: string;
   actorAction: "triggered" | "continued";
 }

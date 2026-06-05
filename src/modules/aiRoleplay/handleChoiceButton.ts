@@ -8,9 +8,10 @@ import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBalanceMessage";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
-import { buildRoleplayMessagePayload } from "./discord/buildRoleplayMessagePayload";
+import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
 import { buildSessionExpiredMessage } from "./discord/buildSessionExpiredMessage";
 import { disableMessageButtons } from "./discord/disableMessageButtons";
+import { fetchRoleplayThread } from "./discord/fetchRoleplayThread";
 import { parseChoiceButtonId } from "./discord/parseChoiceButtonId";
 import { chargeUser } from "./economy/chargeUser";
 import { rewardUser } from "./economy/rewardUser";
@@ -171,42 +172,55 @@ export const tryHandleAiRoleplayButton = async (
 
     await appendSessionTurn(deps.prisma, session.id, "user", selectedChoice);
 
-    const payload = buildRoleplayMessagePayload(
+    const payload = buildRoleplayStoryPayload(
       parsed,
       {
         sourceAuthorId: session.sourceAuthorId,
         sourceMessageUrl: session.sourceMessageUrl,
-        imageUrl: session.sourceImageUrl,
         actorUserId: interaction.user.id,
         actorAction: "continued",
       },
       session.id,
     );
 
-    const outputChannelId =
-      session.outputChannelId ?? config.aiRoleplayChannelId;
-    const outputChannel = await client.channels.fetch(outputChannelId);
-
-    if (!outputChannel?.isTextBased()) {
-      await interaction.followUp({
-        content: buildNotConfiguredMessage(),
-        ephemeral: true,
-      });
-      return true;
-    }
-
     if (interaction.message.inGuild()) {
       await disableMessageButtons(interaction.message);
     }
 
-    const newMessage = await outputChannel.send(payload);
+    const thread = session.threadId
+      ? await fetchRoleplayThread(client, session.threadId)
+      : null;
 
-    await updateSessionOutput(deps.prisma, session.id, {
-      outputMessageId: newMessage.id,
-      outputChannelId: outputChannel.id,
-      pendingChoices: parsed.choices,
-      assistantStory: parsed.story,
-    });
+    if (thread) {
+      const newMessage = await thread.send(payload);
+
+      await updateSessionOutput(deps.prisma, session.id, {
+        outputMessageId: newMessage.id,
+        pendingChoices: parsed.choices,
+        assistantStory: parsed.story,
+      });
+    } else {
+      const outputChannelId =
+        session.outputChannelId ?? config.aiRoleplayChannelId;
+      const outputChannel = await client.channels.fetch(outputChannelId);
+
+      if (!outputChannel?.isTextBased()) {
+        await interaction.followUp({
+          content: buildNotConfiguredMessage(),
+          ephemeral: true,
+        });
+        return true;
+      }
+
+      const newMessage = await outputChannel.send(payload);
+
+      await updateSessionOutput(deps.prisma, session.id, {
+        outputMessageId: newMessage.id,
+        outputChannelId: outputChannel.id,
+        pendingChoices: parsed.choices,
+        assistantStory: parsed.story,
+      });
+    }
   } catch (error) {
     console.error("AI roleplay button failed:", error);
     await interaction.followUp({
