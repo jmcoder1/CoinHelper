@@ -1,5 +1,22 @@
 export const AI_ROLEPLAY_BUTTON_PREFIX = "ai-rp";
 export const AI_ROLEPLAY_ROLE_PREFIX = "ai-rp-role";
+export const AI_ROLEPLAY_MODE_PREFIX = "ai-rp-mode";
+export const AI_ROLEPLAY_DUO_INVITE_PREFIX = "ai-rp-duo";
+export const AI_ROLEPLAY_END_PREFIX = "ai-rp-end";
+
+export const ROLEPLAY_MODE_SOLO = "solo";
+export const ROLEPLAY_MODE_DUO = "duo";
+
+export const PENDING_STATUS_PICK_MODE = "pick_mode";
+export const PENDING_STATUS_PICK_PARTNER = "pick_partner";
+export const PENDING_STATUS_AWAIT_PARTNER = "await_partner_accept";
+export const PENDING_STATUS_PICK_ROLE = "pick_role";
+
+export const SESSION_STATUS_ACTIVE = "active";
+export const SESSION_STATUS_ENDED = "ended";
+
+export const ROLEPLAY_PLAYER_INITIATOR = "i";
+export const ROLEPLAY_PLAYER_PARTNER = "p";
 
 export const PENDING_START_TTL_MS = 10 * 60 * 1000;
 export const MAX_ROLEPLAY_ROLES = 5;

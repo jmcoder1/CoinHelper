@@ -3,14 +3,21 @@ import { buildRoleplaySystemPrompt } from "./config/buildRoleplaySystemPrompt";
 import { generateRoleplayResponse } from "./generateRoleplayResponse";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
+import {
+  ROLEPLAY_MODE_DUO,
+  SESSION_STATUS_ACTIVE,
+  SESSION_STATUS_ENDED,
+} from "./constants";
 import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMessage";
 import { buildGeneratingMessage } from "./discord/buildGeneratingMessage";
 import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBalanceMessage";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
-import { buildNotSessionInitiatorMessage } from "./discord/buildNotSessionInitiatorMessage";
+import { buildNotYourTurnMessage } from "./discord/buildNotYourTurnMessage";
+import { buildRoleplayMessageContext } from "./discord/buildRoleplayMessageContext";
 import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
+import { buildSessionEndedMessage } from "./discord/buildSessionEndedMessage";
 import { buildSourceMessageReply } from "./discord/buildSourceMessageReply";
 import { buildSessionExpiredMessage } from "./discord/buildSessionExpiredMessage";
 import { disableMessageButtons } from "./discord/disableMessageButtons";
@@ -20,6 +27,8 @@ import { chargeUser } from "./economy/chargeUser";
 import { rewardUser } from "./economy/rewardUser";
 import { containsBannedWord } from "./parsing/containsBannedWord";
 import { appendSessionTurn } from "./sessions/appendSessionTurn";
+import { getActivePlayerRolePrompt } from "./sessions/getActivePlayerRolePrompt";
+import { getNextTurnUserId } from "./sessions/getNextTurnUserId";
 import { getSessionWithTurns } from "./sessions/getSessionWithTurns";
 import { isSessionExpired } from "./sessions/isSessionExpired";
 import { updateSessionOutput } from "./sessions/updateSessionOutput";
@@ -74,9 +83,29 @@ export const tryHandleAiRoleplayButton = async (
     return true;
   }
 
-  if (interaction.user.id !== session.initiatorId) {
+  if (session.status === SESSION_STATUS_ENDED) {
     await interaction.reply({
-      content: buildNotSessionInitiatorMessage(),
+      content: buildSessionEndedMessage(),
+      ephemeral: true,
+    });
+    return true;
+  }
+
+  if (session.status !== SESSION_STATUS_ACTIVE) {
+    await interaction.reply({
+      content: "This roleplay session is not active.",
+      ephemeral: true,
+    });
+    return true;
+  }
+
+  const activeTurnUserId = session.currentTurnUserId || session.initiatorId;
+  if (interaction.user.id !== activeTurnUserId) {
+    await interaction.reply({
+      content:
+        session.mode === ROLEPLAY_MODE_DUO
+          ? buildNotYourTurnMessage()
+          : "Only the person who started this roleplay can choose.",
       ephemeral: true,
     });
     return true;
@@ -131,6 +160,7 @@ export const tryHandleAiRoleplayButton = async (
   });
 
   const economyContext = buildGuildEconomyContext(config);
+  const isDuo = session.mode === ROLEPLAY_MODE_DUO;
 
   try {
     const messages = [
@@ -144,7 +174,7 @@ export const tryHandleAiRoleplayButton = async (
     const parsed = await generateRoleplayResponse({
       systemPrompt: buildRoleplaySystemPrompt(
         config.systemPrompt,
-        session.selectedRolePrompt,
+        getActivePlayerRolePrompt(session),
       ),
       thinkingMode: config.thinkingMode,
       messages,
@@ -183,18 +213,27 @@ export const tryHandleAiRoleplayButton = async (
 
     await appendSessionTurn(deps.prisma, session.id, "user", selectedChoice);
 
+    const nextTurnUserId = getNextTurnUserId(session);
+
+    await deps.prisma.roleplaySession.update({
+      where: { id: session.id },
+      data: { currentTurnUserId: nextTurnUserId },
+    });
+
+    const messageContext = buildRoleplayMessageContext({
+      session: { ...session, currentTurnUserId: nextTurnUserId },
+      actorUserId: interaction.user.id,
+      actorAction: "continued",
+      selectedChoice,
+    });
+
     const payload = buildRoleplayStoryPayload(
       parsed,
-      {
-        sourceAuthorId: session.sourceAuthorId,
-        sourceMessageUrl: session.sourceMessageUrl,
-        actorUserId: interaction.user.id,
-        actorAction: "continued",
-        selectedChoice,
-      },
+      messageContext,
       session.id,
       config.buttonCost,
       config.currencyImage,
+      { showEndButton: isDuo },
     );
 
     const previousStoryMessage = interaction.message.inGuild()
@@ -244,6 +283,7 @@ export const tryHandleAiRoleplayButton = async (
         assistantStory: parsed.story,
       });
     }
+
   } catch (error) {
     console.error("AI roleplay button failed:", error);
     await interaction.followUp({

@@ -47,6 +47,8 @@ export interface ExtractRoleplayInputResult {
   imageUrl: string | null;
 }
 
+export type RoleplaySessionMode = "solo" | "duo";
+
 export interface RoleplayMessageContext {
   sourceAuthorId: string;
   sourceMessageUrl: string;
@@ -54,6 +56,12 @@ export interface RoleplayMessageContext {
   imageUrl?: string | null;
   actorUserId: string;
   actorAction: "triggered" | "continued";
+  mode?: RoleplaySessionMode;
+  initiatorId?: string;
+  initiatorRoleLabel?: string;
+  partnerId?: string;
+  partnerRoleLabel?: string;
+  turnUserId?: string;
   selectedRoleLabel?: string;
   selectedChoice?: string;
 }

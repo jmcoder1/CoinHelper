@@ -8,6 +8,7 @@ export const buildRoleplayStoryPayload = (
   sessionId: string,
   buttonCost: number,
   currencyImage: string,
+  options?: { showEndButton?: boolean },
 ) => ({
   content: buildRoleplayStoryContent(parsed, context),
   embeds: [],
@@ -16,5 +17,6 @@ export const buildRoleplayStoryPayload = (
     parsed.choices,
     buttonCost,
     currencyImage,
+    options,
   ),
 });

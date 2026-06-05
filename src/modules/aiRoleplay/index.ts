@@ -6,9 +6,25 @@ import {
   tryHandleAiRoleplayButton,
 } from "./handleChoiceButton";
 import {
+  initAiRoleplayDuoInviteHandler,
+  tryHandleAiRoleplayDuoInvite,
+} from "./handleDuoInviteButton";
+import {
+  initAiRoleplayEndHandler,
+  tryHandleAiRoleplayEnd,
+} from "./handleEndSessionButton";
+import {
+  initAiRoleplayModePickHandler,
+  tryHandleAiRoleplayModePick,
+} from "./handleModePickButton";
+import {
   initAiRoleplayRolePickHandler,
   tryHandleAiRoleplayRolePick,
 } from "./handleRolePickButton";
+import {
+  initAiRoleplayDmHandler,
+  tryHandleAiRoleplayDm,
+} from "./handleDmPartnerMention";
 import {
   initAiRoleplayReactionHandler,
   tryHandleAiRoleplayReaction,
@@ -31,12 +47,20 @@ const deps: AiRoleplayDeps = {
 
 export const registerAiRoleplay = (): void => {
   initAiRoleplayReactionHandler(deps);
+  initAiRoleplayDmHandler(deps);
+  initAiRoleplayModePickHandler(deps);
+  initAiRoleplayDuoInviteHandler(deps);
   initAiRoleplayRolePickHandler(deps);
+  initAiRoleplayEndHandler(deps);
   initAiRoleplayButtonHandler(deps);
 };
 
 export {
   tryHandleAiRoleplayReaction,
+  tryHandleAiRoleplayDm,
+  tryHandleAiRoleplayModePick,
+  tryHandleAiRoleplayDuoInvite,
   tryHandleAiRoleplayRolePick,
+  tryHandleAiRoleplayEnd,
   tryHandleAiRoleplayButton,
 };

@@ -6,10 +6,12 @@ import { guildMemberUpdate } from "../guildMemberUpdate";
 import { messageReactionAdd } from "../messageReactionAdd";
 import { messageReactionRemove } from "../messageReactionRemove";
 import { messageDelete } from "../messageDelete";
+import { dmMessageCreate } from "../dmMessageCreate";
 
 export const attachListeners = (client: Client) => {
   client.on(ready.event, (client) => ready.fn(client));
   client.on(messageCreate.event, (message) => messageCreate.fn(message));
+  client.on(dmMessageCreate.event, (message) => dmMessageCreate.fn(message));
   client.on(messageDelete.event, (message) => messageDelete.fn(message));
   client.on(interactionCreate.event, (interaction) =>
     interactionCreate.fn(interaction, client)

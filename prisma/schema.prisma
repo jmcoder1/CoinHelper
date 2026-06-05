@@ -39,42 +39,59 @@ model GuildAiRoleplayConfig {
 }
 
 model RoleplayPendingStart {
-  id               String   @id @default(cuid())
-  guildId          Int
-  initiatorId      String
-  sourceMessageId  String
-  sourceChannelId  String
-  sourceAuthorId   String
-  sourceMessageUrl String
-  sourceCaption    String   @db.Text
-  sourceImageUrl   String?
-  expiresAt        DateTime
-  createdAt        DateTime @default(now())
-  guild            Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  guildId             Int
+  initiatorId         String
+  sourceMessageId     String
+  sourceChannelId     String
+  sourceAuthorId      String
+  sourceMessageUrl    String
+  sourceCaption       String   @db.Text
+  sourceImageUrl      String?
+  mode                String?
+  status              String   @default("pick_mode")
+  partnerId           String?
+  initiatorRoleId     String?
+  initiatorRoleLabel  String?
+  initiatorRolePrompt String?  @db.Text
+  partnerRoleId       String?
+  partnerRoleLabel    String?
+  partnerRolePrompt   String?  @db.Text
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+  guild               Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
 }
 
 model RoleplaySession {
-  id                String   @id @default(cuid())
-  guildId           Int
-  sourceMessageId   String
-  sourceChannelId   String
-  sourceAuthorId    String
-  initiatorId       String
-  sourceMessageUrl  String
-  sourceCaption     String   @db.Text
+  id                 String   @id @default(cuid())
+  guildId            Int
+  sourceMessageId    String
+  sourceChannelId    String
+  sourceAuthorId     String
+  initiatorId        String
+  sourceMessageUrl   String
+  sourceCaption      String   @db.Text
   sourceImageUrl     String?
+  mode               String   @default("solo")
+  partnerId          String?
   selectedRoleId     String   @default("")
+  selectedRoleLabel  String   @default("")
   selectedRolePrompt String   @default("") @db.Text
+  partnerRoleId      String   @default("")
+  partnerRoleLabel   String   @default("")
+  partnerRolePrompt  String   @default("") @db.Text
+  currentTurnUserId  String   @default("")
+  status             String   @default("active")
   starterMessageId   String?
-  threadId          String?
-  outputMessageId   String?
-  outputChannelId   String?
-  pendingChoices    Json?
-  expiresAt         DateTime
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  guild             Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
-  turns             RoleplayTurn[]
+  threadId           String?
+  outputMessageId    String?
+  outputChannelId    String?
+  pendingChoices     Json?
+  expiresAt          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  guild              Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  turns              RoleplayTurn[]
 }
 
 model RoleplayTurn {

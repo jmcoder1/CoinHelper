@@ -1,6 +1,7 @@
 import { Client, User } from "discord.js";
 import { buildRoleplaySystemPrompt } from "./config/buildRoleplaySystemPrompt";
-import { GuildRoleplayConfig } from "./types";
+import { GuildRoleplayConfig, RoleplaySessionMode } from "./types";
+import { ROLEPLAY_MODE_DUO } from "./constants";
 import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMessage";
 import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
@@ -26,9 +27,14 @@ export interface ExecuteRoleplayStartParams {
   sourceMessageUrl: string;
   sourceCaption: string;
   sourceImageUrl: string | null;
+  mode?: RoleplaySessionMode;
+  partnerId?: string;
   selectedRoleId: string;
   selectedRoleLabel: string;
   selectedRolePrompt: string;
+  partnerRoleId?: string;
+  partnerRoleLabel?: string;
+  partnerRolePrompt?: string;
 }
 
 export const executeRoleplayStart = async (
@@ -38,6 +44,8 @@ export const executeRoleplayStart = async (
   params: ExecuteRoleplayStartParams,
 ): Promise<boolean> => {
   const economyContext = buildGuildEconomyContext(config);
+  const mode = params.mode ?? "solo";
+  const isDuo = mode === ROLEPLAY_MODE_DUO;
 
   try {
     const session = await createRoleplaySession(deps.prisma, {
@@ -49,8 +57,14 @@ export const executeRoleplayStart = async (
       sourceMessageUrl: params.sourceMessageUrl,
       sourceCaption: params.sourceCaption,
       sourceImageUrl: params.sourceImageUrl,
+      mode,
+      partnerId: params.partnerId,
       selectedRoleId: params.selectedRoleId,
+      selectedRoleLabel: params.selectedRoleLabel,
       selectedRolePrompt: params.selectedRolePrompt,
+      partnerRoleId: params.partnerRoleId,
+      partnerRoleLabel: params.partnerRoleLabel,
+      partnerRolePrompt: params.partnerRolePrompt,
     });
 
     const parsed = await generateRoleplayResponse({
@@ -72,15 +86,31 @@ export const executeRoleplayStart = async (
       return false;
     }
 
-    const messageContext = {
-      sourceAuthorId: params.sourceAuthorId,
-      sourceMessageUrl: params.sourceMessageUrl,
-      sourceCaption: params.sourceCaption,
-      imageUrl: params.sourceImageUrl,
-      actorUserId: params.initiatorId,
-      actorAction: "triggered" as const,
-      selectedRoleLabel: params.selectedRoleLabel,
-    };
+    const messageContext = isDuo
+      ? {
+          sourceAuthorId: params.sourceAuthorId,
+          sourceMessageUrl: params.sourceMessageUrl,
+          sourceCaption: params.sourceCaption,
+          imageUrl: params.sourceImageUrl,
+          actorUserId: params.initiatorId,
+          actorAction: "triggered" as const,
+          mode: "duo" as const,
+          initiatorId: params.initiatorId,
+          initiatorRoleLabel: params.selectedRoleLabel,
+          partnerId: params.partnerId,
+          partnerRoleLabel: params.partnerRoleLabel,
+          turnUserId: params.initiatorId,
+        }
+      : {
+          sourceAuthorId: params.sourceAuthorId,
+          sourceMessageUrl: params.sourceMessageUrl,
+          sourceCaption: params.sourceCaption,
+          imageUrl: params.sourceImageUrl,
+          actorUserId: params.initiatorId,
+          actorAction: "triggered" as const,
+          mode: "solo" as const,
+          selectedRoleLabel: params.selectedRoleLabel,
+        };
 
     const starterMessage = await outputChannel.send(
       buildRoleplayThreadStarter(messageContext),
@@ -94,6 +124,7 @@ export const executeRoleplayStart = async (
         session.id,
         config.buttonCost,
         config.currencyImage,
+        { showEndButton: isDuo },
       ),
     );
 

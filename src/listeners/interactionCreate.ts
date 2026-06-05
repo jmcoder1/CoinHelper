@@ -5,6 +5,9 @@ import {
 } from "../commands/utils/paidRequestInteractions";
 import {
   tryHandleAiRoleplayButton,
+  tryHandleAiRoleplayDuoInvite,
+  tryHandleAiRoleplayEnd,
+  tryHandleAiRoleplayModePick,
   tryHandleAiRoleplayRolePick,
 } from "../modules/aiRoleplay";
 import { handleSlashCommand } from "./utils/handleSlashCommand";
@@ -20,10 +23,25 @@ export const interactionCreate: InteractionCreateListener = {
   event: Events.InteractionCreate,
   fn: async (interaction: Interaction, client: Client) => {
     if (interaction.isButton()) {
+      const [modePickHandled] = await tryAsyncAwait(() =>
+        tryHandleAiRoleplayModePick(client, interaction),
+      );
+      if (modePickHandled) return;
+
+      const [duoInviteHandled] = await tryAsyncAwait(() =>
+        tryHandleAiRoleplayDuoInvite(client, interaction),
+      );
+      if (duoInviteHandled) return;
+
       const [rolePickHandled] = await tryAsyncAwait(() =>
         tryHandleAiRoleplayRolePick(client, interaction),
       );
       if (rolePickHandled) return;
+
+      const [endHandled] = await tryAsyncAwait(() =>
+        tryHandleAiRoleplayEnd(client, interaction),
+      );
+      if (endHandled) return;
 
       const [handled] = await tryAsyncAwait(() =>
         tryHandleAiRoleplayButton(client, interaction),

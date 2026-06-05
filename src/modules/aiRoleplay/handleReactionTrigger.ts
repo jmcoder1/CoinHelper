@@ -9,8 +9,8 @@ import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
-import { buildPickRoleMessage } from "./discord/buildPickRoleMessage";
-import { buildRolePickComponents } from "./discord/buildRolePickComponents";
+import { buildModePickComponents } from "./discord/buildModePickComponents";
+import { buildModePickMessage } from "./discord/buildModePickMessage";
 import { emojiMatchesTrigger } from "./discord/emojiMatchesTrigger";
 import { notifyReactor } from "./discord/notifyReactor";
 import { notifyReactorWithComponents } from "./discord/notifyReactorWithComponents";
@@ -18,6 +18,7 @@ import { extractRoleplayInput } from "./extraction/extractRoleplayInput";
 import { containsBannedWord } from "./parsing/containsBannedWord";
 import { createRoleplayPendingStart } from "./sessions/createRoleplayPendingStart";
 import { deleteRoleplayPendingStart } from "./sessions/deleteRoleplayPendingStart";
+import { notifyExpiredPendingToInitiator } from "./sessions/notifyExpiredPendingToInitiator";
 import { AiRoleplayDeps } from "./types";
 
 let deps: AiRoleplayDeps | null = null;
@@ -67,6 +68,12 @@ export const tryHandleAiRoleplayReaction = async (
   }
 
   try {
+    await notifyExpiredPendingToInitiator(
+      deps.prisma,
+      user.id,
+      user as User,
+    );
+
     const pending = await createRoleplayPendingStart(deps.prisma, {
       guildId: config.guildId,
       initiatorId: user.id,
@@ -80,8 +87,8 @@ export const tryHandleAiRoleplayReaction = async (
 
     const sent = await notifyReactorWithComponents(
       user as User,
-      buildPickRoleMessage(),
-      buildRolePickComponents(pending.id, config.roleplayRoles),
+      buildModePickMessage(),
+      buildModePickComponents(pending.id),
     );
 
     if (!sent) {
