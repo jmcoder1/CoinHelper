@@ -3,13 +3,13 @@ import {
   PENDING_STATUS_PICK_ROLE,
   PENDING_STATUS_AWAIT_PARTNER,
   ROLEPLAY_PLAYER_INITIATOR,
-  ROLEPLAY_PLAYER_PARTNER,
 } from "./constants";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildPendingStartExpiredMessage } from "./discord/buildPendingStartExpiredMessage";
-import { buildPickRoleMessage } from "./discord/buildPickRoleMessage";
+import { buildDuoInviteAcceptedPartnerMessage } from "./discord/buildDuoInviteAcceptedPartnerMessage";
+import { buildInitiatorRolePickMessage } from "./discord/buildInitiatorRolePickMessage";
 import { buildRolePickComponents } from "./discord/buildRolePickComponents";
 import { disableMessageButtons } from "./discord/disableMessageButtons";
 import { notifyReactor } from "./discord/notifyReactor";
@@ -106,7 +106,7 @@ export const tryHandleAiRoleplayDuoInvite = async (
 
   const initiatorSent = await notifyReactorWithComponents(
     initiator,
-    buildPickRoleMessage(),
+    buildInitiatorRolePickMessage(),
     buildRolePickComponents(
       pending.id,
       config.roleplayRoles,
@@ -114,28 +114,18 @@ export const tryHandleAiRoleplayDuoInvite = async (
     ),
   );
 
-  const partnerSent = await notifyReactorWithComponents(
-    interaction.user,
-    buildPickRoleMessage(),
-    buildRolePickComponents(
-      pending.id,
-      config.roleplayRoles,
-      ROLEPLAY_PLAYER_PARTNER,
-    ),
-  );
-
-  if (!initiatorSent || !partnerSent) {
+  if (!initiatorSent) {
     await deleteRoleplayPendingStart(deps.prisma, pending.id).catch(() => undefined);
     await interaction.update({
       content:
-        "Couldn't DM both players. Enable DMs from server members and react again.",
+        "Couldn't DM the person who invited you. They may need to enable DMs — ask them to react again.",
       components: [],
     });
     return true;
   }
 
   await interaction.update({
-    content: "Invite accepted. Pick your role below.",
+    content: buildDuoInviteAcceptedPartnerMessage(pending.initiatorId),
     components: [],
   });
 

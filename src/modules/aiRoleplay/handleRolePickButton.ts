@@ -10,6 +10,10 @@ import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { tryStartDuoRoleplayFromPending } from "./duo/tryStartDuoRoleplayFromPending";
 import { buildGeneratingMessage } from "./discord/buildGeneratingMessage";
+import { buildPartnerRolePickMessage } from "./discord/buildPartnerRolePickMessage";
+import { notifyReactor } from "./discord/notifyReactor";
+import { notifyReactorWithComponents } from "./discord/notifyReactorWithComponents";
+import { buildRolePickComponents } from "./discord/buildRolePickComponents";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildPendingStartExpiredMessage } from "./discord/buildPendingStartExpiredMessage";
 import { disableMessageButtons } from "./discord/disableMessageButtons";
@@ -75,6 +79,12 @@ export const tryHandleAiRoleplayRolePick = async (
         });
         return true;
       }
+      if (!pending.initiatorRoleId) {
+        await interaction.reply({
+          content: "Wait for your partner to pick their role first.",
+        });
+        return true;
+      }
     } else {
       await interaction.reply({
         content: "Invalid role pick for this duo session.",
@@ -137,18 +147,38 @@ export const tryHandleAiRoleplayRolePick = async (
   }
 
   if (isDuo) {
-    const waitingForPartner =
+    if (
       buttonData.playerSlot === ROLEPLAY_PLAYER_INITIATOR &&
-      !updatedPending.partnerRoleId;
-    const waitingForInitiator =
-      buttonData.playerSlot === ROLEPLAY_PLAYER_PARTNER &&
-      !updatedPending.initiatorRoleId;
-
-    if (waitingForPartner || waitingForInitiator) {
+      !updatedPending.partnerRoleId
+    ) {
       await interaction.update({
-        content: `You chose **${selectedRole.label}**. Waiting for your partner to pick a role...`,
+        content: `You chose **${selectedRole.label}**. Your partner has been notified to pick their role.`,
         components: [],
       });
+
+      if (!updatedPending.partnerId) return true;
+
+      const partner = await client.users.fetch(updatedPending.partnerId);
+      const partnerSent = await notifyReactorWithComponents(
+        partner,
+        buildPartnerRolePickMessage(
+          updatedPending.initiatorId,
+          selectedRole.label,
+        ),
+        buildRolePickComponents(
+          pending.id,
+          config.roleplayRoles,
+          ROLEPLAY_PLAYER_PARTNER,
+        ),
+      );
+
+      if (!partnerSent) {
+        await notifyReactor(
+          interaction.user,
+          "I couldn't DM your partner to pick their role. They may need to enable DMs from server members.",
+        );
+      }
+
       return true;
     }
 
@@ -165,6 +195,15 @@ export const tryHandleAiRoleplayRolePick = async (
       updatedPending,
       initiator,
     );
+
+    if (updatedPending.partnerId) {
+      const initiatorUser = await client.users.fetch(updatedPending.initiatorId);
+      await notifyReactor(
+        initiatorUser,
+        `Your partner chose **${selectedRole.label}**. Generating your duo roleplay...`,
+      );
+    }
+
     return true;
   }
 
