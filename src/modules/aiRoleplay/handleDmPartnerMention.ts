@@ -7,7 +7,8 @@ import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
 import { buildDuoInviteComponents } from "./discord/buildDuoInviteComponents";
 import { buildDuoInviteMessage } from "./discord/buildDuoInviteMessage";
-import { extractFirstMentionedUserId } from "./discord/extractFirstMentionedUserId";
+import { buildPartnerResolveErrorMessage } from "./discord/buildPartnerResolveErrorMessage";
+import { resolveGuildPartnerFromDm } from "./discord/resolveGuildPartnerFromDm";
 import { notifyReactorWithComponents } from "./discord/notifyReactorWithComponents";
 import { extendPendingStartExpiry } from "./sessions/extendPendingStartExpiry";
 import { getPartnerPickPendingStart } from "./sessions/getPartnerPickPendingStart";
@@ -33,14 +34,6 @@ export const tryHandleAiRoleplayDm = async (
   );
   if (!pending) return false;
 
-  const partnerId = extractFirstMentionedUserId(message, message.author.id);
-  if (!partnerId) {
-    await message.reply(
-      "Reply with a message that @mentions one server member you want to duo roleplay with.",
-    );
-    return true;
-  }
-
   const guild = await deps.prisma.guild.findUnique({
     where: { id: pending.guildId },
   });
@@ -52,13 +45,17 @@ export const tryHandleAiRoleplayDm = async (
     return true;
   }
 
-  const member = await discordGuild.members.fetch(partnerId).catch(() => null);
-  if (!member) {
-    await message.reply(
-      "That user must be a member of the server. @mention someone in the server.",
-    );
+  const resolved = await resolveGuildPartnerFromDm(
+    message,
+    discordGuild,
+    message.author.id,
+  );
+  if (!resolved.ok) {
+    await message.reply(buildPartnerResolveErrorMessage(resolved));
     return true;
   }
+
+  const partnerId = resolved.userId;
 
   const config = await loadGuildRoleplayConfig(deps.prisma, guild.discordId);
   if (!isRoleplayConfigComplete(config)) {
