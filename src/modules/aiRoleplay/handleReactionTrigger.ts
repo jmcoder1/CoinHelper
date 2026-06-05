@@ -118,7 +118,13 @@ export const tryHandleAiRoleplayReaction = async (
     const thread = await createRoleplayThread(starterMessage);
 
     const storyMessage = await thread.send(
-      buildRoleplayStoryPayload(parsed, messageContext, session.id),
+      buildRoleplayStoryPayload(
+        parsed,
+        messageContext,
+        session.id,
+        config.buttonCost,
+        config.currencyImage,
+      ),
     );
 
     await updateSessionOutput(deps.prisma, session.id, {

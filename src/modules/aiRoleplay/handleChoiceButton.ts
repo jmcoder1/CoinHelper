@@ -189,6 +189,8 @@ export const tryHandleAiRoleplayButton = async (
         selectedChoice,
       },
       session.id,
+      config.buttonCost,
+      config.currencyImage,
     );
 
     const previousStoryMessage = interaction.message.inGuild()

@@ -6,8 +6,15 @@ export const buildRoleplayStoryPayload = (
   parsed: ParsedRoleplayResponse,
   context: RoleplayMessageContext,
   sessionId: string,
+  buttonCost: number,
+  currencyImage: string,
 ) => ({
   content: buildRoleplayStoryContent(parsed, context),
   embeds: [],
-  components: buildChoiceComponents(sessionId, parsed.choices),
+  components: buildChoiceComponents(
+    sessionId,
+    parsed.choices,
+    buttonCost,
+    currencyImage,
+  ),
 });
