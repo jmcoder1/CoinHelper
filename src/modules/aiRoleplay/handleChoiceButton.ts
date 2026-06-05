@@ -158,7 +158,9 @@ export const tryHandleAiRoleplayButton = async (
 
   try {
     const clickerId = interaction.user.id;
-    const rolePrompt = getPlayerRolePromptForUser(session, clickerId);
+    const nextTurnUserId = getNextTurnUserId(session);
+    const storyRoleUserId = isDuo ? nextTurnUserId : clickerId;
+    const rolePrompt = getPlayerRolePromptForUser(session, storyRoleUserId);
     const userTurnContent = isDuo
       ? buildDuoChoiceUserMessage(
           getPlayerRoleLabelForUser(session, clickerId),
@@ -177,6 +179,9 @@ export const tryHandleAiRoleplayButton = async (
     const parsed = await generateRoleplayResponse({
       systemPrompt: buildRoleplaySystemPrompt(config.systemPrompt, rolePrompt, {
         duoTurn: isDuo,
+        activeRoleLabel: isDuo
+          ? getPlayerRoleLabelForUser(session, storyRoleUserId)
+          : undefined,
       }),
       thinkingMode: config.thinkingMode,
       messages,
@@ -214,8 +219,6 @@ export const tryHandleAiRoleplayButton = async (
     }
 
     await appendSessionTurn(deps.prisma, session.id, "user", userTurnContent);
-
-    const nextTurnUserId = getNextTurnUserId(session);
 
     await deps.prisma.roleplaySession.update({
       where: { id: session.id },

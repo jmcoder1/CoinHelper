@@ -62,13 +62,3 @@ Your previous response was not valid JSON. Reply with valid JSON only, no markdo
 {"story":"...","choices":["choice 1","choice 2","choice 3"]}
 Provide exactly 3 choices. Escape double quotes in story text. Use \\n for line breaks inside strings.
 `.trim();
-
-export const DUO_ROLEPLAY_INSTRUCTION = `
-DUO ROLEPLAY — active player only:
-- This turn is written ONLY for whoever is playing now. "You" = the Player role above for this request — never the other human player.
-- The other player exists in the scene as a character (he/she/they), not as "you".
-- Narrate what the active role witnesses, says, and does. Do not slip into the other player's perspective.
-- The 3 choices must be actions that THIS turn's role would take — not the other player's actions.
-- If the user message starts with [Playing as RoleName], that is the active role for this turn.
-- Prior story may have used a different POV. Reset voice to the active Player role every turn.
-`.trim();

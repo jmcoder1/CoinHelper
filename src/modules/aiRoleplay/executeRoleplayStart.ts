@@ -71,7 +71,10 @@ export const executeRoleplayStart = async (
       systemPrompt: buildRoleplaySystemPrompt(
         config.systemPrompt,
         params.selectedRolePrompt,
-        { duoTurn: isDuo },
+        {
+          duoTurn: isDuo,
+          activeRoleLabel: isDuo ? params.selectedRoleLabel : undefined,
+        },
       ),
       thinkingMode: config.thinkingMode,
       messages: [{ role: "user", content: params.sourceCaption }],
