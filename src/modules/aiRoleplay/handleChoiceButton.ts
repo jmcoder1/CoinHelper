@@ -1,4 +1,5 @@
 import { ButtonInteraction, Client } from "discord.js";
+import { buildRoleplaySystemPrompt } from "./config/buildRoleplaySystemPrompt";
 import { generateRoleplayResponse } from "./generateRoleplayResponse";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
@@ -141,7 +142,10 @@ export const tryHandleAiRoleplayButton = async (
     ];
 
     const parsed = await generateRoleplayResponse({
-      systemPrompt: config.systemPrompt,
+      systemPrompt: buildRoleplaySystemPrompt(
+        config.systemPrompt,
+        session.selectedRolePrompt,
+      ),
       thinkingMode: config.thinkingMode,
       messages,
     });

@@ -6,6 +6,7 @@ export const isRoleplayConfigComplete = (
   if (!config) return false;
   if (!config.triggerEmoji.trim()) return false;
   if (!config.systemPrompt.trim()) return false;
+  if (config.roleplayRoles.length === 0) return false;
   if (!config.aiRoleplayChannelId.trim()) return false;
   if (!config.economyChannelId.trim()) return false;
   if (!config.currencyPluralName.trim()) return false;

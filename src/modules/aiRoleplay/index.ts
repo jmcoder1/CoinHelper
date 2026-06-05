@@ -6,6 +6,10 @@ import {
   tryHandleAiRoleplayButton,
 } from "./handleChoiceButton";
 import {
+  initAiRoleplayRolePickHandler,
+  tryHandleAiRoleplayRolePick,
+} from "./handleRolePickButton";
+import {
   initAiRoleplayReactionHandler,
   tryHandleAiRoleplayReaction,
 } from "./handleReactionTrigger";
@@ -27,7 +31,12 @@ const deps: AiRoleplayDeps = {
 
 export const registerAiRoleplay = (): void => {
   initAiRoleplayReactionHandler(deps);
+  initAiRoleplayRolePickHandler(deps);
   initAiRoleplayButtonHandler(deps);
 };
 
-export { tryHandleAiRoleplayReaction, tryHandleAiRoleplayButton };
+export {
+  tryHandleAiRoleplayReaction,
+  tryHandleAiRoleplayRolePick,
+  tryHandleAiRoleplayButton,
+};

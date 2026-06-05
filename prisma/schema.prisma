@@ -23,17 +23,34 @@ model Guild {
   guildRoles             GuildRole[]
   aiRoleplayConfig       GuildAiRoleplayConfig?
   roleplaySessions       RoleplaySession[]
+  roleplayPendingStarts  RoleplayPendingStart[]
 }
 
 model GuildAiRoleplayConfig {
   guildId               Int     @id
   triggerEmoji          String
   systemPrompt          String  @db.Text
+  roleplayRoles         Json    @default("[]")
   buttonCost            Int
   authorRewardOnTrigger Int
   authorRewardOnChoice  Int
   thinkingMode          Boolean
   guild                 Guild   @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model RoleplayPendingStart {
+  id               String   @id @default(cuid())
+  guildId          Int
+  initiatorId      String
+  sourceMessageId  String
+  sourceChannelId  String
+  sourceAuthorId   String
+  sourceMessageUrl String
+  sourceCaption    String   @db.Text
+  sourceImageUrl   String?
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  guild            Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
 }
 
 model RoleplaySession {
@@ -45,8 +62,10 @@ model RoleplaySession {
   initiatorId       String
   sourceMessageUrl  String
   sourceCaption     String   @db.Text
-  sourceImageUrl    String?
-  starterMessageId  String?
+  sourceImageUrl     String?
+  selectedRoleId     String   @default("")
+  selectedRolePrompt String   @default("") @db.Text
+  starterMessageId   String?
   threadId          String?
   outputMessageId   String?
   outputChannelId   String?

@@ -1,4 +1,8 @@
 export const AI_ROLEPLAY_BUTTON_PREFIX = "ai-rp";
+export const AI_ROLEPLAY_ROLE_PREFIX = "ai-rp-role";
+
+export const PENDING_START_TTL_MS = 10 * 60 * 1000;
+export const MAX_ROLEPLAY_ROLES = 5;
 
 export const HF_ROLEPLAY_BASE_URL = "https://router.huggingface.co/v1";
 export const HF_ROLEPLAY_MODEL = "deepseek-ai/DeepSeek-V4-Pro:novita";

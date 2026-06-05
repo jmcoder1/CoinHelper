@@ -10,6 +10,8 @@ export interface CreateSessionParams {
   sourceMessageUrl: string;
   sourceCaption: string;
   sourceImageUrl: string | null;
+  selectedRoleId: string;
+  selectedRolePrompt: string;
 }
 
 export const createRoleplaySession = async (

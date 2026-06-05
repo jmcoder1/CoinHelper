@@ -683,6 +683,35 @@ const renderGuildPanel = async () => {
           <label for="ai-rp-system-prompt">System prompt</label>
           <textarea id="ai-rp-system-prompt" rows="10">${escapeHtml(aiRoleplay?.systemPrompt || "")}</textarea>
         </div>
+        <div class="field-row">
+          <label for="ai-rp-roles">Roleplay roles (JSON)</label>
+          <textarea id="ai-rp-roles" rows="10">${escapeHtml(
+            JSON.stringify(
+              Array.isArray(aiRoleplay?.roleplayRoles) &&
+                aiRoleplay.roleplayRoles.length > 0
+                ? aiRoleplay.roleplayRoles
+                : [
+                    {
+                      id: "cuck",
+                      label: "Cuck",
+                      prompt: "The player is the humiliated cuck in this scene.",
+                    },
+                    {
+                      id: "bull",
+                      label: "Bull",
+                      prompt: "The player is the dominant bull in this scene.",
+                    },
+                    {
+                      id: "woman",
+                      label: "Woman",
+                      prompt: "The player is the woman in this scene.",
+                    },
+                  ],
+              null,
+              2,
+            ),
+          )}</textarea>
+        </div>
       </div>
       <div class="actions">
         <button type="button" id="save-ai-roleplay-btn">Save AI roleplay settings</button>
@@ -704,11 +733,20 @@ const renderGuildPanel = async () => {
         panel.querySelector("#ai-rp-author-reward-choice").value,
       );
 
+      let roleplayRoles;
+      try {
+        roleplayRoles = JSON.parse(panel.querySelector("#ai-rp-roles").value);
+      } catch {
+        alert("Roleplay roles must be valid JSON.");
+        return;
+      }
+
       await apiFetch(`/guilds/${guild.id}/ai-roleplay`, {
         method: "PUT",
         body: JSON.stringify({
           triggerEmoji: panel.querySelector("#ai-rp-trigger-emoji").value.trim(),
           systemPrompt: panel.querySelector("#ai-rp-system-prompt").value.trim(),
+          roleplayRoles,
           buttonCost,
           authorRewardOnTrigger,
           authorRewardOnChoice,

@@ -5,24 +5,19 @@ import {
   PartialUser,
   User,
 } from "discord.js";
-import { generateRoleplayResponse } from "./generateRoleplayResponse";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
-import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMessage";
-import { buildGeneratingMessage } from "./discord/buildGeneratingMessage";
-import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
-import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
-import { buildRoleplayThreadStarter } from "./discord/buildRoleplayThreadStarter";
-import { createRoleplayThread } from "./discord/createRoleplayThread";
+import { buildPickRoleMessage } from "./discord/buildPickRoleMessage";
+import { buildRolePickComponents } from "./discord/buildRolePickComponents";
 import { emojiMatchesTrigger } from "./discord/emojiMatchesTrigger";
 import { notifyReactor } from "./discord/notifyReactor";
-import { rewardUser } from "./economy/rewardUser";
+import { notifyReactorWithComponents } from "./discord/notifyReactorWithComponents";
 import { extractRoleplayInput } from "./extraction/extractRoleplayInput";
 import { containsBannedWord } from "./parsing/containsBannedWord";
-import { createRoleplaySession } from "./sessions/createRoleplaySession";
-import { updateSessionOutput } from "./sessions/updateSessionOutput";
+import { createRoleplayPendingStart } from "./sessions/createRoleplayPendingStart";
+import { deleteRoleplayPendingStart } from "./sessions/deleteRoleplayPendingStart";
 import { AiRoleplayDeps } from "./types";
 
 let deps: AiRoleplayDeps | null = null;
@@ -32,7 +27,7 @@ export const initAiRoleplayReactionHandler = (nextDeps: AiRoleplayDeps) => {
 };
 
 export const tryHandleAiRoleplayReaction = async (
-  client: Client,
+  _client: Client,
   reaction: MessageReaction | PartialMessageReaction,
   user: User | PartialUser,
 ): Promise<boolean> => {
@@ -71,86 +66,39 @@ export const tryHandleAiRoleplayReaction = async (
     return true;
   }
 
-  await notifyReactor(user as User, buildGeneratingMessage());
-
-  const economyContext = buildGuildEconomyContext(config);
-
   try {
-    const session = await createRoleplaySession(deps.prisma, {
+    const pending = await createRoleplayPendingStart(deps.prisma, {
       guildId: config.guildId,
+      initiatorId: user.id,
       sourceMessageId: message.id,
       sourceChannelId: message.channelId,
       sourceAuthorId: message.author.id,
-      initiatorId: user.id,
       sourceMessageUrl: message.url,
       sourceCaption: extracted.caption,
       sourceImageUrl: extracted.imageUrl,
     });
 
-    const parsed = await generateRoleplayResponse({
-      systemPrompt: config.systemPrompt,
-      thinkingMode: config.thinkingMode,
-      messages: [{ role: "user", content: extracted.caption }],
-    });
-    if (!parsed) {
-      await notifyReactor(user as User, buildGenerationFailedMessage());
-      return true;
-    }
-
-    const outputChannel = await client.channels.fetch(config.aiRoleplayChannelId);
-    if (!outputChannel?.isTextBased()) {
-      await notifyReactor(user as User, buildNotConfiguredMessage());
-      return true;
-    }
-
-    const messageContext = {
-      sourceAuthorId: message.author.id,
-      sourceMessageUrl: message.url,
-      sourceCaption: extracted.caption,
-      imageUrl: extracted.imageUrl,
-      actorUserId: user.id,
-      actorAction: "triggered" as const,
-    };
-
-    const starterMessage = await outputChannel.send(
-      buildRoleplayThreadStarter(messageContext),
-    );
-    const thread = await createRoleplayThread(starterMessage);
-
-    const storyMessage = await thread.send(
-      buildRoleplayStoryPayload(
-        parsed,
-        messageContext,
-        session.id,
-        config.buttonCost,
-        config.currencyImage,
-      ),
+    const sent = await notifyReactorWithComponents(
+      user as User,
+      buildPickRoleMessage(),
+      buildRolePickComponents(pending.id, config.roleplayRoles),
     );
 
-    await updateSessionOutput(deps.prisma, session.id, {
-      starterMessageId: starterMessage.id,
-      threadId: thread.id,
-      outputMessageId: storyMessage.id,
-      outputChannelId: outputChannel.id,
-      pendingChoices: parsed.choices,
-      assistantStory: parsed.story,
-    });
-
-    if (config.authorRewardOnTrigger > 0) {
-      await rewardUser(
-        client,
-        deps.updateBalance,
-        message.author.id,
-        message.author.username,
-        message.author.avatarURL() ?? undefined,
-        economyContext,
-        config.authorRewardOnTrigger,
-        `<@${user.id}> triggered AI roleplay on your message ${message.url}`,
+    if (!sent) {
+      await deleteRoleplayPendingStart(deps.prisma, pending.id).catch(
+        () => undefined,
+      );
+      await notifyReactor(
+        user as User,
+        "I couldn't DM you. Enable DMs from server members, then react again.",
       );
     }
   } catch (error) {
     console.error("AI roleplay reaction failed:", error);
-    await notifyReactor(user as User, buildGenerationFailedMessage());
+    await notifyReactor(
+      user as User,
+      "Something went wrong starting roleplay. Please try again.",
+    );
   }
 
   return true;

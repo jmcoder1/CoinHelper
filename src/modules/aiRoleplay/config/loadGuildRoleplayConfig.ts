@@ -4,6 +4,7 @@ import {
   ECONOMY_CHANNEL_NAME,
 } from "../../../utils/apiUtils/prismaUtils/constants";
 import { GuildRoleplayConfig } from "../types";
+import { parseRoleplayRoles } from "./parseRoleplayRoles";
 
 export const loadGuildRoleplayConfig = async (
   prisma: PrismaClient,
@@ -35,6 +36,7 @@ export const loadGuildRoleplayConfig = async (
     guildDiscordId: guild.discordId,
     triggerEmoji: guild.aiRoleplayConfig.triggerEmoji,
     systemPrompt: guild.aiRoleplayConfig.systemPrompt,
+    roleplayRoles: parseRoleplayRoles(guild.aiRoleplayConfig.roleplayRoles),
     buttonCost: guild.aiRoleplayConfig.buttonCost,
     authorRewardOnTrigger: guild.aiRoleplayConfig.authorRewardOnTrigger,
     authorRewardOnChoice: guild.aiRoleplayConfig.authorRewardOnChoice,

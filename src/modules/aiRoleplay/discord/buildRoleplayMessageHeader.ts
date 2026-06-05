@@ -5,7 +5,11 @@ export const buildRoleplayMessageHeader = (
   context: RoleplayMessageContext,
 ): string => {
   const sourceLine = `<@${context.sourceAuthorId}> [original message](${context.sourceMessageUrl})`;
+  const roleLine =
+    context.actorAction === "triggered" && context.selectedRoleLabel
+      ? `**Role:** ${context.selectedRoleLabel}`
+      : null;
   const actorLine = buildRoleplayActorLine(context);
 
-  return `${sourceLine}\n${actorLine}`;
+  return [sourceLine, roleLine, actorLine].filter(Boolean).join("\n");
 };

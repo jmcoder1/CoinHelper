@@ -17,6 +17,7 @@ import {
 import { upsertGuildChannels } from "../utils/upsertGuildChannels";
 import { upsertGuildRoles } from "../utils/upsertGuildRoles";
 import { deleteGuildWithRelations } from "../utils/deleteGuildWithRelations";
+import { parseRoleplayRoles } from "../../modules/aiRoleplay/config/parseRoleplayRoles";
 
 export const guildsRouter = Router();
 
@@ -591,9 +592,11 @@ guildsRouter.put("/:id/ai-roleplay", async (req, res) => {
     authorRewardOnTrigger,
     authorRewardOnChoice,
     thinkingMode,
+    roleplayRoles,
   } = req.body as {
     triggerEmoji?: string;
     systemPrompt?: string;
+    roleplayRoles?: unknown;
     buttonCost?: number;
     authorRewardOnTrigger?: number;
     authorRewardOnChoice?: number;
@@ -624,12 +627,22 @@ guildsRouter.put("/:id/ai-roleplay", async (req, res) => {
     return;
   }
 
+  const parsedRoleplayRoles = parseRoleplayRoles(roleplayRoles);
+  if (parsedRoleplayRoles.length === 0) {
+    res.status(400).json({
+      error:
+        "roleplayRoles must be a non-empty array of { id, label, prompt } objects",
+    });
+    return;
+  }
+
   const aiRoleplay = await prisma.guildAiRoleplayConfig.upsert({
     where: { guildId },
     create: {
       guildId,
       triggerEmoji: triggerEmoji.trim(),
       systemPrompt: systemPrompt.trim(),
+      roleplayRoles: JSON.parse(JSON.stringify(parsedRoleplayRoles)),
       buttonCost: parsedButtonCost,
       authorRewardOnTrigger: parsedAuthorRewardOnTrigger,
       authorRewardOnChoice: parsedAuthorRewardOnChoice,
@@ -638,6 +651,7 @@ guildsRouter.put("/:id/ai-roleplay", async (req, res) => {
     update: {
       triggerEmoji: triggerEmoji.trim(),
       systemPrompt: systemPrompt.trim(),
+      roleplayRoles: JSON.parse(JSON.stringify(parsedRoleplayRoles)),
       buttonCost: parsedButtonCost,
       authorRewardOnTrigger: parsedAuthorRewardOnTrigger,
       authorRewardOnChoice: parsedAuthorRewardOnChoice,

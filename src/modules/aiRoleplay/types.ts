@@ -2,11 +2,18 @@ import { Client } from "discord.js";
 import { PrismaClient } from "@prisma/client";
 import { UpdateBalanceParams } from "../../utils/apiUtils/unbelievaboatUtils/updateBalance";
 
+export interface RoleplayRole {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
 export interface GuildRoleplayConfig {
   guildId: number;
   guildDiscordId: string;
   triggerEmoji: string;
   systemPrompt: string;
+  roleplayRoles: RoleplayRole[];
   buttonCost: number;
   authorRewardOnTrigger: number;
   authorRewardOnChoice: number;
@@ -47,5 +54,6 @@ export interface RoleplayMessageContext {
   imageUrl?: string | null;
   actorUserId: string;
   actorAction: "triggered" | "continued";
+  selectedRoleLabel?: string;
   selectedChoice?: string;
 }

@@ -7,6 +7,10 @@ export const buildRoleplayStoryContent = (
 ): string => {
   const lines: string[] = [];
 
+  if (context.actorAction === "triggered" && context.selectedRoleLabel) {
+    lines.push(`**Role:** ${context.selectedRoleLabel}`);
+  }
+
   if (context.selectedChoice) {
     lines.push(`**Choice:** ${context.selectedChoice}`);
   }
