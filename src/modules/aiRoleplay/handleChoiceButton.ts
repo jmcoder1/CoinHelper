@@ -15,6 +15,7 @@ import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBala
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildNotYourTurnMessage } from "./discord/buildNotYourTurnMessage";
+import { buildDuoChoiceUserMessage } from "./discord/buildDuoChoiceUserMessage";
 import { buildRoleplayMessageContext } from "./discord/buildRoleplayMessageContext";
 import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
 import { buildSessionEndedMessage } from "./discord/buildSessionEndedMessage";
@@ -27,7 +28,10 @@ import { chargeUser } from "./economy/chargeUser";
 import { rewardUser } from "./economy/rewardUser";
 import { containsBannedWord } from "./parsing/containsBannedWord";
 import { appendSessionTurn } from "./sessions/appendSessionTurn";
-import { getActivePlayerRolePrompt } from "./sessions/getActivePlayerRolePrompt";
+import {
+  getPlayerRoleLabelForUser,
+  getPlayerRolePromptForUser,
+} from "./sessions/getPlayerRoleForUser";
 import { getNextTurnUserId } from "./sessions/getNextTurnUserId";
 import { getSessionWithTurns } from "./sessions/getSessionWithTurns";
 import { isSessionExpired } from "./sessions/isSessionExpired";
@@ -163,19 +167,27 @@ export const tryHandleAiRoleplayButton = async (
   const isDuo = session.mode === ROLEPLAY_MODE_DUO;
 
   try {
+    const clickerId = interaction.user.id;
+    const rolePrompt = getPlayerRolePromptForUser(session, clickerId);
+    const userTurnContent = isDuo
+      ? buildDuoChoiceUserMessage(
+          getPlayerRoleLabelForUser(session, clickerId),
+          selectedChoice,
+        )
+      : selectedChoice;
+
     const messages = [
       ...session.turns.map((turn) => ({
         role: turn.role as "user" | "assistant",
         content: turn.content,
       })),
-      { role: "user" as const, content: selectedChoice },
+      { role: "user" as const, content: userTurnContent },
     ];
 
     const parsed = await generateRoleplayResponse({
-      systemPrompt: buildRoleplaySystemPrompt(
-        config.systemPrompt,
-        getActivePlayerRolePrompt(session),
-      ),
+      systemPrompt: buildRoleplaySystemPrompt(config.systemPrompt, rolePrompt, {
+        duoTurn: isDuo,
+      }),
       thinkingMode: config.thinkingMode,
       messages,
     });
@@ -211,7 +223,7 @@ export const tryHandleAiRoleplayButton = async (
       );
     }
 
-    await appendSessionTurn(deps.prisma, session.id, "user", selectedChoice);
+    await appendSessionTurn(deps.prisma, session.id, "user", userTurnContent);
 
     const nextTurnUserId = getNextTurnUserId(session);
 
