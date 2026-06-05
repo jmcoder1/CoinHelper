@@ -31,20 +31,22 @@ export const MAX_CHOICES = 3;
 export const CHOICE_MAX_LENGTH = 50;
 export const DISCORD_BUTTON_LABEL_MAX = 80;
 
-export const ROLEPLAY_BANNED_WORDS = [
-  "lolicon",
-  "shotacon",
-  "loli",
-  "shota",
-  "cub",
-  "young",
-  "underage",
-  "baby",
-  "toddler",
-  "child",
-  "teenager",
-  "chibi",
-] as const;
+// Disabled — moderation is handled via guild system prompt at generation time.
+// export const ROLEPLAY_BANNED_WORDS = [
+//   "lolicon",
+//   "shotacon",
+//   "loli",
+//   "shota",
+//   "cub",
+//   "young",
+//   "underage",
+//   "baby",
+//   "toddler",
+//   "child",
+//   "teenager",
+//   "chibi",
+// ] as const;
+export const ROLEPLAY_BANNED_WORDS = [] as const;
 
 export const JSON_RESPONSE_INSTRUCTION = `
 Respond with valid JSON only, no markdown fences:

@@ -12,7 +12,6 @@ import { buildGenerationFailedMessage } from "./discord/buildGenerationFailedMes
 import { buildGeneratingMessage } from "./discord/buildGeneratingMessage";
 import { buildGuildEconomyContext } from "./discord/buildGuildEconomyContext";
 import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBalanceMessage";
-import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildNotYourTurnMessage } from "./discord/buildNotYourTurnMessage";
 import { buildDuoChoiceUserMessage } from "./discord/buildDuoChoiceUserMessage";
@@ -26,7 +25,6 @@ import { fetchRoleplayThread } from "./discord/fetchRoleplayThread";
 import { parseChoiceButtonId } from "./discord/parseChoiceButtonId";
 import { chargeUser } from "./economy/chargeUser";
 import { rewardUser } from "./economy/rewardUser";
-import { containsBannedWord } from "./parsing/containsBannedWord";
 import { appendSessionTurn } from "./sessions/appendSessionTurn";
 import {
   getPlayerRoleLabelForUser,
@@ -128,14 +126,6 @@ export const tryHandleAiRoleplayButton = async (
   if (!selectedChoice) {
     await interaction.reply({
       content: "That choice is no longer available.",
-      ephemeral: true,
-    });
-    return true;
-  }
-
-  if (containsBannedWord(selectedChoice)) {
-    await interaction.reply({
-      content: buildNotAllowedMessage(),
       ephemeral: true,
     });
     return true;

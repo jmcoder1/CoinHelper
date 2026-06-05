@@ -1,5 +1,5 @@
-import { ROLEPLAY_BANNED_WORDS } from "../constants";
-import { containsAnyOf } from "./containsAnyOf";
+// import { ROLEPLAY_BANNED_WORDS } from "../constants";
+// import { containsAnyOf } from "./containsAnyOf";
 
-export const containsBannedWord = (text: string): boolean =>
-  containsAnyOf(ROLEPLAY_BANNED_WORDS, text);
+export const containsBannedWord = (_text: string): boolean =>
+  false;

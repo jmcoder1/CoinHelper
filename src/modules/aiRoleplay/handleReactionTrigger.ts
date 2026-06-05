@@ -7,7 +7,6 @@ import {
 } from "discord.js";
 import { isRoleplayConfigComplete } from "./config/isRoleplayConfigComplete";
 import { loadGuildRoleplayConfig } from "./config/loadGuildRoleplayConfig";
-import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildModePickComponents } from "./discord/buildModePickComponents";
 import { buildModePickMessage } from "./discord/buildModePickMessage";
@@ -15,7 +14,6 @@ import { emojiMatchesTrigger } from "./discord/emojiMatchesTrigger";
 import { notifyReactor } from "./discord/notifyReactor";
 import { notifyReactorWithComponents } from "./discord/notifyReactorWithComponents";
 import { extractRoleplayInput } from "./extraction/extractRoleplayInput";
-import { containsBannedWord } from "./parsing/containsBannedWord";
 import { createRoleplayPendingStart } from "./sessions/createRoleplayPendingStart";
 import { deleteRoleplayPendingStart } from "./sessions/deleteRoleplayPendingStart";
 import { notifyExpiredPendingToInitiator } from "./sessions/notifyExpiredPendingToInitiator";
@@ -59,11 +57,6 @@ export const tryHandleAiRoleplayReaction = async (
       user as User,
       "React on a message that has text (a caption).",
     );
-    return true;
-  }
-
-  if (containsBannedWord(extracted.caption)) {
-    await notifyReactor(user as User, buildNotAllowedMessage());
     return true;
   }
 
