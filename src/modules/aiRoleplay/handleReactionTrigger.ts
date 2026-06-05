@@ -15,7 +15,6 @@ import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
 import { buildRoleplayThreadStarter } from "./discord/buildRoleplayThreadStarter";
-import { buildSourceMessageReply } from "./discord/buildSourceMessageReply";
 import { createRoleplayThread } from "./discord/createRoleplayThread";
 import { emojiMatchesTrigger } from "./discord/emojiMatchesTrigger";
 import { notifyReactor } from "./discord/notifyReactor";
@@ -116,10 +115,9 @@ export const tryHandleAiRoleplayReaction = async (
       actorAction: "triggered" as const,
     };
 
-    const starterMessage = await outputChannel.send({
-      ...buildRoleplayThreadStarter(messageContext),
-      ...buildSourceMessageReply(message),
-    });
+    const starterMessage = await outputChannel.send(
+      buildRoleplayThreadStarter(messageContext),
+    );
     const thread = await createRoleplayThread(starterMessage);
 
     const storyMessage = await thread.send(

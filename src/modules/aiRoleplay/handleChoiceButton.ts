@@ -190,10 +190,6 @@ export const tryHandleAiRoleplayButton = async (
         ? await interaction.message.fetch()
         : interaction.message
       : null;
-    const replyOptions = previousStoryMessage
-      ? buildSourceMessageReply(previousStoryMessage)
-      : {};
-
     if (interaction.message.inGuild()) {
       await disableMessageButtons(interaction.message);
     }
@@ -203,7 +199,11 @@ export const tryHandleAiRoleplayButton = async (
       : null;
 
     if (thread) {
-      const newMessage = await thread.send({ ...payload, ...replyOptions });
+      const newMessage = await thread.send(
+        previousStoryMessage
+          ? { ...payload, ...buildSourceMessageReply(previousStoryMessage) }
+          : payload,
+      );
 
       await updateSessionOutput(deps.prisma, session.id, {
         outputMessageId: newMessage.id,
@@ -223,7 +223,7 @@ export const tryHandleAiRoleplayButton = async (
         return true;
       }
 
-      const newMessage = await outputChannel.send({ ...payload, ...replyOptions });
+      const newMessage = await outputChannel.send(payload);
 
       await updateSessionOutput(deps.prisma, session.id, {
         outputMessageId: newMessage.id,
