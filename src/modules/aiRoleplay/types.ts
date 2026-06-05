@@ -47,4 +47,5 @@ export interface RoleplayMessageContext {
   imageUrl?: string | null;
   actorUserId: string;
   actorAction: "triggered" | "continued";
+  selectedChoice?: string;
 }

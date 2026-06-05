@@ -1,13 +1,13 @@
 import { ParsedRoleplayResponse, RoleplayMessageContext } from "../types";
 import { buildChoiceComponents } from "./buildChoiceComponents";
-import { buildRoleplayActorLine } from "./buildRoleplayActorLine";
+import { buildRoleplayStoryContent } from "./buildRoleplayStoryContent";
 
 export const buildRoleplayStoryPayload = (
   parsed: ParsedRoleplayResponse,
   context: RoleplayMessageContext,
   sessionId: string,
 ) => ({
-  content: `${buildRoleplayActorLine(context)}\n\n${parsed.story}`,
+  content: buildRoleplayStoryContent(parsed, context),
   embeds: [],
   components: buildChoiceComponents(sessionId, parsed.choices),
 });

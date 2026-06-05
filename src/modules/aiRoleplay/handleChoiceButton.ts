@@ -9,6 +9,7 @@ import { buildInsufficientBalanceMessage } from "./discord/buildInsufficientBala
 import { buildNotAllowedMessage } from "./discord/buildNotAllowedMessage";
 import { buildNotConfiguredMessage } from "./discord/buildNotConfiguredMessage";
 import { buildRoleplayStoryPayload } from "./discord/buildRoleplayStoryPayload";
+import { buildSourceMessageReply } from "./discord/buildSourceMessageReply";
 import { buildSessionExpiredMessage } from "./discord/buildSessionExpiredMessage";
 import { disableMessageButtons } from "./discord/disableMessageButtons";
 import { fetchRoleplayThread } from "./discord/fetchRoleplayThread";
@@ -179,9 +180,19 @@ export const tryHandleAiRoleplayButton = async (
         sourceMessageUrl: session.sourceMessageUrl,
         actorUserId: interaction.user.id,
         actorAction: "continued",
+        selectedChoice,
       },
       session.id,
     );
+
+    const previousStoryMessage = interaction.message.inGuild()
+      ? interaction.message.partial
+        ? await interaction.message.fetch()
+        : interaction.message
+      : null;
+    const replyOptions = previousStoryMessage
+      ? buildSourceMessageReply(previousStoryMessage)
+      : {};
 
     if (interaction.message.inGuild()) {
       await disableMessageButtons(interaction.message);
@@ -192,7 +203,7 @@ export const tryHandleAiRoleplayButton = async (
       : null;
 
     if (thread) {
-      const newMessage = await thread.send(payload);
+      const newMessage = await thread.send({ ...payload, ...replyOptions });
 
       await updateSessionOutput(deps.prisma, session.id, {
         outputMessageId: newMessage.id,
@@ -212,7 +223,7 @@ export const tryHandleAiRoleplayButton = async (
         return true;
       }
 
-      const newMessage = await outputChannel.send(payload);
+      const newMessage = await outputChannel.send({ ...payload, ...replyOptions });
 
       await updateSessionOutput(deps.prisma, session.id, {
         outputMessageId: newMessage.id,
