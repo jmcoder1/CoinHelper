@@ -2,8 +2,6 @@ import { Awaitable, ChannelType, Events, Message, User } from "discord.js";
 import { toBalanceUpdate } from "../utils/apiUtils/unbelievaboatUtils/toBalanceUpdate";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
-import { formatImageLimitExceededMessage } from "./utils/discordUtils/formatImageLimitExceededMessage";
-import { getMemberImagePostLimit } from "./utils/discordUtils/getMemberImagePostLimit";
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
 import { toUserId } from "./utils/discordUtils/toUserId";
@@ -111,23 +109,6 @@ export const messageCreate: MessageCreateListener = {
     } else {
       const num = findNumImages(message.attachments);
       if (!num || num === 0) return;
-
-      const postLimit = await getMemberImagePostLimit(message, guild.id);
-      if (
-        postLimit &&
-        postLimit.maxImages !== null &&
-        num > postLimit.maxImages
-      ) {
-        await message.reply(
-          formatImageLimitExceededMessage(
-            postLimit.tier,
-            postLimit.maxImages,
-            num
-          )
-        );
-        await message.delete();
-        return;
-      }
 
       if (message.channel.type != ChannelType.GuildText) return;
       const imageMultiplier = getImageMultiplier(message.channel.name);
