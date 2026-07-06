@@ -6,7 +6,6 @@ export const startMigration = async () => {
   try {
     // Clear existing data
     await prisma.guildRole.deleteMany({});
-    await prisma.guildRemovalReason.deleteMany({});
     await prisma.guildChannel.deleteMany({});
     await prisma.guildCurrency.deleteMany({});
     await prisma.guild.deleteMany({});
@@ -44,20 +43,6 @@ export const startMigration = async () => {
             imageLimit: getDefaultTierImageLimit(roleData.name) ?? undefined,
           },
         });
-      }
-
-      // Insert Removal Reasons
-      if (guildData.removalReasons) {
-        for (const reason of guildData.removalReasons) {
-          await prisma.guildRemovalReason.create({
-            data: {
-              guildId: guild.id,
-              title: reason.title,
-              description: reason.value,
-              value: reason.value,
-            },
-          });
-        }
       }
 
       // Insert Currency (if applicable)

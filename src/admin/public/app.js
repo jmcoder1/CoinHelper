@@ -137,7 +137,6 @@ const renderTabs = (guild) => {
     ["roles", "Roles"],
     ["currency", "Currency"],
     ["ai-roleplay", "AI Roleplay"],
-    ["reasons", "Removal Reasons"],
   ];
 
   const tabsEl = document.createElement("div");
@@ -345,7 +344,7 @@ const renderGuildPanel = async () => {
 
   mainPanel.innerHTML = `<p class="placeholder">Loading...</p>`;
   const data = await apiFetch(`/guilds/${selectedGuildId}`);
-  const { guild, channels, roles, currency, removalReasons, aiRoleplay } = data;
+  const { guild, channels, roles, currency, aiRoleplay } = data;
 
   mainPanel.innerHTML = "";
   mainPanel.appendChild(renderTabs(guild));
@@ -392,7 +391,7 @@ const renderGuildPanel = async () => {
     panel.querySelector("#delete-guild-btn").addEventListener("click", async () => {
       const confirmed = await confirmProduction(
         "Delete guild",
-        `Delete "${guild.name}" and all related channels, roles, currency, and removal reasons from PRODUCTION?`,
+        `Delete "${guild.name}" and all related channels, roles, and currency from PRODUCTION?`,
       );
       if (!confirmed) return;
 
@@ -755,110 +754,6 @@ const renderGuildPanel = async () => {
       });
       await renderGuildPanel();
     });
-  }
-
-  if (activeTab === "reasons") {
-    removalReasons.forEach((reason) => {
-      const card = document.createElement("div");
-      card.className = "reason-card";
-      card.innerHTML = `
-        <h4>Reason #${reason.id}</h4>
-        <div class="field-grid">
-          <div class="field-row">
-            <label>Title</label>
-            <input type="text" data-field="title" value="${escapeHtml(reason.title)}" />
-          </div>
-          <div class="field-row">
-            <label>Description</label>
-            <textarea data-field="description">${escapeHtml(reason.description)}</textarea>
-          </div>
-          <div class="field-row">
-            <label>Value</label>
-            <input type="text" data-field="value" value="${escapeHtml(reason.value)}" />
-          </div>
-        </div>
-        <div class="actions">
-          <button type="button" class="save-reason-btn">Save</button>
-          <button type="button" class="delete-reason-btn danger secondary">Delete</button>
-        </div>
-      `;
-
-      card.querySelector(".save-reason-btn").addEventListener("click", async () => {
-        const confirmed = await confirmProduction(
-          "Save removal reason",
-          "You are editing PRODUCTION. Save this removal reason?",
-        );
-        if (!confirmed) return;
-
-        await apiFetch(`/guilds/${guild.id}/removal-reasons/${reason.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            title: card.querySelector('[data-field="title"]').value.trim(),
-            description: card.querySelector('[data-field="description"]').value.trim(),
-            value: card.querySelector('[data-field="value"]').value.trim(),
-          }),
-        });
-        await renderGuildPanel();
-      });
-
-      card.querySelector(".delete-reason-btn").addEventListener("click", async () => {
-        const confirmed = await confirmProduction(
-          "Delete removal reason",
-          "You are editing PRODUCTION. Delete this removal reason?",
-        );
-        if (!confirmed) return;
-
-        await apiFetch(`/guilds/${guild.id}/removal-reasons/${reason.id}`, {
-          method: "DELETE",
-        });
-        await renderGuildPanel();
-      });
-
-      panel.appendChild(card);
-    });
-
-    const addCard = document.createElement("div");
-    addCard.className = "reason-card";
-    addCard.innerHTML = `
-      <h4>Add removal reason</h4>
-      <div class="field-grid">
-        <div class="field-row">
-          <label>Title</label>
-          <input type="text" id="new-reason-title" />
-        </div>
-        <div class="field-row">
-          <label>Description</label>
-          <textarea id="new-reason-description"></textarea>
-        </div>
-        <div class="field-row">
-          <label>Value</label>
-          <input type="text" id="new-reason-value" />
-        </div>
-      </div>
-      <div class="actions">
-        <button type="button" id="add-reason-btn">Add reason</button>
-      </div>
-    `;
-
-    addCard.querySelector("#add-reason-btn").addEventListener("click", async () => {
-      const confirmed = await confirmProduction(
-        "Add removal reason",
-        "You are editing PRODUCTION. Add this removal reason?",
-      );
-      if (!confirmed) return;
-
-      await apiFetch(`/guilds/${guild.id}/removal-reasons`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: addCard.querySelector("#new-reason-title").value.trim(),
-          description: addCard.querySelector("#new-reason-description").value.trim(),
-          value: addCard.querySelector("#new-reason-value").value.trim(),
-        }),
-      });
-      await renderGuildPanel();
-    });
-
-    panel.appendChild(addCard);
   }
 
   mainPanel.appendChild(panel);

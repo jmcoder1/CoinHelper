@@ -107,7 +107,6 @@ guildsRouter.get("/:id", async (req, res) => {
       guildChannels: true,
       guildRoles: true,
       guildCurrencies: true,
-      guildRemovalReasons: { orderBy: { id: "asc" } },
       aiRoleplayConfig: true,
     },
   });
@@ -126,7 +125,6 @@ guildsRouter.get("/:id", async (req, res) => {
     channels: mapSlots(guild.guildChannels, CHANNEL_SLOT_NAMES),
     roles: mapRoleSlots(guild.guildRoles, ROLE_SLOT_NAMES),
     currency: guild.guildCurrencies[0] ?? null,
-    removalReasons: guild.guildRemovalReasons,
     aiRoleplay: guild.aiRoleplayConfig,
   });
 });
@@ -440,122 +438,6 @@ guildsRouter.put("/:id/currency", async (req, res) => {
       });
 
   res.json({ currency });
-});
-
-guildsRouter.post("/:id/removal-reasons", async (req, res) => {
-  const guildId = parseId(req.params.id);
-  if (!guildId) {
-    res.status(400).json({ error: "Invalid guild id" });
-    return;
-  }
-
-  const guild = await getGuildOr404(guildId, res);
-  if (!guild) return;
-
-  const { title, description, value } = req.body as {
-    title?: string;
-    description?: string;
-    value?: string;
-  };
-
-  if (
-    !isNonEmptyString(title) ||
-    !isNonEmptyString(description) ||
-    !isNonEmptyString(value)
-  ) {
-    res
-      .status(400)
-      .json({ error: "title, description, and value are required" });
-    return;
-  }
-
-  const reason = await prisma.guildRemovalReason.create({
-    data: {
-      guildId,
-      title: title.trim(),
-      description: description.trim(),
-      value: value.trim(),
-    },
-  });
-
-  res.status(201).json({ reason });
-});
-
-guildsRouter.patch("/:id/removal-reasons/:reasonId", async (req, res) => {
-  const guildId = parseId(req.params.id);
-  const reasonId = parseId(req.params.reasonId);
-
-  if (!guildId || !reasonId) {
-    res.status(400).json({ error: "Invalid id" });
-    return;
-  }
-
-  const existing = await prisma.guildRemovalReason.findFirst({
-    where: { id: reasonId, guildId },
-  });
-
-  if (!existing) {
-    res.status(404).json({ error: "Removal reason not found" });
-    return;
-  }
-
-  const { title, description, value } = req.body as {
-    title?: string;
-    description?: string;
-    value?: string;
-  };
-
-  const data: { title?: string; description?: string; value?: string } = {};
-  if (title !== undefined) {
-    if (!isNonEmptyString(title)) {
-      res.status(400).json({ error: "title cannot be empty" });
-      return;
-    }
-    data.title = title.trim();
-  }
-  if (description !== undefined) {
-    if (!isNonEmptyString(description)) {
-      res.status(400).json({ error: "description cannot be empty" });
-      return;
-    }
-    data.description = description.trim();
-  }
-  if (value !== undefined) {
-    if (!isNonEmptyString(value)) {
-      res.status(400).json({ error: "value cannot be empty" });
-      return;
-    }
-    data.value = value.trim();
-  }
-
-  const reason = await prisma.guildRemovalReason.update({
-    where: { id: reasonId },
-    data,
-  });
-
-  res.json({ reason });
-});
-
-guildsRouter.delete("/:id/removal-reasons/:reasonId", async (req, res) => {
-  const guildId = parseId(req.params.id);
-  const reasonId = parseId(req.params.reasonId);
-
-  if (!guildId || !reasonId) {
-    res.status(400).json({ error: "Invalid id" });
-    return;
-  }
-
-  const existing = await prisma.guildRemovalReason.findFirst({
-    where: { id: reasonId, guildId },
-  });
-
-  if (!existing) {
-    res.status(404).json({ error: "Removal reason not found" });
-    return;
-  }
-
-  await prisma.guildRemovalReason.delete({ where: { id: reasonId } });
-  res.json({ ok: true });
 });
 
 guildsRouter.get("/:id/ai-roleplay", async (req, res) => {

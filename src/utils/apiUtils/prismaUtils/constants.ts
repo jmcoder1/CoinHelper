@@ -127,39 +127,6 @@ export const OP_GUILD = {
     { discordId: "1272730473319108668", name: GOLD_ROLE_NAME },
     { discordId: "1272730498300379217", name: DIAMOND_ROLE_NAME },
   ],
-  removalReasons: [
-    {
-      title: "Rule 1: You must be 18+",
-      value: "This is an adult-only NSFW server",
-    },
-    {
-      title: "Rule 2: No doxxing",
-      value: "No doxxing",
-    },
-    {
-      title: "Rule 3: Using @everyone ping",
-      value: "Do not use the @everyone ping",
-    },
-    {
-      title: "Rule 4: No paywall content",
-      value: "No paywall content",
-    },
-    { title: "Rule 5: No leaks", value: "No leaks" },
-    { title: "Rule 6: OP theme", value: "All content must be OP-themed" },
-    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
-    {
-      title: "Rule 8: Captions only",
-      value: "Captions must be burned or side by side the media",
-    },
-    {
-      title: "Inappropriate request",
-      value: "Request in the wrong channel",
-    },
-    {
-      title: "Repost",
-      value: "Your post is a repost",
-    },
-  ],
 };
 
 export const BMB_GUILD = {
@@ -256,39 +223,6 @@ export const BMB_GUILD = {
     { discordId: "1283227791441264743", name: GOLD_ROLE_NAME },
     { discordId: "1283227691251794044", name: DIAMOND_ROLE_NAME },
   ],
-  removalReasons: [
-    {
-      title: "Rule 1: You must be 18+",
-      value: "This is an adult-only NSFW server",
-    },
-    {
-      title: "Rule 2: No doxxing",
-      value: "No doxxing",
-    },
-    {
-      title: "Rule 3: Using @everyone ping",
-      value: "Do not use the @everyone ping",
-    },
-    {
-      title: "Rule 4: No paywall content",
-      value: "No paywall content",
-    },
-    { title: "Rule 5: No leaks", value: "No leaks" },
-    { title: "Rule 6: Bully theme", value: "All content must be bully-themed" },
-    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
-    {
-      title: "Rule 8: Captions only",
-      value: "Captions must be burned or side by side the media",
-    },
-    {
-      title: "Inappropriate request",
-      value: "Request in the wrong channel",
-    },
-    {
-      title: "Repost",
-      value: "Your post is a repost",
-    },
-  ],
 };
 
 export const Tt_GUILD = {
@@ -378,39 +312,6 @@ export const Tt_GUILD = {
     { discordId: "1323435938109718582", name: SILVER_ROLE_NAME },
     { discordId: "1323435890231742474", name: GOLD_ROLE_NAME },
     { discordId: "1323435854261125140", name: DIAMOND_ROLE_NAME },
-  ],
-  removalReasons: [
-    {
-      title: "Rule 1: You must be 18+",
-      value: "This is an adult-only NSFW server",
-    },
-    {
-      title: "Rule 2: No doxxing",
-      value: "No doxxing",
-    },
-    {
-      title: "Rule 3: Using @everyone ping",
-      value: "Do not use the @everyone ping",
-    },
-    {
-      title: "Rule 4: No paywall content",
-      value: "No paywall content",
-    },
-    { title: "Rule 5: No leaks", value: "No leaks" },
-    { title: "Rule 6: Sissy theme", value: "All content must be sissy-themed" },
-    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
-    {
-      title: "Rule 8: Captions only",
-      value: "Captions must be burned or side by side the media",
-    },
-    {
-      title: "Inappropriate request",
-      value: "Request in the wrong channel",
-    },
-    {
-      title: "Repost",
-      value: "Your post is a repost",
-    },
   ],
 };
 
@@ -507,39 +408,6 @@ export const CUCK_GUILD = {
     { discordId: "1367954490317344912", name: SILVER_ROLE_NAME },
     { discordId: "1367954490317344913", name: GOLD_ROLE_NAME },
     { discordId: "1367954490317344914", name: DIAMOND_ROLE_NAME },
-  ],
-  removalReasons: [
-    {
-      title: "Rule 1: You must be 18+",
-      value: "This is an adult-only NSFW server",
-    },
-    {
-      title: "Rule 2: No doxxing",
-      value: "No doxxing",
-    },
-    {
-      title: "Rule 3: Using @everyone ping",
-      value: "Do not use the @everyone ping",
-    },
-    {
-      title: "Rule 4: No paywall content",
-      value: "No paywall content",
-    },
-    { title: "Rule 5: No leaks", value: "No leaks" },
-    { title: "Rule 6: Cuck theme", value: "All content must be cuck-themed" },
-    { title: "Rule 7: No IRL pictures", value: "No IRL pictures" },
-    {
-      title: "Rule 8: Captions only",
-      value: "Captions must be burned or side by side the media",
-    },
-    {
-      title: "Inappropriate request",
-      value: "Request in the wrong channel",
-    },
-    {
-      title: "Repost",
-      value: "Your post is a repost",
-    },
   ],
 };
 export const guilds = [OP_GUILD, BMB_GUILD, Tt_GUILD, CUCK_GUILD];

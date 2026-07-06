@@ -19,7 +19,6 @@ model Guild {
   name                   String
   guildChannels          GuildChannel[]
   guildCurrencies        GuildCurrency[]
-  guildRemovalReasons    GuildRemovalReason[]
   guildRoles             GuildRole[]
   aiRoleplayConfig       GuildAiRoleplayConfig?
   roleplaySessions       RoleplaySession[]
@@ -118,15 +117,6 @@ model GuildCurrency {
   name    String
   namePlural    String 
   iconSrc String
-  guild   Guild @relation(fields: [guildId], references: [id])
-}
-
-model GuildRemovalReason {
-  id      Int    @id @default(autoincrement())
-  guildId Int
-  title   String
-  description String
-  value   String
   guild   Guild @relation(fields: [guildId], references: [id])
 }
 
