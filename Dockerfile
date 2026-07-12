@@ -13,7 +13,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 RUN npx prisma generate
-RUN yarn build
+RUN yarn build:bot
 
 ENV NODE_ENV=production
 
