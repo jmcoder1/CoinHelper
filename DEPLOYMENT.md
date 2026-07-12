@@ -94,13 +94,35 @@ Uses `.env.production` locally with prod `DATABASE_URL` (see `todo.md`).
 
 ## Troubleshooting
 
+### P3009 (failed migration)
+
+If deploy logs show `P3009` and a migration name (e.g. `20260601120000_roleplay_duo_mode`), the database has a **stuck failed migration** from an earlier deploy attempt.
+
+**Railway Postgres (new / empty DB — recommended):**
+
+1. Railway → **Postgres** service → **Settings** → remove and re-add the plugin, or delete the volume/data (wipes DB).
+2. Push the latest code (includes migration order fix).
+3. Redeploy CoinHelper — `prisma migrate deploy` should run all migrations cleanly.
+
+**Without wiping the DB** (from your machine with Railway `DATABASE_URL`):
+
+```bash
+npx prisma migrate resolve --rolled-back "20260601120000_roleplay_duo_mode"
+git push origin main   # after migration fix is on main
+```
+
+Then redeploy. If it still fails, reset Postgres as above.
+
+**Using existing DigitalOcean Postgres (Option A):** point `DATABASE_URL` at DO instead of Railway Postgres — schema is already migrated; no fresh `migrate deploy` on an empty DB.
+
 | Issue | Fix |
 |-------|-----|
 | `Missing required environment variables` | Add missing vars in Railway Variables |
 | `prisma migrate deploy` fails | Check `DATABASE_URL`, SSL, DB firewall |
+| `P3009` failed migration | See **P3009 (failed migration)** below |
 | Bot offline after deploy | Check Railway logs; verify `DISCORD_TOKEN` |
 | `403` from Unbelievaboat | Authorize API app for each guild (separate from deploy) |
-| Build fails on `yarn build` | Fix TypeScript errors locally first |
+| Build fails on `yarn build` | Bot deploy uses `yarn build:bot` (tsc only). Run full `yarn build` locally for admin assets. |
 
 ## Files involved
 

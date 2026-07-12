@@ -1,20 +1,34 @@
--- AlterTable
-ALTER TABLE "RoleplayPendingStart" ADD COLUMN "mode" TEXT,
-ADD COLUMN "status" TEXT NOT NULL DEFAULT 'pick_mode',
-ADD COLUMN "partnerId" TEXT,
-ADD COLUMN "initiatorRoleId" TEXT,
-ADD COLUMN "initiatorRoleLabel" TEXT,
-ADD COLUMN "initiatorRolePrompt" TEXT,
-ADD COLUMN "partnerRoleId" TEXT,
-ADD COLUMN "partnerRoleLabel" TEXT,
-ADD COLUMN "partnerRolePrompt" TEXT;
+﻿-- Duo-mode columns for DBs where Roleplay* tables already existed (incremental dev).
+-- On fresh installs those tables are created later; see 20260712150000_roleplay_duo_mode_columns.
 
--- AlterTable
-ALTER TABLE "RoleplaySession" ADD COLUMN "mode" TEXT NOT NULL DEFAULT 'solo',
-ADD COLUMN "partnerId" TEXT,
-ADD COLUMN "selectedRoleLabel" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "partnerRoleId" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "partnerRoleLabel" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "partnerRolePrompt" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "currentTurnUserId" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "status" TEXT NOT NULL DEFAULT 'active';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'RoleplayPendingStart'
+  ) THEN
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "mode" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'pick_mode';
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "partnerId" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "initiatorRoleId" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "initiatorRoleLabel" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "initiatorRolePrompt" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "partnerRoleId" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "partnerRoleLabel" TEXT;
+    ALTER TABLE "RoleplayPendingStart" ADD COLUMN IF NOT EXISTS "partnerRolePrompt" TEXT;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'RoleplaySession'
+  ) THEN
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "mode" TEXT NOT NULL DEFAULT 'solo';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "partnerId" TEXT;
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "selectedRoleLabel" TEXT NOT NULL DEFAULT '';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "partnerRoleId" TEXT NOT NULL DEFAULT '';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "partnerRoleLabel" TEXT NOT NULL DEFAULT '';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "partnerRolePrompt" TEXT NOT NULL DEFAULT '';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "currentTurnUserId" TEXT NOT NULL DEFAULT '';
+    ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'active';
+  END IF;
+END $$;
