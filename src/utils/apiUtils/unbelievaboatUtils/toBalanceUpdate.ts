@@ -14,10 +14,10 @@ interface ToBalanceUpdateOutput {
   reason: string;
 }
 
-export const toBalanceUpdate = (
+export const toBalanceUpdate = async (
   client: Client,
-  invite: string
-): ToBalanceUpdateOutput | null => {
+  invite: string,
+): Promise<ToBalanceUpdateOutput | null> => {
   const invitedByIndex = invite.toLowerCase().indexOf("invited by");
   if (invitedByIndex === -1) return null;
 
@@ -25,8 +25,15 @@ export const toBalanceUpdate = (
   const isJoin = invite.toLowerCase().indexOf("join") != -1;
   const inviteeMention = words[0];
   const inviterUserId = toUserId(words[words.indexOf("by") + 1]);
+  if (!inviterUserId) return null;
 
-  const inviter = client.users.cache.get(inviterUserId) as User;
+  const cached = client.users.cache.get(inviterUserId);
+  let inviter: User;
+  try {
+    inviter = cached ?? (await client.users.fetch(inviterUserId));
+  } catch {
+    return null;
+  }
 
   return {
     cashAmount: isJoin ? JOIN_AMOUNT : LEAVE_AMOUNT,

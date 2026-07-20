@@ -69,7 +69,10 @@ export const messageCreate: MessageCreateListener = {
     if (!levelsGuildChannel) return;
 
     if (invitesGuildChannel.discordId === message.channelId) {
-      const balanceUpdate = toBalanceUpdate(message.client, message.content);
+      const balanceUpdate = await toBalanceUpdate(
+        message.client,
+        message.content,
+      );
       if (balanceUpdate)
         await updateBalance(message.client, {
           cashAmount: balanceUpdate.cashAmount,
@@ -89,8 +92,16 @@ export const messageCreate: MessageCreateListener = {
     } else if (levelsGuildChannel.discordId === message.channelId) {
       const recipientMention = message.content.split(" ")[0];
       const recipientUserId = toUserId(recipientMention);
+      if (!recipientUserId) return;
 
-      const user = message.client.users.cache.get(recipientUserId) as User;
+      const cached = message.client.users.cache.get(recipientUserId);
+      let user: User;
+      try {
+        user = cached ?? (await message.client.users.fetch(recipientUserId));
+      } catch {
+        return;
+      }
+
       await updateBalance(message.client, {
         user: {
           id: user.id,
