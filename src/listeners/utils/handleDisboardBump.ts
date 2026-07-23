@@ -5,6 +5,7 @@ import {
   getDisboardBumpUser,
   isDisboardBumpRewardMessage,
 } from "./discordUtils/disboardBump";
+import { tryAsyncAwait } from "../../utils/tryAsyncAwait";
 
 export interface HandleDisboardBumpContext {
   guildDiscordId: string;
@@ -23,21 +24,23 @@ export const handleDisboardBump = async (
   const user = getDisboardBumpUser(message)!;
   console.log(`${user.username} used the /bump command.`);
 
-  await updateBalance(client, {
-    user: {
-      id: user.id,
-      name: user.username,
-      iconURL: user.avatarURL() ?? undefined,
-      guild: {
-        id: context.guildDiscordId,
-        currencyPluralName: context.currencyPluralName,
-        economyChannelId: context.economyChannelId,
-        currencyImage: context.currencyImage,
+  await tryAsyncAwait(() =>
+    updateBalance(client, {
+      user: {
+        id: user.id,
+        name: user.username,
+        iconURL: user.avatarURL() ?? undefined,
+        guild: {
+          id: context.guildDiscordId,
+          currencyPluralName: context.currencyPluralName,
+          economyChannelId: context.economyChannelId,
+          currencyImage: context.currencyImage,
+        },
       },
-    },
-    cashAmount: BUMP_REWARD_AMOUNT,
-    reason: `You have been rewarded ${BUMP_REWARD_AMOUNT} ${context.currencyPluralName} for bumping the server.`,
-  });
+      cashAmount: BUMP_REWARD_AMOUNT,
+      reason: `You have been rewarded ${BUMP_REWARD_AMOUNT} ${context.currencyPluralName} for bumping the server.`,
+    }),
+  );
 
   return true;
 };

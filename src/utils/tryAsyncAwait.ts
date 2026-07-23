@@ -1,3 +1,5 @@
+import { formatApiError } from "./formatApiError";
+
 type AsyncReturnType<T extends (...args: any) => Promise<any>> = T extends (
   ...args: any
 ) => Promise<infer R>
@@ -11,7 +13,7 @@ export const tryAsyncAwait = async <F extends () => any>(
     const data = await fn();
     return [data, null];
   } catch (error) {
-    console.error("error", error);
+    console.error("error", formatApiError(error));
     return [null, error];
   }
 };

@@ -15,6 +15,7 @@ import {
 } from "../utils/apiUtils/prismaUtils/constants";
 import { getServerBoostIconUrl } from "../utils/apiUtils/prismaUtils/getServerBoostIconUrl";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 
 export interface GuildMemberUpdateListener extends Listener {
   event: Events.GuildMemberUpdate;
@@ -75,21 +76,24 @@ export const guildMemberUpdate: GuildMemberUpdateListener = {
       return;
     }
 
-    await updateBalance(oldMember.client, {
-      user: {
-        id: newMember.id,
-        name: newMember.displayName,
-        iconURL: newMember.avatarURL() || undefined,
-        guild: {
-          id: guild.discordId,
-          currencyPluralName: guildCurrency.namePlural,
-          economyChannelId: economyGuildChannel.discordId,
-          currencyImage: guildCurrency.iconSrc,
+    const [, balanceError] = await tryAsyncAwait(() =>
+      updateBalance(oldMember.client, {
+        user: {
+          id: newMember.id,
+          name: newMember.displayName,
+          iconURL: newMember.avatarURL() || undefined,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
         },
-      },
-      cashAmount: REWARD_AMOUNT,
-      reason: `You have been awarded ${REWARD_AMOUNT} ${guildCurrency.namePlural} for boosting the server`,
-    });
+        cashAmount: REWARD_AMOUNT,
+        reason: `You have been awarded ${REWARD_AMOUNT} ${guildCurrency.namePlural} for boosting the server`,
+      }),
+    );
+    if (balanceError) return;
 
     const boughtCoinsGuildChannel = await prisma.guildChannel.findFirst({
       where: {

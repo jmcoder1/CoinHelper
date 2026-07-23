@@ -12,6 +12,7 @@ import { tryHandleAiRoleplayReaction } from "../modules/aiRoleplay";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import {
   REACTION_REWARD_AMOUNT,
   TEN_PLUS_REACTION_BONUS,
@@ -101,21 +102,26 @@ export const messageReactionAdd: MessageReactionAddListener = {
     const numImages = findNumImages(message.attachments);
     if (numImages === 0) return;
 
-    await updateBalance(message.client, {
-      user: {
-        id: message.author.id,
-        name: message.author.username,
-        iconURL: message.author.avatarURL() || undefined,
-        guild: {
-          id: guild.discordId,
-          currencyPluralName: guildCurrency.namePlural,
-          economyChannelId: economyGuildChannel.discordId,
-          currencyImage: guildCurrency.iconSrc,
+    const author = message.author;
+    if (!author) return;
+
+    await tryAsyncAwait(() =>
+      updateBalance(message.client, {
+        user: {
+          id: author.id,
+          name: author.username,
+          iconURL: author.avatarURL() || undefined,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
         },
-      },
-      cashAmount: REACTION_REWARD_AMOUNT,
-      reason: `<@${user.id}> positively reacted to your message ${message.url}`,
-    });
+        cashAmount: REACTION_REWARD_AMOUNT,
+        reason: `<@${user.id}> positively reacted to your message ${message.url}`,
+      }),
+    );
 
     const incrementorReactionCount = reaction.count;
 
@@ -124,40 +130,44 @@ export const messageReactionAdd: MessageReactionAddListener = {
       incrementorReactionCount ===
       TWENTY_FIVE_PLUS_REACTION_THRESHOLD + 1
     ) {
-      await updateBalance(message.client, {
-        user: {
-          id: message.author.id,
-          name: message.author.username,
-          iconURL: message.author.avatarURL() || undefined,
-          guild: {
-            id: guild.discordId,
-            currencyPluralName: guildCurrency.namePlural,
-            economyChannelId: economyGuildChannel.discordId,
-            currencyImage: guildCurrency.iconSrc,
+      await tryAsyncAwait(() =>
+        updateBalance(message.client, {
+          user: {
+            id: author.id,
+            name: author.username,
+            iconURL: author.avatarURL() || undefined,
+            guild: {
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
+            },
           },
-        },
-        cashAmount: TWENTY_FIVE_PLUS_REACTION_BONUS,
-        reason: `Your message ${message.url} received more than ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD} reactions!`,
-      });
+          cashAmount: TWENTY_FIVE_PLUS_REACTION_BONUS,
+          reason: `Your message ${message.url} received more than ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD} reactions!`,
+        }),
+      );
     } else if (
       incrementorReactionCount ===
       TEN_PLUS_REACTION_THRESHOLD + 1
     ) {
-      await updateBalance(message.client, {
-        user: {
-          id: message.author.id,
-          name: message.author.username,
-          iconURL: message.author.avatarURL() || undefined,
-          guild: {
-            id: guild.discordId,
-            currencyPluralName: guildCurrency.namePlural,
-            economyChannelId: economyGuildChannel.discordId,
-            currencyImage: guildCurrency.iconSrc,
+      await tryAsyncAwait(() =>
+        updateBalance(message.client, {
+          user: {
+            id: author.id,
+            name: author.username,
+            iconURL: author.avatarURL() || undefined,
+            guild: {
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
+            },
           },
-        },
-        cashAmount: TEN_PLUS_REACTION_BONUS,
-        reason: `Your message ${message.url} received more than ${TEN_PLUS_REACTION_THRESHOLD} reactions!`,
-      });
+          cashAmount: TEN_PLUS_REACTION_BONUS,
+          reason: `Your message ${message.url} received more than ${TEN_PLUS_REACTION_THRESHOLD} reactions!`,
+        }),
+      );
     }
   },
 };

@@ -11,6 +11,7 @@ import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
+import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 
 export interface MessageDeleteListener extends Listener {
   event: Events.MessageDelete;
@@ -53,20 +54,25 @@ export const messageDelete: MessageDeleteListener = {
     });
     if (!economyGuildChannel) return;
 
-    await updateBalance(message.client, {
-      user: {
-        id: message.author.id,
-        name: message.author.username,
-        iconURL: message.author.avatarURL() || undefined,
-        guild: {
-          id: guild.discordId,
-          currencyPluralName: guildCurrency.namePlural,
-          economyChannelId: economyGuildChannel.discordId,
-          currencyImage: guildCurrency.iconSrc,
+    const author = message.author;
+    if (!author) return;
+
+    await tryAsyncAwait(() =>
+      updateBalance(message.client, {
+        user: {
+          id: author.id,
+          name: author.username,
+          iconURL: author.avatarURL() || undefined,
+          guild: {
+            id: guild.discordId,
+            currencyPluralName: guildCurrency.namePlural,
+            economyChannelId: economyGuildChannel.discordId,
+            currencyImage: guildCurrency.iconSrc,
+          },
         },
-      },
-      cashAmount,
-      reason: `${numImages} off topic media`,
-    });
+        cashAmount,
+        reason: `${numImages} off topic media`,
+      }),
+    );
   },
 };

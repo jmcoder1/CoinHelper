@@ -146,21 +146,23 @@ export const TextToImage: Command = {
         logTextToImageStep(interactionId, "banned word hit — applying penalty", {
           matchedToken: bannedWord,
         });
-        await updateBalance(client, {
-          user: {
-            id: interaction.user.id,
-            guild: {
-              id: guild.discordId,
-              currencyPluralName: guildCurrency.namePlural,
-              economyChannelId: economyGuildChannel.discordId,
-              currencyImage: guildCurrency.iconSrc,
+        await tryAsyncAwait(() =>
+          updateBalance(client, {
+            user: {
+              id: interaction.user.id,
+              guild: {
+                id: guild.discordId,
+                currencyPluralName: guildCurrency.namePlural,
+                economyChannelId: economyGuildChannel.discordId,
+                currencyImage: guildCurrency.iconSrc,
+              },
+              name: interaction.user.username,
+              iconURL: interaction.user.avatarURL() || undefined,
             },
-            name: interaction.user.username,
-            iconURL: interaction.user.avatarURL() || undefined,
-          },
-          cashAmount: -BANNED_WORD_COST,
-          reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildCurrency.namePlural}.`,
-        });
+            cashAmount: -BANNED_WORD_COST,
+            reason: `<@${interaction.user.id}> you have been penalised ${BANNED_WORD_COST} ${guildCurrency.namePlural}.`,
+          }),
+        );
         logTextToImageStep(interactionId, "penalty balance update finished");
         await editReplySafe(
           interactionId,

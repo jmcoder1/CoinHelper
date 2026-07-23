@@ -1,5 +1,6 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { client as unbelievaboatClient } from "./client";
+import { formatApiError } from "../../formatApiError";
 
 export interface UpdateBalanceParams {
   user: {
@@ -40,16 +41,32 @@ export const updateBalance = async (
     })
     .addFields({ name: "Reason", value: reason });
 
-  await unbelievaboatClient.editUserBalance(
-    guild.id,
-    user.id,
-    { cash: cashAmount },
-    reason
-  );
+  try {
+    await unbelievaboatClient.editUserBalance(
+      guild.id,
+      user.id,
+      { cash: cashAmount },
+      reason
+    );
+  } catch (error) {
+    const summary = formatApiError(error);
+    console.error(
+      `Unbelievaboat editUserBalance failed: guild=${guild.id} user=${user.id} amount=${cashAmount} | ${summary}`
+    );
+    throw new Error(
+      `Failed to update Unbelievaboat balance for user ${user.id} in guild ${guild.id}`
+    );
+  }
 
-  const economyChannel = await client.channels.fetch(economyChannelId);
-  if (economyChannel?.isTextBased()) {
-    await economyChannel.send({ embeds: [embed] });
-    await economyChannel.send(`<@${user.id}>`);
+  try {
+    const economyChannel = await client.channels.fetch(economyChannelId);
+    if (economyChannel?.isTextBased()) {
+      await economyChannel.send({ embeds: [embed] });
+      await economyChannel.send(`<@${user.id}>`);
+    }
+  } catch (error) {
+    console.error(
+      `Failed to post balance update embed: guild=${guild.id} channel=${economyChannelId} | ${formatApiError(error)}`
+    );
   }
 };
