@@ -10,6 +10,7 @@ import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
+import { isImageAttachment } from "../utils/apiUtils/discordUtils/attachmentContentTypes";
 import { endInteraction } from "./utils/endnteraction";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import {
@@ -79,8 +80,13 @@ export const Preview: Command = {
       if (message.attachments.size > 0) {
         for (let j = 0; j < message.attachments.size; j++) {
           const attachment = message.attachments.at(j);
-          if (!!attachment?.name && !!attachment.url)
-            files.push({ attachment: attachment?.url });
+          if (
+            attachment &&
+            isImageAttachment(attachment) &&
+            !!attachment.name &&
+            !!attachment.url
+          )
+            files.push({ attachment: attachment.url });
         }
       }
     }

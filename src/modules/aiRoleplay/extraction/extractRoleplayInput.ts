@@ -1,6 +1,6 @@
 import { Message } from "discord.js";
 import { ExtractRoleplayInputResult } from "../types";
-import { isImageAttachment } from "./isImageAttachment";
+import { isImageAttachment } from "../../../utils/apiUtils/discordUtils/attachmentContentTypes";
 
 export const extractRoleplayInput = (
   message: Message,

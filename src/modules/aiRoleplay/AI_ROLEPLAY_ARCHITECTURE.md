@@ -107,11 +107,7 @@ src/modules/aiRoleplay/
 │   └── rewardUser.ts
 │
 ├── extraction/
-│   ├── attachmentContentTypes.ts
-│   ├── isImageAttachment.ts
-│   ├── isBlockedAttachment.ts
-│   ├── extractRoleplayInput.ts
-│   └── hasBlockedMedia.ts
+│   └── extractRoleplayInput.ts
 │
 ├── parsing/
 │   ├── containsAnyOf.ts              # Generic: does text contain any term?

@@ -1,4 +1,8 @@
 import { Attachment, Collection } from "discord.js";
+import {
+  isImageAttachment,
+  isVideoAttachment,
+} from "../../../utils/apiUtils/discordUtils/attachmentContentTypes";
 
 export const findNumImages = (attachments: Collection<string, Attachment>) => {
   let numImages = 0;
@@ -6,25 +10,7 @@ export const findNumImages = (attachments: Collection<string, Attachment>) => {
     const attachment = attachments.at(i);
     if (!attachment) return;
 
-    if (
-      attachment.contentType &&
-      [
-        "image/avif",
-        "image/gif",
-        "image/jpeg",
-        "image/png",
-        "image/tiff",
-        "image/vnd.microsoft.icon",
-        "image/x-icon",
-        "image/vnd.djvu",
-        "image/svg+xml",
-        "video/mp4",
-        "video/mpeg",
-        "video/ogg",
-        "video/quicktime",
-        "video/webm",
-      ].includes(attachment.contentType)
-    )
+    if (isImageAttachment(attachment) || isVideoAttachment(attachment))
       numImages = numImages + 1;
   }
   return numImages;
