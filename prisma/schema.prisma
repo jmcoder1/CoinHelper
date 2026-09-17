@@ -23,6 +23,7 @@ model Guild {
   aiRoleplayConfig       GuildAiRoleplayConfig?
   roleplaySessions       RoleplaySession[]
   roleplayPendingStarts  RoleplayPendingStart[]
+  imageCoinPayouts       ImageCoinPayout[]
 }
 
 model GuildAiRoleplayConfig {
@@ -132,4 +133,19 @@ model GuildRole {
 model AppSetting {
   key   String @id
   value String
+}
+
+/// Tracks image/video coin awards so deletes can claw back without Message Content.
+model ImageCoinPayout {
+  id           String    @id @default(cuid())
+  messageId    String    @unique
+  guildId      Int
+  userId       String
+  channelId    String
+  cashAmount   Int
+  createdAt    DateTime  @default(now())
+  clawedBackAt DateTime?
+  guild        Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
 }

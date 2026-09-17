@@ -18,6 +18,7 @@ import { createRoleplayPendingStart } from "./sessions/createRoleplayPendingStar
 import { deleteRoleplayPendingStart } from "./sessions/deleteRoleplayPendingStart";
 import { notifyExpiredPendingToInitiator } from "./sessions/notifyExpiredPendingToInitiator";
 import { AiRoleplayDeps } from "./types";
+import { ensureFullMessage } from "../../listeners/utils/discordUtils/ensureFullMessage";
 
 let deps: AiRoleplayDeps | null = null;
 
@@ -45,11 +46,8 @@ export const tryHandleAiRoleplayReaction = async (
     return true;
   }
 
-  const message = reaction.message.partial
-    ? await reaction.message.fetch()
-    : reaction.message;
-
-  if (!message.author || !message.guild) return true;
+  const message = await ensureFullMessage(reaction.message);
+  if (!message?.author || !message.guild) return true;
 
   const extracted = extractRoleplayInput(message);
   if (!extracted) {

@@ -9,6 +9,7 @@ import {
 import { Listener } from "./utils/types";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
+import { ensureFullMessage } from "./utils/discordUtils/ensureFullMessage";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
@@ -56,9 +57,8 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
 
     if (!reaction.message.guildId) return;
 
-    const message = !reaction.message.author
-      ? await reaction.message.fetch()
-      : reaction.message;
+    const message = await ensureFullMessage(reaction.message);
+    if (!message) return;
 
     // has no author
     if (!message.author) return;

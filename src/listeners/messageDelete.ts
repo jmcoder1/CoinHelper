@@ -1,13 +1,5 @@
-import {
-  Awaitable,
-  ChannelType,
-  Events,
-  Message,
-  PartialMessage,
-} from "discord.js";
+import { Awaitable, Events, Message, PartialMessage } from "discord.js";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
-import { findNumImages } from "./utils/discordUtils/findNumImages";
-import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
 import { Listener } from "./utils/types";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
@@ -21,31 +13,23 @@ export interface MessageDeleteListener extends Listener {
 export const messageDelete: MessageDeleteListener = {
   event: Events.MessageDelete,
   fn: async (message: Message | PartialMessage) => {
-    if (!message.author) return;
+    if (!message.id || !message.guildId) return;
 
-    const numImages = findNumImages(message.attachments);
-    if (!numImages || numImages === 0) return;
-    if (message.channel.type != ChannelType.GuildText) return;
-    const imageMultiplier = getImageMultiplier(message.channel.name);
-    if (imageMultiplier === 0) return;
-
-    const cashAmount = -(numImages * imageMultiplier);
-    if (cashAmount === 0) return;
-
-    if (!message.guildId) return;
+    const payout = await prisma.imageCoinPayout.findUnique({
+      where: { messageId: message.id },
+    });
+    if (!payout || payout.clawedBackAt) return;
 
     const guild = await prisma.guild.findUnique({
-      where: { discordId: message.guildId },
+      where: { id: payout.guildId },
     });
     if (!guild) return;
 
-    // Fetch the guild currency
     const guildCurrency = await prisma.guildCurrency.findFirst({
       where: { guildId: guild.id },
     });
     if (!guildCurrency) return;
 
-    // Fetch the economy guild channel
     const economyGuildChannel = await prisma.guildChannel.findFirst({
       where: {
         guildId: guild.id,
@@ -54,15 +38,17 @@ export const messageDelete: MessageDeleteListener = {
     });
     if (!economyGuildChannel) return;
 
-    const author = message.author;
-    if (!author) return;
+    const [user, userError] = await tryAsyncAwait(() =>
+      message.client.users.fetch(payout.userId),
+    );
+    if (!user || userError) return;
 
-    await tryAsyncAwait(() =>
+    const [, payError] = await tryAsyncAwait(() =>
       updateBalance(message.client, {
         user: {
-          id: author.id,
-          name: author.username,
-          iconURL: author.avatarURL() || undefined,
+          id: user.id,
+          name: user.username,
+          iconURL: user.avatarURL() || undefined,
           guild: {
             id: guild.discordId,
             currencyPluralName: guildCurrency.namePlural,
@@ -70,8 +56,16 @@ export const messageDelete: MessageDeleteListener = {
             currencyImage: guildCurrency.iconSrc,
           },
         },
-        cashAmount,
-        reason: `${numImages} off topic media`,
+        cashAmount: -payout.cashAmount,
+        reason: "off topic media",
+      }),
+    );
+    if (payError) return;
+
+    await tryAsyncAwait(() =>
+      prisma.imageCoinPayout.update({
+        where: { id: payout.id },
+        data: { clawedBackAt: new Date() },
       }),
     );
   },

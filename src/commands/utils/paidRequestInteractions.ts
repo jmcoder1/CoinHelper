@@ -207,16 +207,25 @@ const findMemberByInput = async (
     return member.guild.members.fetch(userId).catch(() => null) as Promise<GuildMember | null>;
 
   const normalizedInput = input.toLowerCase();
-  return (
-    member.guild.members.cache.find((candidate) => {
-      const username = candidate.user.username.toLowerCase();
-      const displayName = candidate.displayName.toLowerCase();
-
-      return (
-        username === normalizedInput || displayName === normalizedInput
-      );
-    }) ?? null
-  );
+  try {
+    const searchResults = await member.guild.members.search({
+      query: input,
+      limit: 10,
+    });
+    return (
+      searchResults.find((candidate) => {
+        const username = candidate.user.username.toLowerCase();
+        const displayName = candidate.displayName.toLowerCase();
+        return (
+          username === normalizedInput || displayName === normalizedInput
+        );
+      }) ??
+      searchResults.first() ??
+      null
+    );
+  } catch {
+    return null;
+  }
 };
 
 const canManagePaidRequest = async (

@@ -13,18 +13,17 @@ export const initClient = async () => {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.GuildModeration,
-      GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildMessageTyping,
-      GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildEmojisAndStickers,
       GatewayIntentBits.GuildIntegrations,
       GatewayIntentBits.GuildWebhooks,
       GatewayIntentBits.GuildVoiceStates,
-      GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildScheduledEvents,
       GatewayIntentBits.GuildInvites,
+      // Guild Members kept for boost GuildMemberUpdate until claim-boost redesign.
       GatewayIntentBits.GuildMembers,
+      // Message Content / Presence: not used — message bodies via REST fetch; /give ignores online.
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User],
   });

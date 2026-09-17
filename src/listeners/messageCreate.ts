@@ -3,6 +3,7 @@ import { toBalanceUpdate } from "../utils/apiUtils/unbelievaboatUtils/toBalanceU
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
 import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
+import { ensureFullMessage } from "./utils/discordUtils/ensureFullMessage";
 import { Listener } from "./utils/types";
 import { toUserId } from "./utils/discordUtils/toUserId";
 import { handleDisboardBump } from "./utils/handleDisboardBump";
@@ -21,21 +22,23 @@ export interface MessageCreateListener extends Listener {
 
 export const messageCreate: MessageCreateListener = {
   event: Events.MessageCreate,
-  fn: async (message: Message) => {
-    if (!message.guildId) return;
+  fn: async (rawMessage: Message) => {
+    if (!rawMessage.guildId) return;
 
     const guild = await prisma.guild.findUnique({
-      where: { discordId: message.guildId },
+      where: { discordId: rawMessage.guildId },
     });
     if (!guild) return;
 
-    // Fetch the guild currency
+    // Refetch via REST when Gateway stripped content (no Message Content intent).
+    const message = await ensureFullMessage(rawMessage);
+    if (!message) return;
+
     const guildCurrency = await prisma.guildCurrency.findFirst({
       where: { guildId: guild.id },
     });
     if (!guildCurrency) return;
 
-    // Fetch the economy guild channel
     const economyGuildChannel = await prisma.guildChannel.findFirst({
       where: {
         guildId: guild.id,
@@ -132,12 +135,14 @@ export const messageCreate: MessageCreateListener = {
       if (imageMultiplier === 0) return;
       const cashAmount = num * imageMultiplier;
       if (cashAmount === 0) return;
-      await tryAsyncAwait(() =>
+      if (!message.author) return;
+
+      const [, payError] = await tryAsyncAwait(() =>
         updateBalance(message.client, {
           user: {
-            id: message.author.id,
-            name: message.author.username,
-            iconURL: message.author.avatarURL() || undefined,
+            id: message.author!.id,
+            name: message.author!.username,
+            iconURL: message.author!.avatarURL() || undefined,
             guild: {
               id: guild.discordId,
               currencyPluralName: guildCurrency.namePlural,
@@ -147,6 +152,19 @@ export const messageCreate: MessageCreateListener = {
           },
           cashAmount,
           reason: `${num} image posts in <#${message.channel.id}>`,
+        }),
+      );
+      if (payError) return;
+
+      await tryAsyncAwait(() =>
+        prisma.imageCoinPayout.create({
+          data: {
+            messageId: message.id,
+            guildId: guild.id,
+            userId: message.author!.id,
+            channelId: message.channelId,
+            cashAmount,
+          },
         }),
       );
     }
