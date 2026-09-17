@@ -1,5 +1,5 @@
-﻿-- CreateTable
-CREATE TABLE "ImageCoinPayout" (
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "ImageCoinPayout" (
     "id" TEXT NOT NULL,
     "messageId" TEXT NOT NULL,
     "guildId" INTEGER NOT NULL,
@@ -12,11 +12,11 @@ CREATE TABLE "ImageCoinPayout" (
     CONSTRAINT "ImageCoinPayout_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "ImageCoinPayout_messageId_key" ON "ImageCoinPayout"("messageId");
+CREATE UNIQUE INDEX IF NOT EXISTS "ImageCoinPayout_messageId_key" ON "ImageCoinPayout"("messageId");
+CREATE INDEX IF NOT EXISTS "ImageCoinPayout_guildId_idx" ON "ImageCoinPayout"("guildId");
 
--- CreateIndex
-CREATE INDEX "ImageCoinPayout_guildId_idx" ON "ImageCoinPayout"("guildId");
-
--- AddForeignKey
-ALTER TABLE "ImageCoinPayout" ADD CONSTRAINT "ImageCoinPayout_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ImageCoinPayout" ADD CONSTRAINT "ImageCoinPayout_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

@@ -1,5 +1,5 @@
-﻿-- CreateTable
-CREATE TABLE "BoostClaim" (
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "BoostClaim" (
     "id" TEXT NOT NULL,
     "guildId" INTEGER NOT NULL,
     "userId" TEXT NOT NULL,
@@ -10,11 +10,11 @@ CREATE TABLE "BoostClaim" (
     CONSTRAINT "BoostClaim_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "BoostClaim_guildId_userId_idx" ON "BoostClaim"("guildId", "userId");
+CREATE INDEX IF NOT EXISTS "BoostClaim_guildId_userId_idx" ON "BoostClaim"("guildId", "userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "BoostClaim_guildId_userId_premiumSince_key" ON "BoostClaim"("guildId", "userId", "premiumSince");
 
--- CreateIndex
-CREATE UNIQUE INDEX "BoostClaim_guildId_userId_premiumSince_key" ON "BoostClaim"("guildId", "userId", "premiumSince");
-
--- AddForeignKey
-ALTER TABLE "BoostClaim" ADD CONSTRAINT "BoostClaim_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "BoostClaim" ADD CONSTRAINT "BoostClaim_guildId_fkey" FOREIGN KEY ("guildId") REFERENCES "Guild"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

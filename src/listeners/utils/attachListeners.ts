@@ -1,5 +1,5 @@
-import { Client } from "discord.js";
-import { ready } from "../ready";
+import { Client, Events } from "discord.js";
+import { ready, registerCommandsForGuild } from "../ready";
 import { messageCreate } from "../messageCreate";
 import { interactionCreate } from "../interactionCreate";
 import { messageReactionAdd } from "../messageReactionAdd";
@@ -9,6 +9,9 @@ import { dmMessageCreate } from "../dmMessageCreate";
 
 export const attachListeners = (client: Client) => {
   client.on(ready.event, (client) => ready.fn(client));
+  client.on(Events.GuildCreate, (guild) =>
+    registerCommandsForGuild(client, guild.id, `${guild.name} (${guild.id})`),
+  );
   client.on(messageCreate.event, (message) => messageCreate.fn(message));
   client.on(dmMessageCreate.event, (message) => dmMessageCreate.fn(message));
   client.on(messageDelete.event, (message) => messageDelete.fn(message));
