@@ -51,8 +51,11 @@ export const AddCurrency: Command = {
     const recipientId = interaction.options.get("recipient")?.value as string;
     const reason = interaction.options.get("reason")?.value as string;
 
-    const recipient = interactionGuild.members.cache.get(recipientId)?.user;
-    if (!recipient) return endInteraction(interaction, "Recipient not found.");
+    const [recipient, recipientError] = await tryAsyncAwait(() =>
+      client.users.fetch(recipientId)
+    );
+    if (!recipient || recipientError)
+      return endInteraction(interaction, "Recipient not found.");
 
     const guild = await prisma.guild.findUnique({
       where: { discordId: interactionGuild.id },

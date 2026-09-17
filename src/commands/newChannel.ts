@@ -74,8 +74,10 @@ export const NewChannel: Command = {
       ?.value as string;
     const creditUserId = interaction.options.get("credit")?.value as string;
 
-    const creditUser = interactionGuild.members.cache.get(creditUserId);
-    if (!creditUser)
+    const [creditUser, creditUserError] = await tryAsyncAwait(() =>
+      client.users.fetch(creditUserId)
+    );
+    if (!creditUser || creditUserError)
       return endInteraction(interaction, "Credit user not found.");
 
     const economyGuildChannel = await prisma.guildChannel.findFirst({
@@ -90,18 +92,18 @@ export const NewChannel: Command = {
     const [, errorUpdateBalance] = await tryAsyncAwait(() =>
       updateBalance(client, {
         user: {
-          name: creditUser.user.username,
-          id: creditUser.user.id,
+          name: creditUser.username,
+          id: creditUser.id,
           guild: {
             id: guild.discordId,
             currencyPluralName: guildCurrency.namePlural,
             economyChannelId: economyGuildChannel.discordId,
             currencyImage: guildCurrency.iconSrc,
           },
-          iconURL: creditUser.user.displayAvatarURL(),
+          iconURL: creditUser.displayAvatarURL(),
         },
         cashAmount: 100,
-        reason: `New channel suggestion by ${creditUser.user.username}`,
+        reason: `New channel suggestion by ${creditUser.username}`,
       })
     );
     if (errorUpdateBalance)
@@ -171,7 +173,7 @@ export const NewChannel: Command = {
       return endInteraction(interaction, "Announcement channel not found.");
 
     await announcementChannel.send({
-      content: `<@&${newChannelGuildRole.discordId}> The new channel <#${newChannel.id}> has been added thanks to <@${creditUser.user.id}>`,
+      content: `<@&${newChannelGuildRole.discordId}> The new channel <#${newChannel.id}> has been added thanks to <@${creditUser.id}>`,
     });
 
     return endInteraction(interaction, "New channel created successfully.");

@@ -20,7 +20,7 @@ import {
 
 export const Give: Command = {
   name: "give",
-  description: "Give currency to a random member of the server who is online.",
+  description: "Give currency to a random non-bot member of the server.",
   type: ApplicationCommandType.ChatInput,
   options: [
     {
@@ -95,21 +95,19 @@ export const Give: Command = {
     );
     if (!res || error) return endInteraction(interaction, error);
 
-    // FIND THE ONLINE USER
-    const onlineUsers = interactionGuild?.members.cache.filter(
+    // Random non-bot member (no Presence intent — do not filter by online status)
+    const eligibleMembers = interactionGuild.members.cache.filter(
       (member) =>
         member &&
-        member.user.id != interaction.user.id &&
-        member.user.bot == false &&
-        member.presence &&
-        member.presence.status === "online"
+        member.user.id !== interaction.user.id &&
+        member.user.bot === false
     );
-    if (!onlineUsers)
-      return endInteraction(interaction, "No online members found.");
+    if (eligibleMembers.size === 0)
+      return endInteraction(interaction, "No eligible members found.");
 
-    const randomMember = getRandCollectionElement(onlineUsers);
+    const randomMember = getRandCollectionElement(eligibleMembers);
     if (!randomMember)
-      return endInteraction(interaction, "No online members found.");
+      return endInteraction(interaction, "No eligible members found.");
 
     const playGuildChannel = await prisma.guildChannel.findFirst({
       where: {

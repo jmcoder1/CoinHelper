@@ -63,8 +63,11 @@ export const BoughtCoins: Command = {
     const buyerId = interaction.options.get("buyer")?.value as string;
     const amount = interaction.options.get("amount")?.value as number;
 
-    const buyer = interactionGuild.members.cache.get(buyerId)?.user;
-    if (!buyer) return endInteraction(interaction, "Buyer not found.");
+    const [buyer, buyerError] = await tryAsyncAwait(() =>
+      client.users.fetch(buyerId)
+    );
+    if (!buyer || buyerError)
+      return endInteraction(interaction, "Buyer not found.");
 
     const economyGuildChannel = await prisma.guildChannel.findFirst({
       where: {
