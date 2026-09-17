@@ -1,4 +1,3 @@
-import { guildMemberUpdate } from "./guildMemberUpdate";
 import { interactionCreate } from "./interactionCreate";
 import { dmMessageCreate } from "./dmMessageCreate";
 import { messageCreate } from "./messageCreate";
@@ -13,7 +12,6 @@ export const listeners = [
   dmMessageCreate,
   messageDelete,
   interactionCreate,
-  guildMemberUpdate,
   messageReactionAdd,
   messageReactionRemove,
 ] as const;

@@ -21,9 +21,7 @@ export const initClient = async () => {
       GatewayIntentBits.GuildVoiceStates,
       GatewayIntentBits.GuildScheduledEvents,
       GatewayIntentBits.GuildInvites,
-      // Guild Members kept for boost GuildMemberUpdate until claim-boost redesign.
-      GatewayIntentBits.GuildMembers,
-      // Message Content / Presence: not used — message bodies via REST fetch; /give ignores online.
+      // No privileged intents: Message Content (REST fetch), Members (claim-boost), Presence.
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User],
   });

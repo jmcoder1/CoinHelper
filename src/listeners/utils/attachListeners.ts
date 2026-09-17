@@ -2,7 +2,6 @@ import { Client } from "discord.js";
 import { ready } from "../ready";
 import { messageCreate } from "../messageCreate";
 import { interactionCreate } from "../interactionCreate";
-import { guildMemberUpdate } from "../guildMemberUpdate";
 import { messageReactionAdd } from "../messageReactionAdd";
 import { messageReactionRemove } from "../messageReactionRemove";
 import { messageDelete } from "../messageDelete";
@@ -15,9 +14,6 @@ export const attachListeners = (client: Client) => {
   client.on(messageDelete.event, (message) => messageDelete.fn(message));
   client.on(interactionCreate.event, (interaction) =>
     interactionCreate.fn(interaction, client)
-  );
-  client.on(guildMemberUpdate.event, (oldMember, newMember) =>
-    guildMemberUpdate.fn(oldMember, newMember)
   );
   client.on(messageReactionAdd.event, (reaction, user) =>
     messageReactionAdd.fn(reaction, user)

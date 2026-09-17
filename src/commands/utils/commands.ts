@@ -1,6 +1,7 @@
 import { AddCurrency } from "../addCurrency";
 import { Balance } from "../balance";
 import { BoughtCoins } from "../boughtCoins";
+import { ClaimBoost } from "../claimBoost";
 import { CoinFlip } from "../coinflip";
 import { Give } from "../give";
 import { NewChannel } from "../newChannel";
@@ -13,6 +14,7 @@ import { Command } from "./types";
 export const Commands: Command[] = [
   AddCurrency,
   Balance,
+  ClaimBoost,
   CoinFlip,
   Give,
   Preview,

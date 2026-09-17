@@ -24,6 +24,7 @@ model Guild {
   roleplaySessions       RoleplaySession[]
   roleplayPendingStarts  RoleplayPendingStart[]
   imageCoinPayouts       ImageCoinPayout[]
+  boostClaims            BoostClaim[]
 }
 
 model GuildAiRoleplayConfig {
@@ -148,4 +149,18 @@ model ImageCoinPayout {
   guild        Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
 
   @@index([guildId])
+}
+
+/// One claim per Discord boost period (premiumSince) per user per guild.
+model BoostClaim {
+  id           String   @id @default(cuid())
+  guildId      Int
+  userId       String
+  premiumSince DateTime
+  cashAmount   Int
+  claimedAt    DateTime @default(now())
+  guild        Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, userId, premiumSince])
+  @@index([guildId, userId])
 }
