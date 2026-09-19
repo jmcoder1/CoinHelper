@@ -15,6 +15,10 @@ import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
 import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import {
+  economyLog,
+  summarizeAttachments,
+} from "./utils/economyPayoutLog";
+import {
   REACTION_REWARD_AMOUNT,
   TEN_PLUS_REACTION_BONUS,
   TEN_PLUS_REACTION_THRESHOLD,
@@ -38,74 +42,147 @@ export const messageReactionAdd: MessageReactionAddListener = {
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser
   ) => {
-    // Fetch partial reaction if necessary
     if (reaction.partial)
       try {
         await reaction.fetch();
       } catch (error) {
-        console.error("Failed to fetch reaction:", error);
+        console.error("[economy:reaction-add] Failed to fetch reaction:", error);
         return;
       }
 
-    // Fetch partial user if necessary
     if (user.partial)
       try {
         await user.fetch();
       } catch (error) {
-        console.error("Failed to fetch user:", error);
+        console.error("[economy:reaction-add] Failed to fetch user:", error);
         return;
       }
 
-    if (!reaction.message.guildId) return;
+    // Only log the fire-reward path; ignore unrelated reactions.
+    if (reaction.emoji.name !== INCREMENTOR_EMOJI) return;
 
-    const message = await ensureFullMessage(reaction.message);
-    if (!message) return;
+    const guildId = reaction.message.guildId;
+    economyLog("reaction-add", "🔥 received", {
+      guildId,
+      channelId: reaction.message.channelId,
+      messageId: reaction.message.id,
+      reactorId: user.id,
+      reactorBot: user.bot,
+      reactionCount: reaction.count,
+      messagePartial: reaction.message.partial,
+    });
 
-    // has no author
-    if (!message.author) return;
+    if (!guildId) {
+      economyLog("reaction-add", "skip: not in a guild");
+      return;
+    }
 
-    // is bot
-    if (user.bot) return;
+    const message = await ensureFullMessage(reaction.message, "reaction-add");
+    if (!message) {
+      economyLog("reaction-add", "skip: ensureFullMessage returned null", {
+        messageId: reaction.message.id,
+        guildId,
+      });
+      return;
+    }
+
+    if (!message.author) {
+      economyLog("reaction-add", "skip: message has no author", {
+        messageId: message.id,
+        guildId,
+      });
+      return;
+    }
+
+    if (user.bot) {
+      economyLog("reaction-add", "skip: reactor is a bot", {
+        reactorId: user.id,
+        messageId: message.id,
+      });
+      return;
+    }
 
     const aiRoleplayHandled = await tryHandleAiRoleplayReaction(
       message.client,
       reaction,
       user,
     );
-    if (aiRoleplayHandled) return;
+    if (aiRoleplayHandled) {
+      economyLog("reaction-add", "skip: handled by AI roleplay instead", {
+        reactorId: user.id,
+        messageId: message.id,
+      });
+      return;
+    }
 
-    // is self reacting
-    if (message.author.id === user.id) return;
-
-    if (reaction.emoji.name !== INCREMENTOR_EMOJI) return;
+    if (message.author.id === user.id) {
+      economyLog("reaction-add", "skip: self-react", {
+        userId: user.id,
+        messageId: message.id,
+      });
+      return;
+    }
 
     const guild = await prisma.guild.findUnique({
-      where: { discordId: reaction.message.guildId },
+      where: { discordId: guildId },
     });
-    if (!guild) return;
+    if (!guild) {
+      economyLog("reaction-add", "skip: guild not in database", { guildId });
+      return;
+    }
 
-    // Fetch the guild currency
     const guildCurrency = await prisma.guildCurrency.findFirst({
       where: { guildId: guild.id },
     });
-    if (!guildCurrency) return;
+    if (!guildCurrency) {
+      economyLog("reaction-add", "skip: no guild currency configured", {
+        guildId,
+        guildDbId: guild.id,
+      });
+      return;
+    }
 
-    // Fetch the economy guild channel
     const economyGuildChannel = await prisma.guildChannel.findFirst({
       where: {
         guildId: guild.id,
         name: ECONOMY_CHANNEL_NAME,
       },
     });
-    if (!economyGuildChannel) return;
+    if (!economyGuildChannel) {
+      economyLog("reaction-add", "skip: no economy channel configured", {
+        guildId,
+        guildDbId: guild.id,
+      });
+      return;
+    }
 
-    const numImages = findNumImages(message.attachments);
-    if (numImages === 0) return;
+    const attachments = summarizeAttachments(message.attachments);
+    const numImages = findNumImages(message.attachments) ?? 0;
+    economyLog("reaction-add", "attachment scan", {
+      messageId: message.id,
+      attachmentCount: message.attachments.size,
+      numImages,
+      attachments,
+    });
+    if (numImages === 0) {
+      economyLog(
+        "reaction-add",
+        "skip: no countable image/video attachments (check contentType)",
+        { messageId: message.id, attachments },
+      );
+      return;
+    }
 
     const author = message.author;
-    if (!author) return;
+    economyLog("reaction-add", "paying reaction reward", {
+      authorId: author.id,
+      reactorId: user.id,
+      cashAmount: REACTION_REWARD_AMOUNT,
+      economyChannelId: economyGuildChannel.discordId,
+      messageUrl: message.url,
+    });
 
-    await tryAsyncAwait(() =>
+    const [, payError] = await tryAsyncAwait(() =>
       updateBalance(message.client, {
         user: {
           id: author.id,
@@ -122,15 +199,30 @@ export const messageReactionAdd: MessageReactionAddListener = {
         reason: `<@${user.id}> positively reacted to your message ${message.url}`,
       }),
     );
+    if (payError) {
+      economyLog("reaction-add", "reaction reward failed", {
+        authorId: author.id,
+        error: payError instanceof Error ? payError.message : String(payError),
+      });
+    } else {
+      economyLog("reaction-add", "reaction reward ok", {
+        authorId: author.id,
+        cashAmount: REACTION_REWARD_AMOUNT,
+      });
+    }
 
     const incrementorReactionCount = reaction.count;
 
-    // Only award the threshold bonus when the 🔥 reaction count crosses up.
     if (
       incrementorReactionCount ===
       TWENTY_FIVE_PLUS_REACTION_THRESHOLD + 1
     ) {
-      await tryAsyncAwait(() =>
+      economyLog("reaction-add", "paying 25+ bonus", {
+        authorId: author.id,
+        reactionCount: incrementorReactionCount,
+        cashAmount: TWENTY_FIVE_PLUS_REACTION_BONUS,
+      });
+      const [, bonusError] = await tryAsyncAwait(() =>
         updateBalance(message.client, {
           user: {
             id: author.id,
@@ -147,11 +239,29 @@ export const messageReactionAdd: MessageReactionAddListener = {
           reason: `Your message ${message.url} received more than ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD} reactions!`,
         }),
       );
+      economyLog(
+        "reaction-add",
+        bonusError ? "25+ bonus failed" : "25+ bonus ok",
+        {
+          authorId: author.id,
+          error:
+            bonusError instanceof Error
+              ? bonusError.message
+              : bonusError
+                ? String(bonusError)
+                : undefined,
+        },
+      );
     } else if (
       incrementorReactionCount ===
       TEN_PLUS_REACTION_THRESHOLD + 1
     ) {
-      await tryAsyncAwait(() =>
+      economyLog("reaction-add", "paying 10+ bonus", {
+        authorId: author.id,
+        reactionCount: incrementorReactionCount,
+        cashAmount: TEN_PLUS_REACTION_BONUS,
+      });
+      const [, bonusError] = await tryAsyncAwait(() =>
         updateBalance(message.client, {
           user: {
             id: author.id,
@@ -167,6 +277,19 @@ export const messageReactionAdd: MessageReactionAddListener = {
           cashAmount: TEN_PLUS_REACTION_BONUS,
           reason: `Your message ${message.url} received more than ${TEN_PLUS_REACTION_THRESHOLD} reactions!`,
         }),
+      );
+      economyLog(
+        "reaction-add",
+        bonusError ? "10+ bonus failed" : "10+ bonus ok",
+        {
+          authorId: author.id,
+          error:
+            bonusError instanceof Error
+              ? bonusError.message
+              : bonusError
+                ? String(bonusError)
+                : undefined,
+        },
       );
     }
   },
