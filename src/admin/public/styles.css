@@ -271,6 +271,70 @@ textarea {
   margin-top: 1rem;
 }
 
+.audit-note {
+  color: #9aa0b5;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.audit-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.audit-table-wrap {
+  overflow: auto;
+  border: 1px solid #2d3348;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.audit-table th,
+.audit-table td {
+  border-bottom: 1px solid #2d3348;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.audit-table th {
+  background: #141824;
+  position: sticky;
+  top: 0;
+}
+
+.audit-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.audit-badge.ok {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.audit-badge.warn {
+  background: #713f12;
+  color: #fde68a;
+}
+
+.audit-badge.missing {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
 @media (max-width: 800px) {
   .layout {
     grid-template-columns: 1fr;
