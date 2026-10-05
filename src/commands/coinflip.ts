@@ -41,6 +41,8 @@ export const CoinFlip: Command = {
     client: Client,
     interaction: CommandInteraction
   ): Promise<boolean> => {
+    await interaction.deferReply({ ephemeral: true });
+
     if (!interaction.guild)
       return endInteraction(
         interaction,
@@ -161,7 +163,7 @@ export const CoinFlip: Command = {
         "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWk3dWhkamd3OGRpa2ZyeHphY2N6Y3QwemVidWxrODdsdTgyanZ5cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6jqfXikz9yzhS/giphy.webp"
       )
       .setDescription(`Check the result in <#${playGuildChannel.discordId}>`);
-    interaction.reply({ embeds: [delayEmebd] });
+    await interaction.editReply({ embeds: [delayEmebd] });
     await sleep(2000);
 
     let reason: string;

@@ -20,6 +20,8 @@ export const Balance: Command = {
     client: Client,
     interaction: CommandInteraction
   ): Promise<boolean> => {
+    await interaction.deferReply({ ephemeral: true });
+
     if (!interaction.guild)
       return endInteraction(
         interaction,
