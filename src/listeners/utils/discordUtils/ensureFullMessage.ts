@@ -1,9 +1,10 @@
 import { Message, PartialMessage } from "discord.js";
 
 /**
- * Discord strips content/embeds/attachments from guild MESSAGE_* gateway
- * events without the Message Content privileged intent. REST Get Message
- * still returns the full body — refetch when the gateway payload looks empty.
+ * Without the Message Content intent, Discord strips content/embeds/attachments
+ * from other people's guild messages on both Gateway events and REST Get Message.
+ * Do not refetch a non-partial empty body — that floods the REST queue and
+ * delays slash-command replies. Partial structures still need a fetch.
  */
 export const ensureFullMessage = async (
   message: Message | PartialMessage,
@@ -18,30 +19,6 @@ export const ensureFullMessage = async (
       );
       const fetched = await message.fetch();
       console.log(`${prefix}ensureFullMessage: partial fetch ok`, {
-        messageId: fetched.id,
-        attachments: fetched.attachments?.size ?? 0,
-        embeds: fetched.embeds?.length ?? 0,
-        contentLength: fetched.content?.length ?? 0,
-        authorId: fetched.author?.id ?? null,
-      });
-      return fetched;
-    }
-
-    const bodyMissing =
-      message.content === "" &&
-      message.attachments.size === 0 &&
-      message.embeds.length === 0;
-
-    if (bodyMissing && message.guildId) {
-      console.log(
-        `${prefix}ensureFullMessage: gateway body empty, REST refetch ${message.id}`,
-        {
-          guildId: message.guildId,
-          channelId: message.channelId,
-        },
-      );
-      const fetched = await message.fetch();
-      console.log(`${prefix}ensureFullMessage: REST refetch ok`, {
         messageId: fetched.id,
         attachments: fetched.attachments?.size ?? 0,
         embeds: fetched.embeds?.length ?? 0,

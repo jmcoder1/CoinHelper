@@ -15,8 +15,7 @@ describe("ensureFullMessage", () => {
     expect(message.fetch).not.toHaveBeenCalled();
   });
 
-  it("fetches when guild gateway body is empty", async () => {
-    const fetched = { id: "fetched" };
+  it("does not fetch when a non-partial guild message body is empty", async () => {
     const message = {
       id: "1",
       partial: false,
@@ -24,11 +23,11 @@ describe("ensureFullMessage", () => {
       attachments: { size: 0 },
       embeds: [],
       guildId: "guild",
-      fetch: jest.fn().mockResolvedValue(fetched),
+      fetch: jest.fn(),
     };
 
-    await expect(ensureFullMessage(message as any)).resolves.toBe(fetched);
-    expect(message.fetch).toHaveBeenCalled();
+    await expect(ensureFullMessage(message as any)).resolves.toBe(message);
+    expect(message.fetch).not.toHaveBeenCalled();
   });
 
   it("fetches partial messages", async () => {
