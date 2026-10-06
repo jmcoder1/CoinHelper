@@ -1,6 +1,5 @@
 import { TextBasedChannel } from "discord.js";
-import { prisma } from "../prismaUtils/prisma";
-import { PARTNER_PROMO_CHANNEL_NAME } from "../prismaUtils/constants";
+import { PARTNER_TICKET_CHANNEL_ID } from "../prismaUtils/constants";
 import { isPartnerPromoOnCooldown } from "./isPartnerPromoOnCooldown";
 import { partnerPromoKey } from "./partnerPromoKey";
 
@@ -8,7 +7,8 @@ const lastPromoAt = new Map<string, number>();
 
 /**
  * After a positive economy payout, ping the user once per day with a
- * clickbait line that points at the configured partner channel.
+ * clickbait line that points at the partner ticket channel.
+ * Only sends in the server that actually contains that channel.
  */
 export const maybeSendPartnerPromo = async (
   economyChannel: TextBasedChannel,
@@ -19,22 +19,14 @@ export const maybeSendPartnerPromo = async (
   const key = partnerPromoKey(guildDiscordId, userId);
   if (isPartnerPromoOnCooldown(lastPromoAt.get(key), now)) return;
 
-  const guild = await prisma.guild.findUnique({
-    where: { discordId: guildDiscordId },
-    select: { id: true },
-  });
-  if (!guild) return;
-
-  const partnerChannel = await prisma.guildChannel.findFirst({
-    where: {
-      guildId: guild.id,
-      name: PARTNER_PROMO_CHANNEL_NAME,
-    },
-  });
-  if (!partnerChannel) return;
+  const partnerChannel = await economyChannel.client.channels.fetch(
+    PARTNER_TICKET_CHANNEL_ID,
+  );
+  if (!partnerChannel?.isTextBased() || partnerChannel.isDMBased()) return;
+  if (partnerChannel.guildId !== guildDiscordId) return;
 
   lastPromoAt.set(key, now);
   await economyChannel.send(
-    `<@${userId}> Want to earn 3000 more coins? Check <#${partnerChannel.discordId}>`,
+    `<@${userId}> Want to earn 3000 more coins? Check <#${PARTNER_TICKET_CHANNEL_ID}>`,
   );
 };
