@@ -9,7 +9,11 @@ import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUt
 import { getChannelById } from "../utils/apiUtils/discordUtils/getChannelById";
 import { endInteraction } from "./utils/endnteraction";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
-import { ECONOMY_CHANNEL_NAME } from "../utils/apiUtils/prismaUtils/constants";
+import {
+  ECONOMY_CHANNEL_NAME,
+  PARTNER_UPSELL_URL,
+} from "../utils/apiUtils/prismaUtils/constants";
+import { maybeSendPartnerPromo } from "../utils/apiUtils/unbelievaboatUtils/maybeSendPartnerPromo";
 
 export const Balance: Command = {
   name: "balance",
@@ -88,6 +92,20 @@ export const Balance: Command = {
 
     await economyChannel.send(`<@${interaction.user.id}>`);
     await economyChannel.send({ embeds: [resultEmbed] });
+    try {
+      await maybeSendPartnerPromo(
+        economyChannel,
+        interactionGuild.id,
+        interaction.user.id,
+        Date.now(),
+        PARTNER_UPSELL_URL,
+      );
+    } catch (promoError) {
+      console.error(
+        `Partner promo failed: guild=${interactionGuild.id} user=${interaction.user.id}`,
+        promoError instanceof Error ? promoError.message : promoError,
+      );
+    }
 
     return endInteraction(
       interaction,

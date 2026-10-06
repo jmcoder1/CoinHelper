@@ -9,6 +9,9 @@ export const PREVIEW_CHANNEL_NAME = "preview";
 export const BOUGHT_COINS_CHANNEL_NAME = "bought-coins";
 /** Channel where the partner ticket panel is posted. */
 export const PARTNER_TICKET_CHANNEL_ID = "1557038658316664864";
+/** Public upsell linked from /balance. */
+export const PARTNER_UPSELL_URL =
+  "https://old.reddit.com/r/NSFWgaming/comments/1wvxobw/lewd_god_offerings_to_the_lustful_deity_subreddit/";
 export const AI_GEN_IMAGE_TIPS_CHANNEL_NAME = "ai-gen-image-tips";
 export const AI_IMAGE_CHANNEL_NAME = "ai-image";
 export const AI_ROLEPLAY_CHANNEL_NAME = "ai-roleplay";

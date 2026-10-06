@@ -15,8 +15,9 @@ export const maybeSendPartnerPromo = async (
   guildDiscordId: string,
   userId: string,
   now = Date.now(),
+  link?: string,
 ) => {
-  const key = partnerPromoKey(guildDiscordId, userId);
+  const key = `${partnerPromoKey(guildDiscordId, userId)}:${link ? "link" : "channel"}`;
   if (isPartnerPromoOnCooldown(lastPromoAt.get(key), now)) return;
 
   const partnerChannel = await economyChannel.client.channels.fetch(
@@ -26,7 +27,8 @@ export const maybeSendPartnerPromo = async (
   if (partnerChannel.guildId !== guildDiscordId) return;
 
   lastPromoAt.set(key, now);
+  const destination = link ?? `<#${PARTNER_TICKET_CHANNEL_ID}>`;
   await economyChannel.send(
-    `<@${userId}> Want to earn 3000 more coins? Check <#${PARTNER_TICKET_CHANNEL_ID}>`,
+    `<@${userId}> Want to earn 3000 more coins? Check ${destination}`,
   );
 };
