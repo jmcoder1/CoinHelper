@@ -7,6 +7,7 @@ export const COMMANDS_CHANNEL_NAME = "commands";
 export const PLAY_CHANNEL_NAME = "play";
 export const PREVIEW_CHANNEL_NAME = "preview";
 export const BOUGHT_COINS_CHANNEL_NAME = "bought-coins";
+export const PARTNER_PROMO_CHANNEL_NAME = "partner-promo";
 export const AI_GEN_IMAGE_TIPS_CHANNEL_NAME = "ai-gen-image-tips";
 export const AI_IMAGE_CHANNEL_NAME = "ai-image";
 export const AI_ROLEPLAY_CHANNEL_NAME = "ai-roleplay";

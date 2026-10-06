@@ -1,6 +1,7 @@
 import { Client, EmbedBuilder } from "discord.js";
 import { client as unbelievaboatClient } from "./client";
 import { formatApiError } from "../../formatApiError";
+import { maybeSendPartnerPromo } from "./maybeSendPartnerPromo";
 
 export interface UpdateBalanceParams {
   user: {
@@ -63,6 +64,16 @@ export const updateBalance = async (
     if (economyChannel?.isTextBased()) {
       await economyChannel.send({ embeds: [embed] });
       await economyChannel.send(`<@${user.id}>`);
+      if (cashAmount > 0) {
+        try {
+          await maybeSendPartnerPromo(economyChannel, guild.id, user.id);
+        } catch (promoError) {
+          console.error(
+            `Partner promo failed: guild=${guild.id} user=${user.id}`,
+            promoError instanceof Error ? promoError.message : promoError,
+          );
+        }
+      }
     }
   } catch (error) {
     console.error(
