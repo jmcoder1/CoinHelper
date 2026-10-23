@@ -21,7 +21,8 @@ export const initClient = async () => {
       GatewayIntentBits.GuildVoiceStates,
       GatewayIntentBits.GuildScheduledEvents,
       GatewayIntentBits.GuildInvites,
-      // No privileged intents: Message Content (REST fetch), Members (claim-boost), Presence.
+      GatewayIntentBits.MessageContent,
+      // Members / Presence still off unless separately needed and approved.
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User],
   });
