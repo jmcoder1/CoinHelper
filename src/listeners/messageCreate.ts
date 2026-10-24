@@ -2,7 +2,12 @@ import { Awaitable, ChannelType, Events, Message, User } from "discord.js";
 import { toBalanceUpdate } from "../utils/apiUtils/unbelievaboatUtils/toBalanceUpdate";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { findNumImages } from "./utils/discordUtils/findNumImages";
-import { getImageMultiplier } from "./utils/discordUtils/getImageMultiplier";
+import {
+  getImageMultiplier,
+  isRockDiamondChannel,
+  TIER_CHANNEL_EMOJIS,
+} from "./utils/discordUtils/tierChannel";
+import { maybeAutoReactTierMedia } from "./utils/discordUtils/autoReactTierMedia";
 import { ensureFullMessage } from "./utils/discordUtils/ensureFullMessage";
 import { Listener } from "./utils/types";
 import { toUserId } from "./utils/discordUtils/toUserId";
@@ -63,6 +68,9 @@ export const messageCreate: MessageCreateListener = {
       }
       return;
     }
+
+    // Dyno-style auto-reacts: independent of economy payout config.
+    await maybeAutoReactTierMedia(message);
 
     const attachments = summarizeAttachments(message.attachments);
     const hasAttachments = message.attachments.size > 0;
@@ -240,16 +248,24 @@ export const messageCreate: MessageCreateListener = {
         return;
       }
 
-      const imageMultiplier = getImageMultiplier(message.channel.name);
-      if (imageMultiplier === 0) {
+      if (!isRockDiamondChannel(message.channel.name)) {
         economyLog(
           "image-post",
-          "skip: channel name has no tier emoji (🪨🥉🥈🥇💎)",
+          `skip: channel name has no tier emoji (${TIER_CHANNEL_EMOJIS.join("")})`,
           {
             messageId: message.id,
             channelName: message.channel.name,
           },
         );
+        return;
+      }
+
+      const imageMultiplier = getImageMultiplier(message.channel.name);
+      if (imageMultiplier === 0) {
+        economyLog("image-post", "skip: image multiplier is 0", {
+          messageId: message.id,
+          channelName: message.channel.name,
+        });
         return;
       }
 
