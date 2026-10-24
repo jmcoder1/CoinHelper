@@ -6,6 +6,7 @@ import {
   CommandInteraction,
   EmbedBuilder,
   ModalBuilder,
+  ModalSubmitInteraction,
   TextChannel,
   TextInputBuilder,
   TextInputStyle,
@@ -13,7 +14,7 @@ import {
 import { Command } from "./utils/types";
 import { client as unbelievaboatClient } from "../utils/apiUtils/unbelievaboatUtils/client";
 import { updateBalance } from "../utils/apiUtils/unbelievaboatUtils/updateBalance";
-import { validateAmount } from "./utils/validateAmount";
+import { getValidateAmountErrorMessage } from "./utils/validateAmount";
 import { endInteraction } from "./utils/endnteraction";
 import { tryAsyncAwait } from "../utils/tryAsyncAwait";
 import { prisma } from "../utils/apiUtils/prismaUtils/prisma";
@@ -25,6 +26,18 @@ import {
 } from "../utils/apiUtils/prismaUtils/constants";
 
 const COMMAND_COST = 25;
+const MODAL_TIMEOUT_MS = 15 * 60 * 1000;
+
+const replyModal = async (
+  modalInteraction: ModalSubmitInteraction,
+  content: string
+) => {
+  if (modalInteraction.deferred || modalInteraction.replied) {
+    await modalInteraction.editReply({ content });
+    return;
+  }
+  await modalInteraction.reply({ content, ephemeral: true });
+};
 
 export const Request: Command = {
   name: "request",
@@ -49,8 +62,8 @@ export const Request: Command = {
     },
   ],
   run: async (_: Client, interaction: CommandInteraction): Promise<boolean> => {
-    await interaction.deferReply({ ephemeral: true });
-
+    // Do not deferReply before showModal — Discord only allows one initial
+    // response, and showModal must be that response.
     if (!interaction.guild)
       return endInteraction(interaction, "Guild not found.");
 
@@ -61,7 +74,6 @@ export const Request: Command = {
     });
     if (!guild) return endInteraction(interaction, "Guild not found.");
 
-    // Fetch the guild currency
     const guildCurrency = await prisma.guildCurrency.findFirst({
       where: { guildId: guild.id },
     });
@@ -105,13 +117,13 @@ export const Request: Command = {
         interaction.user.id
       )
     ).cash;
-    const isValidAmount = validateAmount(interaction, {
+    const amountError = getValidateAmountErrorMessage({
       amount: COMMAND_COST,
       balance: cashBalance,
       cost: COMMAND_COST,
       currencyPluralName: guildCurrency.namePlural,
     });
-    if (!isValidAmount) return true;
+    if (amountError) return endInteraction(interaction, amountError);
 
     const modal = new ModalBuilder()
       .setCustomId(`${type}-form`)
@@ -150,12 +162,20 @@ export const Request: Command = {
 
     await interaction.showModal(modal);
 
+    let modalInteraction: ModalSubmitInteraction;
     try {
-      const modalInteraction = await interaction.awaitModalSubmit({
-        time: 15 * 60 * 1000, // 15 minutes timeout
+      modalInteraction = await interaction.awaitModalSubmit({
+        time: MODAL_TIMEOUT_MS,
         filter: (i) =>
           i.customId === `${type}-form` && i.user.id === interaction.user.id,
       });
+    } catch {
+      // User dismissed the modal or timed out — nothing left to acknowledge.
+      return true;
+    }
+
+    try {
+      await modalInteraction.deferReply({ ephemeral: true });
 
       const kinks = modalInteraction.fields.getTextInputValue("kinks");
       const limits = modalInteraction.fields.getTextInputValue("limits");
@@ -180,14 +200,14 @@ export const Request: Command = {
       if (type === "roleplay-request")
         embed.addFields({ name: "Plot", value: plot });
 
-      // Determine the appropriate channel
       const targetChannel = interactionGuild.channels.cache.get(channelId) as
         | TextChannel
         | undefined;
-      if (!targetChannel || !targetChannel.isTextBased())
-        return endInteraction(interaction, "Target channel not found.");
+      if (!targetChannel || !targetChannel.isTextBased()) {
+        await replyModal(modalInteraction, "Target channel not found.");
+        return true;
+      }
 
-      // Check if the user has created a request in the last 24 hours
       const userAvatarURL = interaction.user.avatarURL() || undefined;
 
       const economyGuildChannel = await prisma.guildChannel.findFirst({
@@ -196,11 +216,13 @@ export const Request: Command = {
           name: ECONOMY_CHANNEL_NAME,
         },
       });
-      if (!economyGuildChannel)
-        return endInteraction(
-          interaction,
+      if (!economyGuildChannel) {
+        await replyModal(
+          modalInteraction,
           ECONOMY_CHANNEL_NAME + " channel not found."
         );
+        return true;
+      }
 
       const [, errorBalance] = await tryAsyncAwait(() =>
         updateBalance(interaction.client, {
@@ -223,33 +245,31 @@ export const Request: Command = {
             guildCurrency.namePlural,
         })
       );
-      if (errorBalance)
-        return endInteraction(interaction, "Error updating balance.");
+      if (errorBalance) {
+        await replyModal(modalInteraction, "Error updating balance.");
+        return true;
+      }
 
-      // Send the embed to the appropriate channel
       await targetChannel.send({
         content: `Request submitted by <@${interaction.user.id}>.`,
         embeds: [embed],
         components: [createRequestDeleteActionRow(interaction.user.id)],
       });
 
-      await modalInteraction.reply({
-        content:
-          "Your request has been successfully submitted in " +
-          `<#${channelId}>`,
-        ephemeral: true,
-      });
+      await replyModal(
+        modalInteraction,
+        "Your request has been successfully submitted in " + `<#${channelId}>`
+      );
+      return true;
     } catch (error) {
       console.error("Error handling modal submission:", error);
-      await interaction.followUp({
-        content: "There was an error processing your request.",
-        ephemeral: true,
-      });
+      await tryAsyncAwait(() =>
+        replyModal(
+          modalInteraction,
+          "There was an error processing your request."
+        )
+      );
+      return true;
     }
-
-    return endInteraction(
-      interaction,
-      `Request submitted successfully in <#${channelId}>`
-    );
   },
 };
