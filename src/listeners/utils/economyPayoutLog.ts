@@ -7,7 +7,8 @@ import {
 export type EconomyPayoutScope =
   | "reaction-add"
   | "reaction-remove"
-  | "image-post";
+  | "image-post"
+  | "auto-react";
 
 export const economyLog = (
   scope: EconomyPayoutScope,
