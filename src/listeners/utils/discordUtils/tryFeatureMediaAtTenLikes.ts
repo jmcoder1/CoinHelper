@@ -1,6 +1,8 @@
 import {
+  AttachmentBuilder,
   EmbedBuilder,
   Message,
+  MessageCreateOptions,
   MessageReaction,
   PartialMessageReaction,
   TextChannel,
@@ -9,13 +11,74 @@ import { prisma } from "../../../utils/apiUtils/prismaUtils/prisma";
 import { FEATURED_MEDIA_CHANNEL_NAME } from "../../../utils/apiUtils/prismaUtils/constants";
 import { updateBalance } from "../../../utils/apiUtils/unbelievaboatUtils/updateBalance";
 import { tryAsyncAwait } from "../../../utils/tryAsyncAwait";
-import { isImageAttachment } from "../../../utils/apiUtils/discordUtils/attachmentContentTypes";
+import {
+  isImageAttachment,
+  isVideoAttachment,
+} from "../../../utils/apiUtils/discordUtils/attachmentContentTypes";
 import {
   TEN_PLUS_REACTION_BONUS,
   TEN_PLUS_REACTION_THRESHOLD,
 } from "../reactionThresholds";
 import { economyLog } from "../economyPayoutLog";
 import { countDesignatedLikes } from "./designatedLikeEmojis";
+
+const buildFeaturedForwardPayload = (
+  message: Message,
+  author: NonNullable<Message["author"]>,
+  options: { attachFiles: boolean }
+): MessageCreateOptions => {
+  const caption = message.content?.trim() || null;
+  const attachments = [...message.attachments.values()];
+  const firstImage = attachments.find((attachment) =>
+    isImageAttachment(attachment)
+  );
+  const firstVideo = attachments.find((attachment) =>
+    isVideoAttachment(attachment)
+  );
+
+  const embed = new EmbedBuilder()
+    .setColor(0xf1c40f)
+    .setAuthor({
+      name: author.displayName || author.username,
+      iconURL: author.displayAvatarURL(),
+      url: message.url,
+    })
+    .setDescription(
+      [caption, `[View original](${message.url})`].filter(Boolean).join("\n\n")
+    )
+    .setFooter({ text: `Featured · ${TEN_PLUS_REACTION_THRESHOLD}+ likes` })
+    .setTimestamp(message.createdAt);
+
+  // Prefer re-attaching media so videos/gifs render natively in Discord.
+  if (options.attachFiles && attachments.length > 0) {
+    return {
+      content: `🔥 Featured · <@${author.id}>`,
+      embeds: [embed],
+      files: attachments.map(
+        (attachment) =>
+          new AttachmentBuilder(attachment.url, {
+            name: attachment.name || "media",
+          })
+      ),
+    };
+  }
+
+  // Fallback when re-attach fails (file too large, etc.): embed image, bare
+  // video URL in content so Discord can unfurl a player.
+  if (firstImage) {
+    embed.setImage(firstImage.url);
+  }
+
+  const contentParts = [`🔥 Featured · <@${author.id}>`];
+  if (!firstImage && firstVideo) {
+    contentParts.push(firstVideo.url);
+  }
+
+  return {
+    content: contentParts.join("\n"),
+    embeds: [embed],
+  };
+};
 
 type GuildCurrencyRow = {
   namePlural: string;
@@ -148,41 +211,24 @@ export const tryFeatureMediaAtTenLikes = async (
     return;
   }
 
-  const firstImage = [...message.attachments.values()].find((attachment) =>
-    isImageAttachment(attachment)
+  const channel = featuredChannel as TextChannel;
+  let [sent, sendError] = await tryAsyncAwait(() =>
+    channel.send(buildFeaturedForwardPayload(message, author, { attachFiles: true }))
   );
 
-  const embed = new EmbedBuilder()
-    .setColor(0xf1c40f)
-    .setAuthor({
-      name: author.username,
-      iconURL: author.avatarURL() || undefined,
-    })
-    .setDescription(
-      [
-        `Featured post by <@${author.id}>`,
-        message.content?.trim() ? message.content.trim() : null,
-        `[Jump to original](${message.url})`,
-      ]
-        .filter(Boolean)
-        .join("\n\n")
-    )
-    .setTimestamp(message.createdAt);
-
-  if (firstImage) {
-    embed.setImage(firstImage.url);
-  } else {
-    const mediaLinks = [...message.attachments.values()]
-      .map((attachment) => `[${attachment.name}](${attachment.url})`)
-      .join("\n");
-    if (mediaLinks) {
-      embed.addFields({ name: "Media", value: mediaLinks });
-    }
+  if (sendError || !sent) {
+    economyLog("reaction-add", "featured forward with files failed; retrying fallback", {
+      messageId: message.id,
+      error:
+        sendError instanceof Error ? sendError.message : String(sendError),
+    });
+    [sent, sendError] = await tryAsyncAwait(() =>
+      channel.send(
+        buildFeaturedForwardPayload(message, author, { attachFiles: false })
+      )
+    );
   }
 
-  const [sent, sendError] = await tryAsyncAwait(() =>
-    (featuredChannel as TextChannel).send({ embeds: [embed] })
-  );
   if (sendError || !sent) {
     economyLog("reaction-add", "featured forward send failed", {
       messageId: message.id,
@@ -192,16 +238,18 @@ export const tryFeatureMediaAtTenLikes = async (
     return;
   }
 
+  const featuredMessage = sent;
+
   await tryAsyncAwait(() =>
     prisma.featuredMediaPost.update({
       where: { messageId: message.id },
-      data: { featuredChannelMessageId: sent.id },
+      data: { featuredChannelMessageId: featuredMessage.id },
     })
   );
 
   economyLog("reaction-add", "featured forward ok", {
     messageId: message.id,
-    featuredMessageId: sent.id,
+    featuredMessageId: featuredMessage.id,
     featuredChannelId: featuredGuildChannel.discordId,
   });
 };
