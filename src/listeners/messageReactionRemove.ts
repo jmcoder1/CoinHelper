@@ -19,11 +19,13 @@ import {
 } from "./utils/economyPayoutLog";
 import {
   REACTION_REWARD_AMOUNT,
-  TEN_PLUS_REACTION_BONUS,
-  TEN_PLUS_REACTION_THRESHOLD,
   TWENTY_FIVE_PLUS_REACTION_BONUS,
   TWENTY_FIVE_PLUS_REACTION_THRESHOLD,
 } from "./utils/reactionThresholds";
+import {
+  countDesignatedLikes,
+  isDesignatedLikeEmoji,
+} from "./utils/discordUtils/designatedLikeEmojis";
 
 export interface MessageReactionRemoveListener extends Listener {
   event: Events.MessageReactionRemove;
@@ -33,15 +35,13 @@ export interface MessageReactionRemoveListener extends Listener {
   ) => Awaitable<void>;
 }
 
-export const INCREMENTOR_EMOJI = "🔥";
-
 export const messageReactionRemove: MessageReactionRemoveListener = {
   event: Events.MessageReactionRemove,
   fn: async (
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser
   ) => {
-    if (reaction.emoji.name !== INCREMENTOR_EMOJI) return;
+    if (!isDesignatedLikeEmoji(reaction.emoji)) return;
 
     if (reaction.partial)
       try {
@@ -66,12 +66,13 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
       }
 
     const guildId = reaction.message.guildId;
-    economyLog("reaction-remove", "🔥 removed", {
+    economyLog("reaction-remove", "designated like removed", {
       guildId,
       channelId: reaction.message.channelId,
       messageId: reaction.message.id,
       reactorId: user.id,
       reactorBot: user.bot,
+      emoji: reaction.emoji.name,
       reactionCount: reaction.count,
     });
 
@@ -200,12 +201,13 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
       },
     );
 
-    const incrementorReactionCount = reaction.count;
-
-    if (incrementorReactionCount === TWENTY_FIVE_PLUS_REACTION_THRESHOLD) {
+    // 10+ feature bonus is intentionally not clawed back, and the forwarded
+    // featured post is left in place if likes drop.
+    const likeCount = countDesignatedLikes(message, reaction);
+    if (likeCount === TWENTY_FIVE_PLUS_REACTION_THRESHOLD) {
       economyLog("reaction-remove", "clawing back 25+ bonus", {
         authorId: author.id,
-        reactionCount: incrementorReactionCount,
+        reactionCount: likeCount,
       });
       await tryAsyncAwait(() =>
         updateBalance(message.client, {
@@ -222,28 +224,6 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
           },
           cashAmount: -TWENTY_FIVE_PLUS_REACTION_BONUS,
           reason: `Your message ${message.url} dropped below the ${TWENTY_FIVE_PLUS_REACTION_THRESHOLD}+ reactions threshold.`,
-        }),
-      );
-    } else if (incrementorReactionCount === TEN_PLUS_REACTION_THRESHOLD) {
-      economyLog("reaction-remove", "clawing back 10+ bonus", {
-        authorId: author.id,
-        reactionCount: incrementorReactionCount,
-      });
-      await tryAsyncAwait(() =>
-        updateBalance(message.client, {
-          user: {
-            id: author.id,
-            name: author.username,
-            iconURL: author.avatarURL() || undefined,
-            guild: {
-              id: guild.discordId,
-              currencyPluralName: guildCurrency.namePlural,
-              economyChannelId: economyGuildChannel.discordId,
-              currencyImage: guildCurrency.iconSrc,
-            },
-          },
-          cashAmount: -TEN_PLUS_REACTION_BONUS,
-          reason: `Your message ${message.url} dropped below the ${TEN_PLUS_REACTION_THRESHOLD}+ reactions threshold.`,
         }),
       );
     }

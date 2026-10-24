@@ -24,6 +24,7 @@ model Guild {
   roleplaySessions       RoleplaySession[]
   roleplayPendingStarts  RoleplayPendingStart[]
   imageCoinPayouts       ImageCoinPayout[]
+  featuredMediaPosts     FeaturedMediaPost[]
   boostClaims            BoostClaim[]
 }
 
@@ -147,6 +148,22 @@ model ImageCoinPayout {
   createdAt    DateTime  @default(now())
   clawedBackAt DateTime?
   guild        Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId])
+}
+
+/// One-time 10+ like feature: coin bonus + forward. Not clawed back if likes drop.
+model FeaturedMediaPost {
+  id                       String   @id @default(cuid())
+  messageId                String   @unique
+  guildId                  Int
+  userId                   String
+  sourceChannelId          String
+  featuredChannelId        String
+  featuredChannelMessageId String?
+  cashAmount               Int
+  createdAt                DateTime @default(now())
+  guild                    Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
 
   @@index([guildId])
 }

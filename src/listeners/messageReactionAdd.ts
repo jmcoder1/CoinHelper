@@ -20,11 +20,14 @@ import {
 } from "./utils/economyPayoutLog";
 import {
   REACTION_REWARD_AMOUNT,
-  TEN_PLUS_REACTION_BONUS,
-  TEN_PLUS_REACTION_THRESHOLD,
   TWENTY_FIVE_PLUS_REACTION_BONUS,
   TWENTY_FIVE_PLUS_REACTION_THRESHOLD,
 } from "./utils/reactionThresholds";
+import {
+  countDesignatedLikes,
+  isDesignatedLikeEmoji,
+} from "./utils/discordUtils/designatedLikeEmojis";
+import { tryFeatureMediaAtTenLikes } from "./utils/discordUtils/tryFeatureMediaAtTenLikes";
 
 export interface MessageReactionAddListener extends Listener {
   event: Events.MessageReactionAdd;
@@ -33,8 +36,6 @@ export interface MessageReactionAddListener extends Listener {
     user: User | PartialUser
   ) => Awaitable<void>;
 }
-
-export const INCREMENTOR_EMOJI = "🔥";
 
 export const messageReactionAdd: MessageReactionAddListener = {
   event: Events.MessageReactionAdd,
@@ -58,16 +59,16 @@ export const messageReactionAdd: MessageReactionAddListener = {
         return;
       }
 
-    // Only log the fire-reward path; ignore unrelated reactions.
-    if (reaction.emoji.name !== INCREMENTOR_EMOJI) return;
+    if (!isDesignatedLikeEmoji(reaction.emoji)) return;
 
     const guildId = reaction.message.guildId;
-    economyLog("reaction-add", "🔥 received", {
+    economyLog("reaction-add", "designated like received", {
       guildId,
       channelId: reaction.message.channelId,
       messageId: reaction.message.id,
       reactorId: user.id,
       reactorBot: user.bot,
+      emoji: reaction.emoji.name,
       reactionCount: reaction.count,
       messagePartial: reaction.message.partial,
     });
@@ -94,14 +95,6 @@ export const messageReactionAdd: MessageReactionAddListener = {
       return;
     }
 
-    if (user.bot) {
-      economyLog("reaction-add", "skip: reactor is a bot", {
-        reactorId: user.id,
-        messageId: message.id,
-      });
-      return;
-    }
-
     const aiRoleplayHandled = await tryHandleAiRoleplayReaction(
       message.client,
       reaction,
@@ -110,14 +103,6 @@ export const messageReactionAdd: MessageReactionAddListener = {
     if (aiRoleplayHandled) {
       economyLog("reaction-add", "skip: handled by AI roleplay instead", {
         reactorId: user.id,
-        messageId: message.id,
-      });
-      return;
-    }
-
-    if (message.author.id === user.id) {
-      economyLog("reaction-add", "skip: self-react", {
-        userId: user.id,
         messageId: message.id,
       });
       return;
@@ -174,52 +159,70 @@ export const messageReactionAdd: MessageReactionAddListener = {
     }
 
     const author = message.author;
-    economyLog("reaction-add", "paying reaction reward", {
-      authorId: author.id,
-      reactorId: user.id,
-      cashAmount: REACTION_REWARD_AMOUNT,
-      economyChannelId: economyGuildChannel.discordId,
-      messageUrl: message.url,
-    });
+    const isBotReactor = Boolean(user.bot);
+    const isSelfReact = author.id === user.id;
 
-    const [, payError] = await tryAsyncAwait(() =>
-      updateBalance(message.client, {
-        user: {
-          id: author.id,
-          name: author.username,
-          iconURL: author.avatarURL() || undefined,
-          guild: {
-            id: guild.discordId,
-            currencyPluralName: guildCurrency.namePlural,
-            economyChannelId: economyGuildChannel.discordId,
-            currencyImage: guildCurrency.iconSrc,
-          },
-        },
-        cashAmount: REACTION_REWARD_AMOUNT,
-        reason: `<@${user.id}> positively reacted to your message ${message.url}`,
-      }),
-    );
-    if (payError) {
-      economyLog("reaction-add", "reaction reward failed", {
+    // Per-react coins: humans only, no self-reacts. Bot auto-reacts still
+    // count toward thresholds below.
+    if (!isBotReactor && !isSelfReact) {
+      economyLog("reaction-add", "paying reaction reward", {
         authorId: author.id,
-        error: payError instanceof Error ? payError.message : String(payError),
+        reactorId: user.id,
+        cashAmount: REACTION_REWARD_AMOUNT,
+        economyChannelId: economyGuildChannel.discordId,
+        messageUrl: message.url,
       });
+
+      const [, payError] = await tryAsyncAwait(() =>
+        updateBalance(message.client, {
+          user: {
+            id: author.id,
+            name: author.username,
+            iconURL: author.avatarURL() || undefined,
+            guild: {
+              id: guild.discordId,
+              currencyPluralName: guildCurrency.namePlural,
+              economyChannelId: economyGuildChannel.discordId,
+              currencyImage: guildCurrency.iconSrc,
+            },
+          },
+          cashAmount: REACTION_REWARD_AMOUNT,
+          reason: `<@${user.id}> positively reacted to your message ${message.url}`,
+        }),
+      );
+      if (payError) {
+        economyLog("reaction-add", "reaction reward failed", {
+          authorId: author.id,
+          error: payError instanceof Error ? payError.message : String(payError),
+        });
+      } else {
+        economyLog("reaction-add", "reaction reward ok", {
+          authorId: author.id,
+          cashAmount: REACTION_REWARD_AMOUNT,
+        });
+      }
     } else {
-      economyLog("reaction-add", "reaction reward ok", {
-        authorId: author.id,
-        cashAmount: REACTION_REWARD_AMOUNT,
+      economyLog("reaction-add", "skip per-react reward", {
+        reactorId: user.id,
+        isBotReactor,
+        isSelfReact,
+        messageId: message.id,
       });
     }
 
-    const incrementorReactionCount = reaction.count;
+    await tryFeatureMediaAtTenLikes({
+      message,
+      triggeringReaction: reaction,
+      guild,
+      guildCurrency,
+      economyChannelId: economyGuildChannel.discordId,
+    });
 
-    if (
-      incrementorReactionCount ===
-      TWENTY_FIVE_PLUS_REACTION_THRESHOLD + 1
-    ) {
+    const likeCount = countDesignatedLikes(message, reaction);
+    if (likeCount === TWENTY_FIVE_PLUS_REACTION_THRESHOLD + 1) {
       economyLog("reaction-add", "paying 25+ bonus", {
         authorId: author.id,
-        reactionCount: incrementorReactionCount,
+        reactionCount: likeCount,
         cashAmount: TWENTY_FIVE_PLUS_REACTION_BONUS,
       });
       const [, bonusError] = await tryAsyncAwait(() =>
@@ -242,45 +245,6 @@ export const messageReactionAdd: MessageReactionAddListener = {
       economyLog(
         "reaction-add",
         bonusError ? "25+ bonus failed" : "25+ bonus ok",
-        {
-          authorId: author.id,
-          error:
-            bonusError instanceof Error
-              ? bonusError.message
-              : bonusError
-                ? String(bonusError)
-                : undefined,
-        },
-      );
-    } else if (
-      incrementorReactionCount ===
-      TEN_PLUS_REACTION_THRESHOLD + 1
-    ) {
-      economyLog("reaction-add", "paying 10+ bonus", {
-        authorId: author.id,
-        reactionCount: incrementorReactionCount,
-        cashAmount: TEN_PLUS_REACTION_BONUS,
-      });
-      const [, bonusError] = await tryAsyncAwait(() =>
-        updateBalance(message.client, {
-          user: {
-            id: author.id,
-            name: author.username,
-            iconURL: author.avatarURL() || undefined,
-            guild: {
-              id: guild.discordId,
-              currencyPluralName: guildCurrency.namePlural,
-              economyChannelId: economyGuildChannel.discordId,
-              currencyImage: guildCurrency.iconSrc,
-            },
-          },
-          cashAmount: TEN_PLUS_REACTION_BONUS,
-          reason: `Your message ${message.url} received more than ${TEN_PLUS_REACTION_THRESHOLD} reactions!`,
-        }),
-      );
-      economyLog(
-        "reaction-add",
-        bonusError ? "10+ bonus failed" : "10+ bonus ok",
         {
           authorId: author.id,
           error:

@@ -21,6 +21,8 @@ export const ROLEPLAY_REQUEST_CHANNEL_NAME = "roleplay-request";
 export const SAUCE_REQUEST_CHANNEL_NAME = "sauce-request";
 export const CAPTION_REQUEST_CHANNEL_NAME = "caption-request";
 export const TRANSLATION_REQUEST_CHANNEL_NAME = "translation-request";
+/** Channel where media posts are forwarded after 10+ designated likes. */
+export const FEATURED_MEDIA_CHANNEL_NAME = "featured-media";
 
 // Channel names for the guilds
 export const PREVIEW_ROLE_NAME = "preview";
