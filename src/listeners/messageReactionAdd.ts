@@ -1,5 +1,6 @@
 import {
   Awaitable,
+  ChannelType,
   Events,
   MessageReaction,
   PartialMessageReaction,
@@ -28,6 +29,10 @@ import {
   isDesignatedLikeEmoji,
 } from "./utils/discordUtils/designatedLikeEmojis";
 import { tryFeatureMediaAtTenLikes } from "./utils/discordUtils/tryFeatureMediaAtTenLikes";
+import {
+  isRockDiamondChannel,
+  TIER_CHANNEL_EMOJIS,
+} from "./utils/discordUtils/tierChannel";
 
 export interface MessageReactionAddListener extends Listener {
   event: Events.MessageReactionAdd;
@@ -138,6 +143,26 @@ export const messageReactionAdd: MessageReactionAddListener = {
         guildId,
         guildDbId: guild.id,
       });
+      return;
+    }
+
+    if (message.channel.type !== ChannelType.GuildText) {
+      economyLog("reaction-add", "skip: channel is not GuildText", {
+        messageId: message.id,
+        channelType: message.channel.type,
+      });
+      return;
+    }
+
+    if (!isRockDiamondChannel(message.channel.name)) {
+      economyLog(
+        "reaction-add",
+        `skip: channel name has no tier emoji (${TIER_CHANNEL_EMOJIS.join("")})`,
+        {
+          messageId: message.id,
+          channelName: message.channel.name,
+        },
+      );
       return;
     }
 

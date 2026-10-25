@@ -1,5 +1,6 @@
 import {
   Awaitable,
+  ChannelType,
   Events,
   MessageReaction,
   PartialMessageReaction,
@@ -26,6 +27,10 @@ import {
   countDesignatedLikes,
   isDesignatedLikeEmoji,
 } from "./utils/discordUtils/designatedLikeEmojis";
+import {
+  isRockDiamondChannel,
+  TIER_CHANNEL_EMOJIS,
+} from "./utils/discordUtils/tierChannel";
 
 export interface MessageReactionRemoveListener extends Listener {
   event: Events.MessageReactionRemove;
@@ -143,6 +148,26 @@ export const messageReactionRemove: MessageReactionRemoveListener = {
       economyLog("reaction-remove", "skip: no economy channel configured", {
         guildId,
       });
+      return;
+    }
+
+    if (message.channel.type !== ChannelType.GuildText) {
+      economyLog("reaction-remove", "skip: channel is not GuildText", {
+        messageId: message.id,
+        channelType: message.channel.type,
+      });
+      return;
+    }
+
+    if (!isRockDiamondChannel(message.channel.name)) {
+      economyLog(
+        "reaction-remove",
+        `skip: channel name has no tier emoji (${TIER_CHANNEL_EMOJIS.join("")})`,
+        {
+          messageId: message.id,
+          channelName: message.channel.name,
+        },
+      );
       return;
     }
 

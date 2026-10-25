@@ -1,5 +1,6 @@
 import {
   AttachmentBuilder,
+  ChannelType,
   EmbedBuilder,
   Message,
   MessageCreateOptions,
@@ -21,6 +22,7 @@ import {
 } from "../reactionThresholds";
 import { economyLog } from "../economyPayoutLog";
 import { countDesignatedLikes } from "./designatedLikeEmojis";
+import { isRockDiamondChannel } from "./tierChannel";
 
 const buildFeaturedForwardPayload = (
   message: Message,
@@ -103,6 +105,13 @@ export const tryFeatureMediaAtTenLikes = async (
 ): Promise<void> => {
   const { message, triggeringReaction, guild, guildCurrency, economyChannelId } =
     params;
+
+  if (
+    message.channel.type !== ChannelType.GuildText ||
+    !isRockDiamondChannel(message.channel.name)
+  ) {
+    return;
+  }
 
   const likeCount = countDesignatedLikes(message, triggeringReaction);
   if (likeCount < TEN_PLUS_REACTION_THRESHOLD) return;
