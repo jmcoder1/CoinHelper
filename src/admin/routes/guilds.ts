@@ -543,3 +543,255 @@ guildsRouter.put("/:id/ai-roleplay", async (req, res) => {
 
   res.json({ aiRoleplay });
 });
+
+const serializeStoreItem = (item: {
+  id: string;
+  guildId: number;
+  unbItemId: string | null;
+  name: string;
+  price: number;
+  description: string;
+  iconEmoji: string | null;
+  listed: boolean;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  roleActions: { discordRoleId: string }[];
+  roleRequirements: { discordRoleId: string }[];
+}) => ({
+  id: item.id,
+  guildId: item.guildId,
+  unbItemId: item.unbItemId,
+  name: item.name,
+  price: item.price,
+  description: item.description,
+  iconEmoji: item.iconEmoji,
+  listed: item.listed,
+  deletedAt: item.deletedAt,
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt,
+  actionRoleIds: item.roleActions.map((row) => row.discordRoleId),
+  requirementRoleIds: item.roleRequirements.map((row) => row.discordRoleId),
+});
+
+const parseRoleIdList = (value: unknown): string[] | null => {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) return null;
+  const ids = value
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter(Boolean);
+  return [...new Set(ids)];
+};
+
+const storeItemInclude = {
+  roleActions: true,
+  roleRequirements: true,
+} as const;
+
+guildsRouter.get("/:id/store-items", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const includeDeleted = String(req.query.includeDeleted || "") === "true";
+  const items = await prisma.storeItem.findMany({
+    where: {
+      guildId,
+      ...(includeDeleted ? {} : { deletedAt: null }),
+    },
+    include: storeItemInclude,
+    orderBy: [{ deletedAt: "asc" }, { price: "asc" }, { name: "asc" }],
+  });
+
+  res.json({ items: items.map(serializeStoreItem) });
+});
+
+guildsRouter.post("/:id/store-items", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  if (!guildId) {
+    res.status(400).json({ error: "Invalid guild id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const { name, price, description, iconEmoji, listed } = req.body as {
+    name?: string;
+    price?: number;
+    description?: string;
+    iconEmoji?: string | null;
+    listed?: boolean;
+  };
+  const actionRoleIds = parseRoleIdList(req.body.actionRoleIds);
+  const requirementRoleIds = parseRoleIdList(req.body.requirementRoleIds);
+
+  if (!isNonEmptyString(name) || name.trim().length < 3 || name.trim().length > 100) {
+    res.status(400).json({ error: "name must be 3-100 characters" });
+    return;
+  }
+  if (!Number.isInteger(price) || (price as number) < 0) {
+    res.status(400).json({ error: "price must be a non-negative integer" });
+    return;
+  }
+  if (actionRoleIds === null || requirementRoleIds === null) {
+    res.status(400).json({ error: "actionRoleIds and requirementRoleIds must be string arrays" });
+    return;
+  }
+
+  try {
+    const item = await prisma.storeItem.create({
+      data: {
+        guildId,
+        name: name.trim(),
+        price: price as number,
+        description: typeof description === "string" ? description : "",
+        iconEmoji:
+          typeof iconEmoji === "string" && iconEmoji.trim()
+            ? iconEmoji.trim()
+            : null,
+        listed: listed !== false,
+        roleActions: {
+          create: actionRoleIds.map((discordRoleId) => ({ discordRoleId })),
+        },
+        roleRequirements: {
+          create: requirementRoleIds.map((discordRoleId) => ({
+            discordRoleId,
+          })),
+        },
+      },
+      include: storeItemInclude,
+    });
+    res.status(201).json({ item: serializeStoreItem(item) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("Unique constraint") || message.includes("StoreItem_guildId_name")) {
+      res.status(409).json({ error: "An item with that name already exists" });
+      return;
+    }
+    throw error;
+  }
+});
+
+guildsRouter.put("/:id/store-items/:itemId", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  const itemId = String(req.params.itemId || "");
+  if (!guildId || !itemId) {
+    res.status(400).json({ error: "Invalid guild id or item id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const existing = await prisma.storeItem.findFirst({
+    where: { id: itemId, guildId },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Store item not found" });
+    return;
+  }
+
+  const { name, price, description, iconEmoji, listed } = req.body as {
+    name?: string;
+    price?: number;
+    description?: string;
+    iconEmoji?: string | null;
+    listed?: boolean;
+  };
+  const actionRoleIds = parseRoleIdList(req.body.actionRoleIds);
+  const requirementRoleIds = parseRoleIdList(req.body.requirementRoleIds);
+
+  if (!isNonEmptyString(name) || name.trim().length < 3 || name.trim().length > 100) {
+    res.status(400).json({ error: "name must be 3-100 characters" });
+    return;
+  }
+  if (!Number.isInteger(price) || (price as number) < 0) {
+    res.status(400).json({ error: "price must be a non-negative integer" });
+    return;
+  }
+  if (actionRoleIds === null || requirementRoleIds === null) {
+    res.status(400).json({ error: "actionRoleIds and requirementRoleIds must be string arrays" });
+    return;
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.storeItemRoleAction.deleteMany({ where: { storeItemId: itemId } });
+      await tx.storeItemRoleRequirement.deleteMany({
+        where: { storeItemId: itemId },
+      });
+      await tx.storeItem.update({
+        where: { id: itemId },
+        data: {
+          name: name.trim(),
+          price: price as number,
+          description: typeof description === "string" ? description : "",
+          iconEmoji:
+            typeof iconEmoji === "string" && iconEmoji.trim()
+              ? iconEmoji.trim()
+              : null,
+          listed: listed !== false,
+          deletedAt: null,
+          roleActions: {
+            create: actionRoleIds.map((discordRoleId) => ({ discordRoleId })),
+          },
+          roleRequirements: {
+            create: requirementRoleIds.map((discordRoleId) => ({
+              discordRoleId,
+            })),
+          },
+        },
+      });
+    });
+
+    const item = await prisma.storeItem.findUniqueOrThrow({
+      where: { id: itemId },
+      include: storeItemInclude,
+    });
+    res.json({ item: serializeStoreItem(item) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("Unique constraint") || message.includes("StoreItem_guildId_name")) {
+      res.status(409).json({ error: "An item with that name already exists" });
+      return;
+    }
+    throw error;
+  }
+});
+
+guildsRouter.delete("/:id/store-items/:itemId", async (req, res) => {
+  const guildId = parseId(req.params.id);
+  const itemId = String(req.params.itemId || "");
+  if (!guildId || !itemId) {
+    res.status(400).json({ error: "Invalid guild id or item id" });
+    return;
+  }
+
+  const guild = await getGuildOr404(guildId, res);
+  if (!guild) return;
+
+  const existing = await prisma.storeItem.findFirst({
+    where: { id: itemId, guildId },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Store item not found" });
+    return;
+  }
+
+  const item = await prisma.storeItem.update({
+    where: { id: itemId },
+    data: {
+      deletedAt: new Date(),
+      listed: false,
+    },
+    include: storeItemInclude,
+  });
+
+  res.json({ item: serializeStoreItem(item) });
+});

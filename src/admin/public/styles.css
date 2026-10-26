@@ -178,12 +178,48 @@ select:disabled {
   flex-wrap: wrap;
 }
 
+.tabs.sub-tabs {
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.tabs.sub-tabs .tab {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem;
+}
+
 .tab {
   background: #343a55;
 }
 
 .tab.active {
   background: #4c6ef5;
+}
+
+.role-multi {
+  min-height: 8rem;
+}
+
+.store-item-card {
+  border: 1px solid #2d3348;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  background: #151822;
+}
+
+.store-item-card.deleted {
+  opacity: 0.65;
+}
+
+.store-item-card h4 {
+  margin: 0 0 0.35rem;
+}
+
+.store-item-meta {
+  color: #9aa3bd;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 
 .tab-panel {
