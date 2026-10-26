@@ -26,6 +26,8 @@ model Guild {
   imageCoinPayouts       ImageCoinPayout[]
   featuredMediaPosts     FeaturedMediaPost[]
   boostClaims            BoostClaim[]
+  storeItems             StoreItem[]
+  storePurchases         StorePurchase[]
 }
 
 model GuildAiRoleplayConfig {
@@ -180,4 +182,65 @@ model BoostClaim {
 
   @@unique([guildId, userId, premiumSince])
   @@index([guildId, userId])
+}
+
+/// Guild store catalog (imported from UnbelievaBoat / managed in admin).
+model StoreItem {
+  id          String    @id @default(cuid())
+  guildId     Int
+  /// UnbelievaBoat store item id for idempotent import.
+  unbItemId   String?
+  name        String
+  price       Int
+  description String    @db.Text @default("")
+  iconEmoji   String?
+  listed      Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  guild       Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  roleActions StoreItemRoleAction[]
+  roleRequirements StoreItemRoleRequirement[]
+  purchases   StorePurchase[]
+
+  @@unique([guildId, name])
+  @@unique([guildId, unbItemId])
+  @@index([guildId, listed])
+  @@index([guildId, deletedAt])
+}
+
+/// Roles granted on successful /buy-item (stacked; never removes other roles).
+model StoreItemRoleAction {
+  id            String    @id @default(cuid())
+  storeItemId   String
+  discordRoleId String
+  storeItem     StoreItem @relation(fields: [storeItemId], references: [id], onDelete: Cascade)
+
+  @@unique([storeItemId, discordRoleId])
+}
+
+/// Buyer must already have ALL of these roles (UnbelievaBoat ROLE + EVERY).
+model StoreItemRoleRequirement {
+  id            String    @id @default(cuid())
+  storeItemId   String
+  discordRoleId String
+  storeItem     StoreItem @relation(fields: [storeItemId], references: [id], onDelete: Cascade)
+
+  @@unique([storeItemId, discordRoleId])
+}
+
+/// Audit log of store purchases.
+model StorePurchase {
+  id          String    @id @default(cuid())
+  guildId     Int
+  storeItemId String
+  userId      String
+  itemName    String
+  pricePaid   Int
+  createdAt   DateTime  @default(now())
+  guild       Guild     @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  storeItem   StoreItem @relation(fields: [storeItemId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, userId])
+  @@index([storeItemId])
 }

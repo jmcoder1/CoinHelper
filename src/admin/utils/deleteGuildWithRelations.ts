@@ -5,6 +5,8 @@ export const deleteGuildWithRelations = async (guildId: number): Promise<void> =
   await prisma.roleplayPendingStart.deleteMany({ where: { guildId } });
   await prisma.roleplaySession.deleteMany({ where: { guildId } });
   await prisma.guildAiRoleplayConfig.deleteMany({ where: { guildId } });
+  await prisma.storePurchase.deleteMany({ where: { guildId } });
+  await prisma.storeItem.deleteMany({ where: { guildId } });
   await prisma.guildRole.deleteMany({ where: { guildId } });
   await prisma.guildChannel.deleteMany({ where: { guildId } });
   await prisma.guildCurrency.deleteMany({ where: { guildId } });

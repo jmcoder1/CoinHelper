@@ -13,6 +13,7 @@
     "dev": "nodemon dist/index.js",
     "admin": "node -r ./dist/admin/envBootstrap.js dist/admin/server.js",
     "verify:guild-config": "node scripts/verify-guild-config.js",
+    "import:unb-store": "node scripts/import-unb-store-items.js",
     "test": "jest --detectOpenHandles --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
