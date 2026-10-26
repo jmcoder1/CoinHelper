@@ -24,6 +24,9 @@ import { economyLog } from "../economyPayoutLog";
 import { countDesignatedLikes } from "./designatedLikeEmojis";
 import { isRockDiamondChannel } from "./tierChannel";
 
+/** Vote emojis the bot adds on each featured/contest post. */
+export const FEATURED_VOTE_EMOJIS = ["👍", "👎"] as const;
+
 const buildFeaturedForwardPayload = (
   message: Message,
   author: NonNullable<Message["author"]>,
@@ -248,6 +251,22 @@ export const tryFeatureMediaAtTenLikes = async (
   }
 
   const featuredMessage = sent;
+
+  for (const emoji of FEATURED_VOTE_EMOJIS) {
+    const [, reactError] = await tryAsyncAwait(() =>
+      featuredMessage.react(emoji)
+    );
+    if (reactError) {
+      economyLog("reaction-add", "featured vote react failed", {
+        featuredMessageId: featuredMessage.id,
+        emoji,
+        error:
+          reactError instanceof Error
+            ? reactError.message
+            : String(reactError),
+      });
+    }
+  }
 
   await tryAsyncAwait(() =>
     prisma.featuredMediaPost.update({
