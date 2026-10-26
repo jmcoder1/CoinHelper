@@ -200,6 +200,96 @@ select:disabled {
   min-height: 8rem;
 }
 
+.discord-picker {
+  position: relative;
+  width: 100%;
+}
+
+.discord-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.discord-picker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #2a3148;
+  border: 1px solid #3d4663;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.discord-picker-chip button {
+  background: transparent;
+  border: 0;
+  color: #b5bdd3;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.discord-picker-selected {
+  color: #c5cde3;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+  min-height: 1.1rem;
+}
+
+.discord-picker-selected.empty {
+  color: #6b7280;
+}
+
+.discord-picker-dropdown {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  max-height: 220px;
+  overflow: auto;
+  background: #12151e;
+  border: 1px solid #3d4663;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.discord-picker.open .discord-picker-dropdown {
+  display: block;
+}
+
+.discord-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #232839;
+  color: inherit;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+}
+
+.discord-picker-option:hover,
+.discord-picker-option.active {
+  background: #243056;
+}
+
+.discord-picker-option .muted {
+  color: #8b93ab;
+  font-size: 0.8rem;
+}
+
+.discord-picker-empty {
+  padding: 0.65rem 0.7rem;
+  color: #8b93ab;
+  font-size: 0.85rem;
+}
+
 .store-item-card {
   border: 1px solid #2d3348;
   border-radius: 8px;
