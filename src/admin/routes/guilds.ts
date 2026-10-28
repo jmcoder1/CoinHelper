@@ -121,6 +121,7 @@ guildsRouter.get("/:id", async (req, res) => {
       id: guild.id,
       discordId: guild.discordId,
       name: guild.name,
+      roleplayChannelEmoji: guild.roleplayChannelEmoji,
     },
     channels: mapSlots(guild.guildChannels, CHANNEL_SLOT_NAMES),
     roles: mapRoleSlots(guild.guildRoles, ROLE_SLOT_NAMES),
@@ -243,12 +244,17 @@ guildsRouter.patch("/:id", async (req, res) => {
   const guild = await getGuildOr404(guildId, res);
   if (!guild) return;
 
-  const { discordId, name } = req.body as {
+  const { discordId, name, roleplayChannelEmoji } = req.body as {
     discordId?: string;
     name?: string;
+    roleplayChannelEmoji?: string;
   };
 
-  const data: { discordId?: string; name?: string } = {};
+  const data: {
+    discordId?: string;
+    name?: string;
+    roleplayChannelEmoji?: string;
+  } = {};
   if (discordId !== undefined) {
     if (!isNonEmptyString(discordId)) {
       res.status(400).json({ error: "discordId cannot be empty" });
@@ -262,6 +268,13 @@ guildsRouter.patch("/:id", async (req, res) => {
       return;
     }
     data.name = name.trim();
+  }
+  if (roleplayChannelEmoji !== undefined) {
+    if (!isNonEmptyString(roleplayChannelEmoji)) {
+      res.status(400).json({ error: "roleplayChannelEmoji cannot be empty" });
+      return;
+    }
+    data.roleplayChannelEmoji = roleplayChannelEmoji.trim();
   }
 
   if (Object.keys(data).length === 0) {

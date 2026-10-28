@@ -1,4 +1,4 @@
-﻿-- Fresh DBs create Roleplay* tables after 20260601120000_roleplay_duo_mode; add duo-mode columns here.
+-- Fresh DBs create Roleplay* tables after 20260601120000_roleplay_duo_mode; add duo-mode columns here.
 
 ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "mode" TEXT NOT NULL DEFAULT 'solo';
 ALTER TABLE "RoleplaySession" ADD COLUMN IF NOT EXISTS "partnerId" TEXT;

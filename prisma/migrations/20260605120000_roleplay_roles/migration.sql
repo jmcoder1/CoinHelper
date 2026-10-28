@@ -1,4 +1,4 @@
-﻿-- AlterTable
+-- AlterTable
 ALTER TABLE "GuildAiRoleplayConfig" ADD COLUMN "roleplayRoles" JSONB NOT NULL DEFAULT '[]';
 
 -- AlterTable

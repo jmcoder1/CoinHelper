@@ -17,6 +17,8 @@ model Guild {
   id                     Int           @id @default(autoincrement())
   discordId              String        @unique
   name                   String
+  /// Channel-name emoji that awards a flat bonus on media posts (e.g. 🗣️).
+  roleplayChannelEmoji   String        @default("🗣️")
   guildChannels          GuildChannel[]
   guildCurrencies        GuildCurrency[]
   guildRoles             GuildRole[]

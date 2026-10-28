@@ -1,4 +1,4 @@
-﻿-- Duo-mode columns for DBs where Roleplay* tables already existed (incremental dev).
+-- Duo-mode columns for DBs where Roleplay* tables already existed (incremental dev).
 -- On fresh installs those tables are created later; see 20260712150000_roleplay_duo_mode_columns.
 
 DO $$

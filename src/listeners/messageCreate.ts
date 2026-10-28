@@ -5,6 +5,8 @@ import { findNumImages } from "./utils/discordUtils/findNumImages";
 import {
   getImageMultiplier,
   isRockDiamondChannel,
+  isRoleplayBonusChannel,
+  ROLEPLAY_CHANNEL_POST_BONUS,
   TIER_CHANNEL_EMOJIS,
 } from "./utils/discordUtils/tierChannel";
 import { maybeAutoReactTierMedia } from "./utils/discordUtils/autoReactTierMedia";
@@ -269,12 +271,19 @@ export const messageCreate: MessageCreateListener = {
         return;
       }
 
-      const cashAmount = num * imageMultiplier;
+      const roleplayBonus = isRoleplayBonusChannel(
+        message.channel.name,
+        guild.roleplayChannelEmoji,
+      )
+        ? ROLEPLAY_CHANNEL_POST_BONUS
+        : 0;
+      const cashAmount = num * imageMultiplier + roleplayBonus;
       if (cashAmount === 0) {
         economyLog("image-post", "skip: cashAmount is 0", {
           messageId: message.id,
           num,
           imageMultiplier,
+          roleplayBonus,
         });
         return;
       }
@@ -298,10 +307,16 @@ export const messageCreate: MessageCreateListener = {
         authorId: message.author.id,
         numImages: num,
         imageMultiplier,
+        roleplayBonus,
         cashAmount,
         economyChannelId: economyGuildChannel.discordId,
         channelName: message.channel.name,
       });
+
+      const reasonParts = [`${num} image posts in <#${message.channel.id}>`];
+      if (roleplayBonus > 0) {
+        reasonParts.push(`+${roleplayBonus} roleplay channel bonus`);
+      }
 
       const [, payError] = await tryAsyncAwait(() =>
         updateBalance(message.client, {
@@ -317,7 +332,7 @@ export const messageCreate: MessageCreateListener = {
             },
           },
           cashAmount,
-          reason: `${num} image posts in <#${message.channel.id}>`,
+          reason: reasonParts.join(" "),
         }),
       );
       if (payError) {
